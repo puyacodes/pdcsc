@@ -1,0 +1,21 @@
+{
+  "name": "@puya/pdcsc",
+  "version": "1.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "PDCSC tool for managing changeset scripts",
+  "dependencies": {
+    "@puya/ts": "^1.1.1",
+    "mssql": "^11.0.1",
+    "simple-git": "^3.27.0",
+    "sqlcmd": "^3.0.4"
+  },
+  "bin": {
+    "pdcsc": "./bin/index.js"
+  }
+}

@@ -1,17 +1,16 @@
 {
     "database": {
-        "server": "192.168.10.119",
+        "server": ".",
         "user": "sa",
-        "password": "Rotart314$",
-        "databaseName": "PuyaDataRoot"
+        "password": "****",
+        "databaseName": "MyDb"
     },
     "paths": {
         "backupDir": "C:\\temp\\",
-        "basePath": "C:\\Users\\sw9\\source\\repos\\general-database",
         "changesetFolderName": "Changes",
         "scriptsFolderName": "Scripts",
         "appVersionFormat": "YYYY-MM-DD HH:mm:ss",
-        "timestampLocale": "fa",
+        "timestampLocale": "en",
         "masterBranchName": "origin/dev"
     }
 }

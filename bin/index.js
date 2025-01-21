@@ -140,22 +140,20 @@ async function initialize(config) {
 
     if (!config.options.RunOnPipline) {
         await compareWithDevBranch();
-    }
-
-    if (!changesetFile) {
-        changesetFile = await generateFile();
+        if (!changesetFile) {
+            changesetFile = await generateFile();
+        }
     }
 }
 async function run(config) {
-    const cleanFilename = path.parse(changesetFile).name
-    const tempFileName = `${path.parse(changesetFile).name}~`;
-    const changesetTempFile = `${path.parse(changesetFile).name}~.txt`;
-    const changesetFilePath = path.join(changesetPath, `${cleanFilename}.txt`);
-    const changesetTempFilePath = path.join(changesetPath, changesetTempFile);
-    const tempScriptFilePath = path.join(changesetPath, `${cleanFilename}~.sql`);
-    const scriptFilePath = path.join(changesetPath, `${cleanFilename}.sql`);
-
     if (!config.options.RunOnPipline) {
+        const cleanFilename = path.parse(changesetFile).name;
+        const tempFileName = `${path.parse(changesetFile).name}~`;
+        const changesetTempFile = `${path.parse(changesetFile).name}~.txt`;
+        const changesetFilePath = path.join(changesetPath, `${cleanFilename}.txt`);
+        const changesetTempFilePath = path.join(changesetPath, changesetTempFile);
+        const tempScriptFilePath = path.join(changesetPath, `${cleanFilename}~.sql`);
+        const scriptFilePath = path.join(changesetPath, `${cleanFilename}.sql`);
         if (fs.existsSync(changesetFilePath)) {
             validateChangeSetFile(changesetFilePath);
 
@@ -253,9 +251,12 @@ async function run(config) {
         }
     } else {
         const changesetFileName = await getChangesetFile();
-        const scriptFilePath = path.join(changesetPath, `${changesetFileName}`);
 
-        await backupAndRunScript(scriptFilePath, "", "", "", config.options.RunOnPipline);
+        if (changesetFileName) {
+            const scriptFilePath = path.join(changesetPath, `${changesetFileName}`);
+
+            await backupAndRunScript(scriptFilePath, "", "", "", config.options.RunOnPipline);
+        }
     }
 }
 async function main() {
@@ -354,10 +355,10 @@ async function getChangesetFile() {
     if (changesetFile) {
         const indexOfLastSlash = changesetFile.lastIndexOf('/');
         console.log(`Found changeset file: ${changesetFile.substring(indexOfLastSlash + 1)}`);
+
         return changesetFile.substring(indexOfLastSlash + 1);
     } else {
         console.log(`No changeset file found for branch '${currentBranch}'`);
-        process.exit(1);
     }
 }
 
@@ -436,8 +437,8 @@ async function generateFile() {
         if (!fileExists) {
             fileName = `${now}_${branchName}.txt`;
             fs.writeFileSync(path.join(changesetPath, fileName), fileContent.trim());
-            //await git.add(`${config.paths.changesetFolderName}/${fileName}`);
-            //await git.commit(`Auto-Commit added ${fileName}.`);
+            await git.add(`${config.paths.changesetFolderName}/${fileName}`);
+            await git.commit(`Auto-Commit added ${fileName}.`);
         }
 
         return fileName;

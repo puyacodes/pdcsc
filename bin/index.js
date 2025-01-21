@@ -16,7 +16,8 @@ let now;
 let config;
 let changesetPath;
 const git = simpleGit();
-const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim().replace("/", "-");
+let currentBranch;
+let realBranchName;
 let backupFile;
 let appVersionFormat;
 let server;
@@ -37,7 +38,6 @@ async function validateCommandLineArgs() {
     const args = process.argv.slice(2);
 
     const RunOnPipline = args.includes("-rop") ? true : false;
-    const RunOnMaster = args.includes("-rom") || RunOnPipline ? true : false;
 
     const changesetFileArgIndex = args.indexOf("-csf");
     if (changesetFileArgIndex !== -1 && args[changesetFileArgIndex + 1]) {
@@ -47,12 +47,12 @@ async function validateCommandLineArgs() {
     if (serverArgIndex !== -1 && args[serverArgIndex + 1]) {
         server = args[serverArgIndex + 1];
     }
-    
+
     const userArgIndex = args.indexOf("-u");
     if (userArgIndex !== -1 && args[userArgIndex + 1]) {
         user = args[userArgIndex + 1];
     }
-    
+
     const passwordArgIndex = args.indexOf("-p");
     if (passwordArgIndex !== -1 && args[passwordArgIndex + 1]) {
         password = args[passwordArgIndex + 1];
@@ -82,15 +82,30 @@ async function validateCommandLineArgs() {
         }
     }
 
-    return { ...config, options: { RunOnMaster, RunOnPipline } }
+    return { ...config, options: { RunOnPipline } }
 }
 async function initialize(config) {
     config = validateConfig(config, { server, user, password, databaseName });
 
+    if (config.options.RunOnPipline) {
+        if (config.pipeline == "gitlabs") {
+            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            realBranchName = process.env.CI_COMMIT_REF_NAME;
+        } else if (config.pipeline == "azuredevops") {
+            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            realBranchName = process.env.CI_COMMIT_REF_NAME;
+        }
+        console.log(`Current Branch: ${realBranchName}`);
+    } else {
+        currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim().replace("/", "-");
+        realBranchName = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+
+    }
+
     if (!config.database.server) {
         throw `server not specified`
     }
-    
+
     if (!config.database.user) {
         throw `user not specified`
     }
@@ -110,12 +125,12 @@ async function initialize(config) {
 
     moment.locale(timestampLocale);
     now = moment().format('jYYYYjMMjDDHHmmss');
-    
+
     const { paths } = config;
 
     changesetPath = path.join(basePath, paths.changesetFolderName);
     appVersionFormat = paths.appVersionFormat;
-    backupFile = path.join(paths.backupDir, `backup-${currentBranch}-${now}.bak`);
+    backupFile = path.join(paths.backupDir, `backup-${databaseName}-temp.bak`);
     timestampLocale = paths.timestampLocale;
 
 
@@ -123,14 +138,12 @@ async function initialize(config) {
 
     credentials = `-S ${server} -U ${user} -P ${password}`;
 
-    await compareWithDevBranch(config.options.RunOnPipline);
+    if (!config.options.RunOnPipline) {
+        await compareWithDevBranch();
+    }
 
     if (!changesetFile) {
         changesetFile = await generateFile();
-    }
-
-    if (config.options.RunOnPipline) {
-        await getChangesetFile();
     }
 }
 async function run(config) {
@@ -146,83 +159,86 @@ async function run(config) {
         if (fs.existsSync(changesetFilePath)) {
             validateChangeSetFile(changesetFilePath);
 
+            const status = await git.status();
+            do {
+                if (status.modified.length > 0 || status.not_added.length > 0) {
+                    console.warn(
+                        "Warning: You have uncommitted changes. Only committed changes will be included in the script."
+                    );
+
+                    userChoice = await promptUser(
+                        "Choose an option:\n1. Ignore changes and continue\n2. Commit changes and continue\n3. Show uncommitted changes.\n4. Cancel\nEnter your choice: "
+                    );
+
+                    if (userChoice === "1") {
+                        console.log("Ignoring changes and continuing...");
+                        break;
+                    } else if (userChoice === "2") {
+                        console.log("Committing changes...");
+                        await git.add(".");
+                        await git.commit("Auto-Commit before generating changeset.");
+                        break;
+                    } else if (userChoice === "3") {
+                        const uncommittedChanges = [];
+                        if (status.modified.length > 0) {
+                            uncommittedChanges.push("Modified files:");
+                            uncommittedChanges.push(...status.modified.map(file => `  - ${file}`));
+                        }
+                        if (status.not_added.length > 0) {
+                            uncommittedChanges.push("Untracked files:");
+                            uncommittedChanges.push(...status.not_added.map(file => `  - ${file}`));
+                        }
+                        if (status.deleted.length > 0) {
+                            uncommittedChanges.push("Deleted files:");
+                            uncommittedChanges.push(...status.deleted.map(file => `  - ${file}`));
+                        }
+
+                        if (uncommittedChanges.length > 0) {
+                            console.log("Uncommitted changes:");
+                            console.log(uncommittedChanges.join("\n"));
+                        } else {
+                            console.log("No uncommitted changes found.");
+                        }
+                    } else if (userChoice === "4") {
+                        if (!fs.existsSync(scriptFilePath)) {
+                            fs.unlinkSync(changesetFilePath);
+                        };
+                        console.log("Operation cancelled by the user.");
+                        process.exit(0);
+                    } else {
+                        console.log("Invalid choice. Please enter a valid option.");
+                    }
+                } else {
+                    console.log("No uncommitted changes detected.");
+                    break;
+                }
+            } while (true);
+
+
+            const modifiedFiles = getModifiedAndUntrackedFiles();
+            const filteredFiles = modifiedFiles.filter((file) => isValidScriptFile(config, file));
+            console.log("Filtered Modified Files:", filteredFiles);
+            if (filteredFiles.length === 0) {
+                console.log("No relevant modified files found.");
+                process.exit(0);
+            }
+
+            const sections = categorizeFiles(filteredFiles);
+
             if (innerContent.length > 0) {
                 changesetContent = fs.readFileSync(changesetFilePath, "utf-8");
-            }
-            else {
-                const status = await git.status();
-                do {
-                    if (status.modified.length > 0 || status.not_added.length > 0) {
-                        console.warn(
-                            "Warning: You have uncommitted changes. Only committed changes will be included in the script."
-                        );
-
-                        userChoice = await promptUser(
-                            "Choose an option:\n1. Ignore changes and continue\n2. Commit changes and continue\n3. Show uncommitted changes.\n4. Cancel\nEnter your choice: "
-                        );
-
-                        if (userChoice === "1") {
-                            console.log("Ignoring changes and continuing...");
-                            break;
-                        } else if (userChoice === "2") {
-                            console.log("Committing changes...");
-                            await git.add(".");
-                            await git.commit("Auto-Commit before generating changeset.");
-                            break;
-                        } else if (userChoice === "3") {
-                            const uncommittedChanges = [];
-                            if (status.modified.length > 0) {
-                                uncommittedChanges.push("Modified files:");
-                                uncommittedChanges.push(...status.modified.map(file => `  - ${file}`));
-                            }
-                            if (status.not_added.length > 0) {
-                                uncommittedChanges.push("Untracked files:");
-                                uncommittedChanges.push(...status.not_added.map(file => `  - ${file}`));
-                            }
-                            if (status.deleted.length > 0) {
-                                uncommittedChanges.push("Deleted files:");
-                                uncommittedChanges.push(...status.deleted.map(file => `  - ${file}`));
-                            }
-
-                            if (uncommittedChanges.length > 0) {
-                                console.log("Uncommitted changes:");
-                                console.log(uncommittedChanges.join("\n"));
-                            } else {
-                                console.log("No uncommitted changes found.");
-                            }
-                        } else if (userChoice === "4") {
-                            fs.unlinkSync(changesetFilePath);
-                            console.log("Operation cancelled by the user.");
-                            process.exit(0);
-                        } else {
-                            console.log("Invalid choice. Please enter a valid option.");
-                        }
-                    } else {
-                        console.log("No uncommitted changes detected.");
-                        break;
-                    }
-                } while (true);
-
-
-                const modifiedFiles = getModifiedAndUntrackedFiles();
-                const filteredFiles = modifiedFiles.filter((file) => isValidScriptFile(config, file));
-                console.log("Filtered Modified Files:", filteredFiles);
-                if (filteredFiles.length === 0) {
-                    console.log("No relevant modified files found.");
-                    process.exit(0);
-                }
-
-                const sections = categorizeFiles(filteredFiles);
+            } else {
 
                 changesetContent = generateChangesetContent(sections);
             }
+
 
             fs.writeFileSync(changesetTempFilePath, changesetContent.trim(), "utf-8");
             console.log(`Changeset written to ${changesetTempFilePath}`);
 
             const content = processChangeset(basePath, tempFileName) + `
     go
-    ${getWebVersion()}
+    ${getAppVersion()}
     go
             `;
 
@@ -230,11 +246,16 @@ async function run(config) {
 
             console.log(`Script written to: ${tempScriptFilePath}`);
 
-            await backupAndRunScript(tempScriptFilePath, changesetTempFilePath, scriptFilePath, changesetFilePath, config.options.RunOnMaster, config.options.RunOnPipline);
+            await backupAndRunScript(tempScriptFilePath, changesetTempFilePath, scriptFilePath, changesetFilePath, config.options.RunOnPipline);
         } else {
             console.log("Error: file not found!");
             process.exit(1);
         }
+    } else {
+        const changesetFileName = await getChangesetFile();
+        const scriptFilePath = path.join(changesetPath, `${changesetFileName}`);
+
+        await backupAndRunScript(scriptFilePath, "", "", "", config.options.RunOnPipline);
     }
 }
 async function main() {
@@ -247,6 +268,37 @@ async function main() {
 
 
 /************ FUNCTIONS ************/
+async function executeQuery(query, dbName, noCatch = true) {
+    try {
+        const pool = await sql.connect({
+            user: user,
+            password: password,
+            server: server,
+            database: dbName ?? databaseName,
+            options: { encrypt: false }
+        });
+        result = await pool.request().query(query);
+        await pool.close();
+
+        return result.recordset;
+
+    } catch (error) {
+        if (noCatch) {
+            throw error;
+        }
+
+        console.log("Error fetching database file Groups:", error);
+
+        return false;
+    }
+}
+async function executeBatch(content, dbName) {
+    var parts = content.split(/\s*GO\s*/i);
+
+    for (let part of parts) {
+        await executeQuery(part, dbName);
+    }
+}
 async function getFileGroups() {
     try {
         const pool = await sql.connect({
@@ -289,10 +341,7 @@ async function generateRestoreCommand() {
 
         const moveString = moveClauses.join(", ");
 
-        const restoreCommand = `
-            sqlcmd -S ${server} -U ${user} -P ${password} -Q "use master; RESTORE DATABASE [${backupDbName}] FROM DISK='${backupFile}' 
-            WITH File = 1, ${moveString}, NOUNLOAD, STATS = 5;"
-        `;
+        const restoreCommand = `use master; RESTORE DATABASE [${backupDbName}] FROM DISK='${backupFile}' WITH File = 1, ${moveString};`;
         return restoreCommand;
     } catch (error) {
         console.error("Error generating restore command:", err);
@@ -300,7 +349,7 @@ async function generateRestoreCommand() {
 }
 
 async function getChangesetFile() {
-    const changedFiles = await git.diff(['--name-only', masterBranchName, currentBranch.replace("-", "/")]);
+    const changedFiles = await git.diff(['--name-only', masterBranchName, 'origin/' + realBranchName]);
     const changesetFile = changedFiles.split('\n').find(file => file.includes(currentBranch.replace("-", "_")));
     if (changesetFile) {
         const indexOfLastSlash = changesetFile.lastIndexOf('/');
@@ -312,7 +361,7 @@ async function getChangesetFile() {
     }
 }
 
-async function compareWithDevBranch(RunOnPipline) {
+async function compareWithDevBranch() {
     try {
         git.checkIsRepo((err, isRepo) => {
             if (err || !isRepo) {
@@ -321,21 +370,19 @@ async function compareWithDevBranch(RunOnPipline) {
             };
         });
 
-        if (!RunOnPipline) {
-            console.log("Fetching the latest updates from origin...");
-            await git.fetch('origin', 'dev');
-        }
+        console.log("Fetching the latest updates from origin...");
+        await git.fetch('origin', 'dev');
 
         const branches = await git.branch(['-r']);
         if (!branches.all.includes(`${masterBranchName}`)) {
             throw new Error(`Remote branch ${masterBranchName} does not exist.`);
         }
 
-        const base = await git.raw(['merge-base', `${currentBranch.replace("-", "/")}`, `${masterBranchName}`]);
+        const base = await git.raw(['merge-base', `${realBranchName}`, `${masterBranchName}`]);
         const log = await git.log({ from: base.trim(), to: `${masterBranchName}` });
 
         if (log.total > 0) {
-            console.log(`Your branch '${currentBranch.replace("-", "/")}' is behind ${masterBranchName} by ${log.total} commits.`);
+            console.log(`Your branch '${realBranchName}' is behind ${masterBranchName} by ${log.total} commits.`);
             console.log(`Please run git pull ${masterBranchName} to sync with the latest changes.`);
             process.exit(1);
         }
@@ -415,7 +462,7 @@ function promptUser(question) {
     });
 }
 
-function getWebVersion() {
+function getAppVersion() {
     const res = Timestamper({
         locale: `${timestampLocale}`,
         template: `${appVersionSporcTemplate}`,
@@ -613,34 +660,36 @@ function getModifiedAndUntrackedFiles() {
     }
 }
 
-async function backupAndRunScript(tempScript, temptxtfile, scriptFile, txtFile, RunOnMaster, RunOnPipline) {
+async function backupAndRunScript(tempScript, temptxtfile, scriptFile, txtFile, RunOnPipline) {
     try {
-        let restoreCommand = await generateRestoreCommand();
-        if (innerContent == 0 || RunOnPipline) {
-            // Step 1: Create database
-            console.log("Creating database backup...");
-            execSync(`sqlcmd ${credentials} -Q "BACKUP DATABASE [${databaseName}] TO DISK='${backupFile}'"`);
-            console.log(`Database backup created at: ${backupFile}`);
+        const restoreCommand = await generateRestoreCommand();
 
-            // Step 2: Restore database
-            console.log("Restoring backup to temporary database...");
-            restoreCommand = `sqlcmd ${credentials} -Q "create or alter proc PuyaDataRoot.dbo.p1 as select 'hello'"`
-            execSync(restoreCommand);
-            console.log(restoreCommand);
-            console.log(`Backup restored as: ${backupDbName}`);
-            process.exit(1);
+        // Step 1: Create database
+        console.log("Creating database backup...");
+        await executeQuery(`BACKUP DATABASE [${databaseName}] TO DISK='${backupFile}' WITH INIT`);
+        //execSync(`sqlcmd ${credentials} -Q "BACKUP DATABASE [${databaseName}] TO DISK='${backupFile}' WITH INIT"`);
+        console.log(`Database backup created at: ${backupFile}`);
 
-            // Step 3: Execute script on backup database
-            console.log("Executing script on temporary database...");
-            execSync(`sqlcmd ${credentials} -b -d ${backupDbName} -i "${tempScript}"`, { stdio: "inherit" });
-            console.log(`Script executed successfully on database: ${backupDbName}`);
+        // Step 2: Restore database
+        console.log("Restoring backup to temporary database...");
+        await executeQuery(restoreCommand);
+        console.log(`Backup restored as: ${backupDbName}`);
 
-            if (RunOnMaster) {
-                // Step 4: Execute script on Master DB
-                console.log("Executing script on master database...");
-                execSync(`sqlcml ${credentials} -b -d ${databaseName} -i "${tempScript}"`, { stdio: "inherit" });
-                console.log(`Script executed successfully on database: ${databaseName}`);
-            }
+        // Step 3: Execute script on backup database
+        console.log("Executing script on temporary database...");
+        const tempScriptContent = fs.readFileSync(tempScript, "utf-8");
+        await executeBatch(tempScriptContent);
+        //execSync(`sqlcmd ${credentials} -b -d ${backupDbName} -i "${tempScript}"`, { stdio: "inherit" });
+        console.log(`Script executed successfully on database: ${backupDbName}`);
+
+        if (RunOnPipline) {
+            // Step 4: Execute script on Master DB
+            console.log("Executing script on master database...");
+            const tempScriptContent = fs.readFileSync(tempScript, "utf-8");
+            await executeBatch(tempScriptContent, databaseName);
+            //await executeQuery(`${credentials} -b -d ${databaseName} -i "${tempScript}"`);
+            //execSync(`sqlcmd ${credentials} -b -d ${databaseName} -i "${tempScript}"`, { stdio: "inherit" });
+            console.log(`Script executed successfully on database: ${databaseName}`);
         }
 
         // Step 5: Save script 
@@ -656,24 +705,23 @@ async function backupAndRunScript(tempScript, temptxtfile, scriptFile, txtFile, 
         }
 
         // Step 6: Remove database and tempfile
-        execSync(`sqlcmd ${credentials} -Q "DROP DATABASE [${backupDbName}]"`);
+        await executeQuery(`DROP DATABASE [${backupDbName}]`);
+        //execSync(`sqlcmd ${credentials} -Q "DROP DATABASE [${backupDbName}]"`);
         console.log(`Temporary database ${backupDbName} dropped successfully.`);
 
     } catch (error) {
         console.error("Error during script execution:", error.message);
-
-        if (!RunOnPipline) {
-            const logFile = path.join(changesetPath, "error.log");
-            fs.writeFileSync(logFile, error.message, "utf-8");
-            console.error(`Error log written to: ${logFile}`);
-        }
-
+        const logFile = path.join(changesetPath, "error.log");
+        fs.writeFileSync(logFile, error.message, "utf-8");
+        console.error(`Error log written to: ${logFile}`);
+        await executeQuery(`IF EXISTS (SELECT name FROM sys.databases WHERE name = '${backupDbName}') DROP DATABASE [${backupDbName}]`);
         //execSync(`sqlcmd ${credentials} -Q "IF EXISTS (SELECT name FROM sys.databases WHERE name = '${backupDbName}') DROP DATABASE [${backupDbName}]"`, { stdio: "ignore" });
     } finally {
         // Remove temp script file
         if (!RunOnPipline) {
-            // if (fs.existsSync(tempScript)) fs.unlinkSync(tempScript);
+            if (fs.existsSync(tempScript)) fs.unlinkSync(tempScript);
             if (fs.existsSync(temptxtfile)) fs.unlinkSync(temptxtfile);
+            if (fs.existsSync(backupFile)) fs.unlinkSync(backupFile);
         }
     }
 }

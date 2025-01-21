@@ -5,6 +5,7 @@
         "password": "****",
         "databaseName": "MyDb"
     },
+    "pipeline": "gitlabs",
     "paths": {
         "backupDir": "C:\\temp\\",
         "changesetFolderName": "Changes",

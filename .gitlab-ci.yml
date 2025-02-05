@@ -14,8 +14,6 @@ cache:
 build:
   stage: build
   script:
-    - echo "NPM_AUTH_TOKEN=$NPM_AUTH_TOKEN"
-    - echo "NPM_AUTH_TOKEN=${NPM_AUTH_TOKEN} "
     - npm install
     - npm run clean
     - npm run build 
@@ -26,12 +24,7 @@ build:
 publish:
   stage: publish
   script:
-    - cat <<EOF > ~/.npmrc
-    - registry=http://192.168.10.110:8624/npm/private-npm/
-    - //192.168.10.110:8624/npm/private-npm/:_authToken=${NPM_AUTH_TOKEN}
-    - EOF
-    - npm config set registry http://192.168.10.110:8624/npm/private-npm/
-    - npm config set _auth "${NPM_AUTH_TOKEN}"
+    - echo "//192.168.10.110:8624/npm/private-npm/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
     - npm pkg fix
     - npm publish --verbose
   only:

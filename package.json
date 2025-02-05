@@ -1,6 +1,6 @@
 {
   "name": "@puya/pdcsc",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "main": "bin/index.js",
   "scripts": {
     "clean": "rimraf bin",
@@ -14,7 +14,7 @@
   "description": "PDCSC tool for managing changeset scripts",
   "dependencies": {
     "@locustjs/exception": "^2.0.3",
-    "@puya/ts": "^1.1.1",
+    "@puya/ts": "^1.1.2",
     "chalk": "^4.1.2",
     "mssql": "^11.0.1",
     "semver": "^7.6.3",

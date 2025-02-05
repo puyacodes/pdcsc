@@ -24,7 +24,8 @@ build:
 publish:
   stage: publish
   script:
+    - echo "//192.168.10.110:8624/npm/private-npm/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
     - npm pkg fix
-    - npm publish
+    - npm publish --verbose
   only:
     - dev

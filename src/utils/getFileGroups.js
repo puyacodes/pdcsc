@@ -21,7 +21,7 @@ async function getFileGroups({ config }) {
                 sys.databases db ON db.database_id = mf.database_id
             WHERE db.name = '${config.database.databaseName}'
         `;
-        result = await pool.request().query(query);
+        const result = await pool.request().query(query);
         await pool.close();
 
         return result.recordset;

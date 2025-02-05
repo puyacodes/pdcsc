@@ -60,7 +60,7 @@ async function run(config, defaults) {
                         status: status.deleted,
                         listName: deletedFiles,
                         commit: false,
-                        folder: config.folders,
+                        folders: config.folders,
                         config
                     });
                 }

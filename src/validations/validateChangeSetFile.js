@@ -27,7 +27,7 @@ function validateChangeSetFile(props) {
         }
 
         // Extract current section content
-        innerContent = content
+        let innerContent = content
             .split(section.start)[1]
             .split(section.end)[0]
             .trim();

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+"use strict";
 const { validateCommandLineArgs } = require("./validations/validateCommandLineArgs.js");
 const { initialize } = require("./initialize.js");
 const { run } = require("./run.js");

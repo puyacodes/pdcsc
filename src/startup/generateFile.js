@@ -51,7 +51,8 @@ async function generateFile(changesetPath, now, config) {
                 fileExists = true;
                 fileName = file;
                 console.warn(`Changeset file already exists in ${changesetPath}${fileName}`);
-                if (files.some(x => (extractDateFromString(config, x)) > (extractDateFromString(config, file)))) {
+
+                if (files.filter(file => file.endsWith(".sql")).some(x => (extractDateFromString(config, x)) > (extractDateFromString(config, file)))) {
                     do {
                         console.warn("The changeset you want to modify is followed by other changesets.");
                         userChoice = await promptUser("Modifying this file might cause issues during execution later. Are you sure you want to change this file (Y/N)? ");

@@ -3,6 +3,7 @@ const resolve = require('@rollup/plugin-node-resolve');
 const json = require('@rollup/plugin-json');
 const terser = require('@rollup/plugin-terser');
 // const { babel } = require("@rollup/plugin-babel");
+const del = require('rollup-plugin-delete');
 
 module.exports = {
     input: "src/index.js",
@@ -13,10 +14,11 @@ module.exports = {
     //     }),
     // ],
     plugins: [
+        del({ targets: 'bin/*' }),
         resolve(), // Allows Rollup to resolve modules in 'node_modules'
         terser(),
         commonjs(), // Convert CommonJS modules to ES6, so Rollup can bundle them
-        json()
+        json(),
     ],
     output: {
         file: "./bin/index.js",

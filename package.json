@@ -1,0 +1,24 @@
+{
+  "name": "@puya/pdcsc",
+  "version": "1.5.4",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "PDCSC tool for managing changeset scripts",
+  "dependencies": {
+    "@locustjs/exception": "^2.0.3",
+    "@puya/ts": "^1.1.1",
+    "chalk": "^4.1.2",
+    "mssql": "^11.0.1",
+    "semver": "^7.6.3",
+    "simple-git": "^3.27.0",
+    "sqlcmd": "^3.0.4"
+  },
+  "bin": {
+    "pdcsc": "./bin/index.js"
+  }
+}

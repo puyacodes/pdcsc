@@ -4,7 +4,7 @@ stages:
 
 variables:
   DOCKER_REGISTRY: "192.168.10.110:8624"
-  NPM_REGISTRY: "http://192.168.10.110:8624/npm/private-npm/"
+  NPM_REGISTRY: "192.168.10.110:8624/npm/private-npm/"
 
 image: "${DOCKER_REGISTRY}/puya-docker-registry/node-git"
 
@@ -28,6 +28,6 @@ publish:
     - echo "//${NPM_REGISTRY}:_authToken=${NPM_AUTH_TOKEN}" > .npmrc
     - cat .npmrc
     - npm pkg fix
-    - npm publish --registry=${NPM_REGISTRY}
+    - npm publish --registry=http://${NPM_REGISTRY}
   only:
     - dev

@@ -1,0 +1,25 @@
+image: node:alpine
+
+stages:
+  - build
+  - publish
+
+cache:
+  paths:
+    - node_modules/
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run build 
+  artifacts:
+    paths:
+      - bin/
+
+publish:
+  stage: publish
+  script:
+    - npm publish
+  only:
+    - main

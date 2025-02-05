@@ -1,0 +1,29 @@
+stages:
+  - build
+  - publish
+
+variables:
+  DOCKER_REGISTRY: "192.168.10.110:8624"
+
+image: "${DOCKER_REGISTRY}/puya-docker-registry/node-git"
+
+cache:
+  paths:
+    - node_modules/
+
+build:
+  stage: build
+  script:
+    - npm install
+    - npm run clean
+    - npm run build 
+  artifacts:
+    paths:
+      - bin/
+
+publish:
+  stage: publish
+  script:
+    - npm publish
+  only:
+    - dev

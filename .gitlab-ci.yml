@@ -15,7 +15,7 @@ build:
   stage: build
   script:
     - echo "NPM_AUTH_TOKEN=$NPM_AUTH_TOKEN"
-    - echo "NPM_AUTH_TOKEN=${NPM_AUTH_TOKEN}"
+    - echo "NPM_AUTH_TOKEN=${NPM_AUTH_TOKEN} "
     - npm install
     - npm run clean
     - npm run build 

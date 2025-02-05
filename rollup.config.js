@@ -23,9 +23,9 @@ module.exports = {
     output: {
         file: "./bin/index.js",
         format: "cjs",
-    },
-    external: (id) => {
-        // Exclude all modules in node_modules
-        return id.startsWith('\0') || id.includes('node_modules');
-    },
+    }
+    // external: (id) => {
+    //     // Exclude all modules in node_modules
+    //     return id.startsWith('\0') || id.includes('node_modules');
+    // },
 };

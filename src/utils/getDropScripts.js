@@ -1,14 +1,14 @@
 function getDropScripts(deletedFiles, folders) {
     const folderToObjectMap = {
-        [folders.Procedures]: "PROCEDURE",
-        [folders.Functions]: "FUNCTION",
-        [folders.Tables]: "TABLE",
-        [folders.Relations]: "FOREIGN KEY",
-        [folders.Types]: "TYPE",
-        [folders.Views]: "VIEW",
-        [folders.Indexes]: "INDEX",
-        [folders.Triggers]: "TRIGGER",
-        [folders.Schemas]: "SCHEMA"
+        [folders.procedures]: "PROCEDURE",
+        [folders.functions]: "FUNCTION",
+        [folders.tables]: "TABLE",
+        [folders.relations]: "FOREIGN KEY",
+        [folders.types]: "TYPE",
+        [folders.views]: "VIEW",
+        [folders.indexes]: "INDEX",
+        [folders.triggers]: "TRIGGER",
+        [folders.schemas]: "SCHEMA"
     };
 
     const generateDropQuery = (objectType, objectName) => {

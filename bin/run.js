@@ -36,6 +36,8 @@ let changesetContent;
 const backupDbName = 'TempBackupDB';
 
 async function run(config, defaults) {
+    const changesetFileName = await getChangesetFile(defaults);
+    console.log(changesetFileName);
     try {
         if (!config.options.runOnPipline && !config.options.runAllChangesets) {
             const status = await git.status();

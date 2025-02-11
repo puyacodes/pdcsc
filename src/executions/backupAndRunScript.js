@@ -125,10 +125,10 @@ async function backupAndRunScript(props) {
     }
 
     if (error) {
-        if (props.userChoice === "2" || afterCommit) {
-            restoreCommitedChanges();
-        } else if (props.userChoice === "2" && afterCommit) {
+        if (props.userChoice === "2" && afterCommit) {
             restoreCommitedChanges(2);
+        } else if (props.userChoice === "2" || afterCommit) {
+            restoreCommitedChanges();
         }
         throw new Error(error);
     }

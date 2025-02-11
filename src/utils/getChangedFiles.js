@@ -1,6 +1,6 @@
 const { execSync } = require("child_process");
 
-function getModifiedAndUntrackedFiles({ debug, currentBranch }) {
+function getChangedFiles({ debug, currentBranch }) {
     try {
         const mergeBase = execSync(
             `git merge-base HEAD origin/dev`,
@@ -20,8 +20,8 @@ function getModifiedAndUntrackedFiles({ debug, currentBranch }) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        const untrackedFiles = execSync(
-            `git diff --name-only --diff-filter=AM ${mergeBase} HEAD`,
+        const renamedFiles = execSync(
+            `git diff --name-only --diff-filter=R ${mergeBase} HEAD`,
             { encoding: "utf-8" }
         )
             .split("\n")
@@ -36,11 +36,11 @@ function getModifiedAndUntrackedFiles({ debug, currentBranch }) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        const allFiles = [...modifiedFiles, ...untrackedFiles, ...deletedFiles];
+        const allFiles = [...modifiedFiles, ...deletedFiles, ...renamedFiles];
         return allFiles;
     } catch (error) {
         throw new Error(`Error fetching modified and untracked files: ${error.message}`);
     }
 }
 
-module.exports = { getModifiedAndUntrackedFiles }
+module.exports = { getChangedFiles }

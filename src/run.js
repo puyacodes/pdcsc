@@ -10,7 +10,7 @@ const { getChangesetFile } = require("./utils/getChangesetFile.js");
 const { getDropScripts } = require("./utils/getDropScripts.js");
 const { getUserChoice } = require("./startup/getUserChoice.js");
 const { generateFile } = require("./startup/generateFile.js");
-const { getModifiedAndUntrackedFiles } = require("./utils/getModifiedAndUntrackedFiles.js");
+const { getChangedFiles } = require("./utils/getChangedFiles.js");
 const { restoreCommitedChanges } = require("./utils/restoreCommitedChanges.js");
 
 const simpleGit = require("simple-git");
@@ -73,10 +73,10 @@ async function run(config, defaults) {
                     tempSections: tempSections
                 });
 
-                const modifiedFiles = getModifiedAndUntrackedFiles({ debug: config.options.debugMode, currentBranch: defaults.currentBranch });
-                const filteredFiles = modifiedFiles.filter((file) => isValidScriptFile({ config, file }));
+                const changedFiles = getChangedFiles({ status, debug: config.options.debugMode, currentBranch: defaults.currentBranch });
+                const filteredFiles = changedFiles.filter((file) => isValidScriptFile({ config, file }));
                 if (config.options.debugMode) {
-                    console.log("Filtered Modified Files:", filteredFiles);
+                    console.log("Filtered Changed Files:", filteredFiles);
                     console.log("Filtered Deleted Files:", deletedFiles);
                 }
                 if (filteredFiles.length === 0 && deletedFiles.length == 0) {

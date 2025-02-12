@@ -1,6 +1,6 @@
 {
   "name": "@puya/pdcsc",
-  "version": "1.5.10",
+  "version": "1.5.11",
   "main": "bin/index.js",
   "scripts": {
     "clean": "rimraf bin",

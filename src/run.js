@@ -181,7 +181,7 @@ go
         }
     } catch (error) {
         if (!config.options.runOnPipline && !config.options.runAllChangesets) {
-            if (userChoice == "2") {
+            if (!error.includes("BackupAndRun") && userChoice === "2") {
                 restoreCommitedChanges();
             }
         }

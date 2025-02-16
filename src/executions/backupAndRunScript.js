@@ -157,7 +157,7 @@ async function dropTempDb(backupDbName, config) {
 }
 async function updateChangesetsTable(changesetsTableName, config, pendingChangesets, now) {
     await executeQuery({
-        query: `IF OBJECTID('${changesetsTableName}', 'U') IS NULL CREATE TABLE ${changesetsTableName} (ID INT IDENTITY(1,1) PRIMARY KEY, [NAME] NVARCHAR(255) NOT NULL, [DATE] DATETIME NOT NULL);`,
+        query: `IF OBJECT_ID('${changesetsTableName}', 'U') IS NULL CREATE TABLE ${changesetsTableName} (ID INT IDENTITY(1,1) PRIMARY KEY, [NAME] NVARCHAR(255) NOT NULL, [DATE] DATETIME NOT NULL);`,
         config: config
     });
     for (const changeset of pendingChangesets) {

@@ -38,7 +38,7 @@ function generateChangesetContent(sections, dropQuery) {
     -- ===================== Triggers ( end ) ======================
 
     -- ===================== Custom-End (start) ======================
-    ${sections.customEnd.join("\n")}
+    ${sections.customEnd}
     -- ===================== Custom-End ( end ) ======================
     `
 };

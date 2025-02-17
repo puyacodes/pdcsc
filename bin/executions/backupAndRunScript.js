@@ -5,10 +5,10 @@ const { executeQuery } = require("./executeQuery.js");
 const { ExecuteQueryException } = require("../utils/ExecuteQueryException.js");
 const { generateRestoreCommand } = require("../startup/generateRestoreCommand.js");
 const simpleGit = require("simple-git");
-const { execSync } = require("child_process");
 const { fileNameWithoutExtension } = require("../utils/fileNameWithoutExtentions.js");
 const { extractDateFromString } = require("../utils/extractDateFromString.js");
 const { restoreCommitedChanges } = require("../utils/restoreCommitedChanges.js");
+const { BackupAndRunException } = require("../exceptions/BackupAndRunException.js");
 
 async function backupAndRunScript(props) {
     const databaseName = props.config.database.databaseName
@@ -130,7 +130,7 @@ async function backupAndRunScript(props) {
         } else if (props.userChoice === "2" || afterCommit) {
             restoreCommitedChanges();
         }
-        throw new Error(error);
+        throw new BackupAndRunException(error);
     }
 }
 

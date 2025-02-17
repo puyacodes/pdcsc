@@ -27,12 +27,12 @@ async function initialize(config) {
             currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
             realBranchName = process.env.CI_COMMIT_REF_NAME;
         }
-        if (config.options.debugMode) {
-            console.log(`Current Branch: ${realBranchName}`);
-        }
     } else {
         currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim().replace("/", "-");
         realBranchName = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+    }
+    if (config.options.debugMode) {
+        console.log(`Current Branch: ${realBranchName}`);
     }
 
     now = moment().locale(config.paths.timestampLocale).format('YYYYMMDDHHmmss');

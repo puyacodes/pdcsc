@@ -45,9 +45,10 @@ async function generateFile(changesetPath, now, config) {
         const files = fs.readdirSync(changesetPath);
         let fileName;
         let fileExists = false;
+        const regex = new RegExp(`^\\d+_${branchName}\\.sql$`);
 
         for (const file of files) {
-            if (file.includes(branchName)) {
+            if (regex.test(file)) {
                 fileExists = true;
                 fileName = file;
                 console.warn(`Changeset file already exists in ${changesetPath}${fileName}`);

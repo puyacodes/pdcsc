@@ -1,11 +1,12 @@
 const fs = require("fs");
+const { default: del } = require("rollup-plugin-delete");
 
 function validateChangeSetFile(props) {
     let content = fs.readFileSync(props.changesetFilePath, "utf-8");
 
     const sections = [
-        { name: "Custom-Start", start: "-- ===================== Custom-Start (start) ======================", end: "-- ===================== Custom-Start ( end ) ======================" },
-        { name: "Custom-End", start: "-- ===================== Custom-End (start) ======================", end: "-- ===================== Custom-End ( end ) ======================" },
+        { name: "customStart", start: "-- ===================== Custom-Start (start) ======================", end: "-- ===================== Custom-Start ( end ) ======================" },
+        { name: "customEnd", start: "-- ===================== Custom-End (start) ======================", end: "-- ===================== Custom-End ( end ) ======================" },
         { name: "types", start: "-- ===================== Types (start) ======================", end: "-- ===================== Types ( end ) ======================" },
         { name: "tables", start: "-- ===================== Tables (start) ======================", end: "-- ===================== Tables ( end ) ======================" },
         { name: "relations", start: "-- ===================== Relations (start) ======================", end: "-- ===================== Relations ( end ) ======================" },
@@ -34,7 +35,7 @@ function validateChangeSetFile(props) {
 
         if (innerContent.length > 0) {
             props.hasContent = true;
-            if (section.name != "Custom-Start" && section.name != "Custom-End") {
+            if (section.name != "customStart" && section.name != "customEnd") {
                 const lines = innerContent.split("\n");
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
@@ -50,7 +51,7 @@ function validateChangeSetFile(props) {
                 const lines = innerContent.split("\n");
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
-                    if (!props.tempSections[section.name].includes(trimmedLine)) {
+                    if (props.tempSections[section.name] != trimmedLine) {
                         props.tempSections[section.name] += `\n${trimmedLine}`;
                     }
                 });

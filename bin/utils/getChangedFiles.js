@@ -36,7 +36,7 @@ function getChangedFiles({ debug, currentBranch }) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        const allFiles = [...modifiedFiles, ...deletedFiles, ...renamedFiles];
+        const allFiles = [...modifiedFiles, ...renamedFiles];
         return allFiles;
     } catch (error) {
         throw new Error(`Error fetching modified and untracked files: ${error.message}`);

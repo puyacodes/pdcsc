@@ -12,6 +12,7 @@ const { getUserChoice } = require("./startup/getUserChoice.js");
 const { generateFile } = require("./startup/generateFile.js");
 const { getChangedFiles } = require("./utils/getChangedFiles.js");
 const { restoreCommitedChanges } = require("./utils/restoreCommitedChanges.js");
+const { BackupAndRunException } = require("./exceptions/BackupAndRunException.js");
 
 const simpleGit = require("simple-git");
 const git = simpleGit();
@@ -81,7 +82,8 @@ async function run(config, defaults) {
                     console.log("Filtered Changed Files:", filteredFiles);
                     console.log("Filtered Deleted Files:", deletedFiles);
                 }
-                if (filteredFiles.length === 0 && deletedFiles.length == 0) {
+
+                if (filteredFiles.length === 0 && deletedFiles.length == 0 && status.modified.length == 0 || !status.modified.some(file => path.basename(changesetFilePath).includes(path.basename(file)))) {
                     console.log("No relevant modified files found.");
                     if (userChoice === "2") {
                         restoreCommitedChanges();
@@ -183,7 +185,7 @@ go
         }
     } catch (error) {
         if (!config.options.runOnPipline && !config.options.runAllChangesets) {
-            if (!error.includes("BackupAndRun") && userChoice === "2") {
+            if (!(error instanceof BackupAndRunException) && userChoice === "2") {
                 restoreCommitedChanges();
             }
         }

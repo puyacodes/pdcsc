@@ -85,8 +85,14 @@ async function run(config, defaults) {
                     console.log("Filtered Deleted Files:", deletedFiles);
                 }
 
-                if (filteredFiles.length === 0 && deletedFiles.length == 0 && status.modified.length == 0 || !status.modified.some(file => path.basename(changesetFilePath).includes(path.basename(file)))) {
+                if (filteredFiles.length === 0 &&
+                    deletedFiles.length == 0 &&
+                    (
+                        status.modified.length == 0 ||
+                        !status.modified.some(file => path.basename(changesetFilePath).includes(path.basename(file)))
+                    )) {
                     console.log("No relevant modified files found.");
+                    
                     if (userChoice === "2") {
                         restoreCommitedChanges();
                     }

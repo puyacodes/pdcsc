@@ -57,7 +57,7 @@ function scriptCopier(changeFile, dir, debug) {
     for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed.startsWith("--")) {
+        if (trimmed.startsWith("##")) {
             if (trimmed.includes("Procedure") || trimmed.includes("SPROCs")) currentSection = "procedure";
             else if (trimmed.includes("Function")) currentSection = "function";
             else if (trimmed.includes("Tables")) currentSection = "table";
@@ -72,7 +72,7 @@ function scriptCopier(changeFile, dir, debug) {
             customStart += `\n${trimmed}`;
         } else if (currentSection === "customEnd") {
             customEnd += `\n${trimmed}`;
-        } else if (trimmed && !trimmed.startsWith("--")) {
+        } else if (trimmed && !trimmed.startsWith("##")) {
             objects.push(new DbObject(trimmed, currentSection));
         }
     }

@@ -5,16 +5,16 @@ function validateChangeSetFile(props) {
     let content = fs.readFileSync(props.changesetFilePath, "utf-8");
 
     const sections = [
-        { name: "customStart", start: "-- ===================== Custom-Start (start) ======================", end: "-- ===================== Custom-Start ( end ) ======================" },
-        { name: "customEnd", start: "-- ===================== Custom-End (start) ======================", end: "-- ===================== Custom-End ( end ) ======================" },
-        { name: "types", start: "-- ===================== Types (start) ======================", end: "-- ===================== Types ( end ) ======================" },
-        { name: "tables", start: "-- ===================== Tables (start) ======================", end: "-- ===================== Tables ( end ) ======================" },
-        { name: "relations", start: "-- ===================== Relations (start) ======================", end: "-- ===================== Relations ( end ) ======================" },
-        { name: "functions", start: "-- ===================== Functions (start) ======================", end: "-- ===================== Functions ( end ) ======================" },
-        { name: "procedures", start: "-- ===================== SPROCs (start) ======================", end: "-- ===================== SPROCs ( end ) ======================" },
-        { name: "views", start: "-- ===================== Views (start) ======================", end: "-- ===================== Views ( end ) ======================" },
-        { name: "indexes", start: "-- ===================== Indexes (start) ======================", end: "-- ===================== Indexes ( end ) ======================" },
-        { name: "triggers", start: "-- ===================== Triggers (start) ======================", end: "-- ===================== Triggers ( end ) ======================" }
+        { name: "customStart", start: "## ===================== Custom-Start (start) ======================", end: "## ===================== Custom-Start ( end ) ======================" },
+        { name: "customEnd", start: "## ===================== Custom-End (start) ======================", end: "## ===================== Custom-End ( end ) ======================" },
+        { name: "types", start: "## ===================== Types (start) ======================", end: "## ===================== Types ( end ) ======================" },
+        { name: "tables", start: "## ===================== Tables (start) ======================", end: "## ===================== Tables ( end ) ======================" },
+        { name: "relations", start: "## ===================== Relations (start) ======================", end: "## ===================== Relations ( end ) ======================" },
+        { name: "functions", start: "## ===================== Functions (start) ======================", end: "## ===================== Functions ( end ) ======================" },
+        { name: "procedures", start: "## ===================== SPROCs (start) ======================", end: "## ===================== SPROCs ( end ) ======================" },
+        { name: "views", start: "## ===================== Views (start) ======================", end: "## ===================== Views ( end ) ======================" },
+        { name: "indexes", start: "## ===================== Indexes (start) ======================", end: "## ===================== Indexes ( end ) ======================" },
+        { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
     const normalizeFileName = (fileName) => {

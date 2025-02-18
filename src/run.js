@@ -13,6 +13,8 @@ const { generateFile } = require("./startup/generateFile.js");
 const { getChangedFiles } = require("./utils/getChangedFiles.js");
 const { restoreCommitedChanges } = require("./utils/restoreCommitedChanges.js");
 const { BackupAndRunException } = require("./exceptions/BackupAndRunException.js");
+const { runOnPipeline } = require("./executions/runOnPipeline.js");
+const { runAllChangesets } = require("./executions/runAllChangesets.js");
 
 const simpleGit = require("simple-git");
 const git = simpleGit();
@@ -115,9 +117,8 @@ go
                     temptxtfile: changesetTempFilePath,
                     scriptFile: scriptFilePath,
                     txtFile: changesetFilePath,
-                    changesetPath: defaults.changesetPath,
+                    defaults,
                     runOnPipline: config.options.runOnPipline,
-                    backupFile: defaults.backupFile,
                     backupDbName,
                     config,
                     userChoice,
@@ -125,9 +126,6 @@ go
                 });
 
             } else {
-                if (userChoice === "2") {
-                    restoreCommitedChanges();
-                }
                 throw new Error("Error: file not found!");
             }
         } else {
@@ -135,49 +133,18 @@ go
                 const changesetFileName = await getChangesetFile(defaults);
                 if (changesetFileName) {
                     const scriptFilePath = path.join(defaults.changesetPath, `${changesetFileName}`);
-
-                    await backupAndRunScript({
-                        tempScript: scriptFilePath,
-                        temptxtfile: "",
-                        scriptFile: "",
-                        txtFile: "",
-                        changesetPath: defaults.changesetPath,
-                        runOnPipline: config.options.runOnPipline,
-                        backupFile: defaults.backupFile,
-                        backupDbName,
-                        config,
-                        userChoice,
-                        folders: config.folders,
-                        changesetsTableName: config.paths.changesetsTableName,
-                        now: defaults.now
-                    });
+                    await runOnPipeline(config, defaults, scriptFilePath, backupDbName);
                 } else {
                     return;
                 }
             }
-
             if (config.options.runAllChangesets) {
                 const result = await getAllChangesetFiles(config, defaults.now);
                 if (config.options.debugMode) {
                     console.log("allChangesetsScriptFilePath:", result.allChangesetsScriptFilePath)
                 }
                 if (result?.allChangesetsScriptFilePath) {
-                    await backupAndRunScript({
-                        tempScript: result.allChangesetsScriptFilePath,
-                        temptxtfile: "",
-                        scriptFile: "",
-                        txtFile: "",
-                        changesetPath: defaults.changesetPath,
-                        runAllChangesets: config.options.runAllChangesets,
-                        backupFile: defaults.backupFile,
-                        backupDbName,
-                        config,
-                        userChoice,
-                        folders: config.folders,
-                        now: defaults.now,
-                        pendingChangesets: result.pendingChangesets,
-                        changesetsTableName: config.paths.changesetsTableName,
-                    });
+                    await runAllChangesets(result, defaults, backupDbName, config);
                 } else {
                     return;
                 }

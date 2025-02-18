@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { ExecuteQueryException } = require("../utils/ExecuteQueryException.js");
+const { ExecuteQueryException } = require("../exceptions/ExecuteQueryException.js");
 
 async function executeQuery({ query, dbName, noCatch = true, config }) {
     let error;

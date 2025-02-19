@@ -1,24 +1,24 @@
-const { execSync } = require("child_process");
-const semver = require("semver");
-const packageJson = require("../../package.json");
+import { execSync } from "child_process";
+import semver from "semver";
+import { name, version } from "../../package.json";
 
-async function checkForUpdate(config) {
+function checkForUpdate(config) {
     try {
-        const currentVersion = packageJson.version;
-        const latest = execSync(`npm view ${packageJson.name} version`, { encoding: "utf8" }).trim();
+        const currentVersion = version;
+        const latest = execSync(`npm view ${name} version`, { encoding: "utf8" }).trim();
 
         if (semver.gt(latest, currentVersion)) {
-            console.warn(`⚠️  Update available for ${packageJson.name}: ${currentVersion} → ${latest}`);
-            console.log(`Run "npm update ${packageJson.name}" to update.`);
+            console.warn(`⚠️  Update available for ${name}: ${currentVersion} → ${latest}`);
+            console.log(`Run "npm update ${name}" to update.`);
         } else {
-            if (config.options.debugMode) {
-                console.log(`✅  ${packageJson.name} is up-to-date! (version: ${currentVersion})`);
+            if (config.debugMode) {
+                console.log(`✅  ${name} is up-to-date! (version: ${currentVersion})`);
             }
         }
-    } catch (error) {
-        console.error(`Failed to check for updates: ${error.message}`);
+    } catch (err) {
+        console.error(`Failed to check for updates: ${err}`);
     }
 }
 
 
-module.exports = { checkForUpdate }
+export default checkForUpdate;

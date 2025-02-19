@@ -15,7 +15,7 @@ async function validateChangedFiles({
         return isInAllowedFolder && isSqlFile;
     });
 
-    if (config.options.debugMode) {
+    if (config.debugMode) {
         console.log("filtered Uncommited files:", filteredFiles);
     }
 
@@ -27,7 +27,8 @@ async function validateChangedFiles({
             for (const file of filteredFiles) {
                 await git.add(file);
             }
-            await git.commit("Auto-Commit before generating changeset.");
+
+            await git.commit("pdcsc: commited current changes");
         }
     }
 }

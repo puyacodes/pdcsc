@@ -12,7 +12,7 @@ async function getAllStatuses(props) {
             }
         }
     });
-    if (props.config.options.debugMode) {
+    if (props.config.debugMode) {
         console.log("allStatuses", allStatuses);
     }
     return allStatuses;

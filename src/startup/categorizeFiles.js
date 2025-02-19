@@ -13,7 +13,7 @@ function categorizeFiles({ filteredFiles, tempSections, config, folders }) {
                     tempSections[section].push(fileName);
                     return;
                 } else {
-                    if (config.options.debugMode) {
+                    if (config.debugMode) {
                         console.warn(`File '${fileName}' already exists in section '${section}'.`);
                     }
                 }

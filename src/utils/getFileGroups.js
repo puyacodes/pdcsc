@@ -1,4 +1,4 @@
-const sql = require("mssql");
+import sql from "mssql";
 
 async function getFileGroups({ config }) {
     try {
@@ -31,4 +31,4 @@ async function getFileGroups({ config }) {
     }
 }
 
-module.exports = { getFileGroups }
+export default getFileGroups;

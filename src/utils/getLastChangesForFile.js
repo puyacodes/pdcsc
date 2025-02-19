@@ -32,7 +32,7 @@ async function findLastCommitForFile(filePath) {
 async function showFileChanges(config, commitHash, filePath) {
     try {
         const changes = await git.show([`${commitHash}:${filePath}`]);
-        if (config.options.debugMode) {
+        if (config.debugMode) {
             console.log(`last commit for file: ${commitHash}:\n`);
             console.log(`last changes for file: ${changes}`);
         }

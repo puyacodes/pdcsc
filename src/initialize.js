@@ -1,64 +1,32 @@
-const { compareWithDevBranch } = require("./checks/compareWithDevBranch.js");
-const validateConfig = require('./validations/validateConfig.js');
-const { checkForUpdate } = require('./checks/checkForUpdate.js');
-let moment = require("jalali-moment");
-const { execSync } = require("child_process");
-const path = require("path");
+import getCurrentBranch from "./utils/getCurrentBranch.js"
+import moment from "jalali-moment";
+import path from "path";
 
 async function initialize(config) {
-    let currentBranch;
-    let realBranchName;
-    let timestampLocale;
-    let now;
-    let changesetPath;
-    let appVersionFormat;
-    let backupFile;
-    let masterBranchName;
+    let result;
+    
+    const { currentBranch, realBranchName } = getCurrentBranch(config);
 
-    validateConfig(config);
-
-    await checkForUpdate(config);
-
-    if (config.options.runOnPipline) {
-        if (config.pipeline === "gitlabs") {
-            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
-            realBranchName = process.env.CI_COMMIT_REF_NAME;
-        } else if (config.pipeline === "azuredevops") {
-            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
-            realBranchName = process.env.CI_COMMIT_REF_NAME;
-        }
-    } else {
-        currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim().replace("/", "-");
-        realBranchName = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
-    }
-    if (config.options.debugMode) {
+    if (config.debugMode) {
         console.log(`Current Branch: ${realBranchName}`);
     }
 
-    now = moment().locale(config.paths.timestampLocale).format('YYYYMMDDHHmmss');
+    const now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
 
-    if (config.options.debugMode) {
-        console.log("now:", now);
+    if (config.debugMode) {
+        console.log("now: ", now);
     }
 
-    const { paths } = config;
+    const changesetPath = path.join(config.basePath, config.paths.changesetFolderName);
+    const backupFile = path.join(config.paths.backupDir, `backup-${config.database.databaseName}-temp.bak`);
 
-    changesetPath = path.join(config.basePath, paths.changesetFolderName);
-    appVersionFormat = paths.appVersionFormat;
-    backupFile = path.join(paths.backupDir, `backup-${config.database.databaseName}-temp.bak`);
-    timestampLocale = paths.timestampLocale;
-
-    masterBranchName = paths.masterBranchName ?? 'origin/dev';
-
-    //credentialsString = `-S ${server} -U ${user} -P ${password}`;
-
-    if (!config.options.runOnPipline && !config.options.runAllChangesets) {
-        await compareWithDevBranch(config.paths.masterBranchName, realBranchName);
+    config.settings = {
+        currentBranch,
+        realBranchName,
+        changesetPath,
+        backupFile,
+        now
     }
-
-    let result = { currentBranch, realBranchName, timestampLocale, now, changesetPath, appVersionFormat, backupFile, masterBranchName }
-
-    return result
 }
 
-module.exports = { initialize }
+export default initialize;

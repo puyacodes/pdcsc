@@ -1,8 +1,9 @@
 
 function fileNameWithoutExtension(filePath) {
     const path = require("path");
-    const fileNameWithoutExtension = path.basename(filePath, path.extname(filePath));
-    return fileNameWithoutExtension;
+    const result = path.basename(filePath, path.extname(filePath));
+
+    return result;
 }
 
-module.exports = { fileNameWithoutExtension }
+export default fileNameWithoutExtension;

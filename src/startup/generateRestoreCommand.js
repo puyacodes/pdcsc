@@ -1,5 +1,8 @@
-const { getFileGroups } = require("../utils/getFileGroups");
-async function generateRestoreCommand({ config, backupDbName, backupFile }) {
+import getFileGroups from "../utils/getFileGroups";
+
+async function generateRestoreCommand(config) {
+    const { backupDbName } = config;
+
     try {
         const fileLocations = await getFileGroups({ config });
         const moveClauses = fileLocations.map(file => {
@@ -9,11 +12,12 @@ async function generateRestoreCommand({ config, backupDbName, backupFile }) {
 
         const moveString = moveClauses.join(", ");
 
-        const restoreCommand = `use master; RESTORE DATABASE [${backupDbName}] FROM DISK='${backupFile}' WITH File = 1, ${moveString};`;
+        const restoreCommand = `use master; RESTORE DATABASE [${backupDbName}] FROM DISK='${config.settings.backupFile}' WITH File = 1, ${moveString};`;
+
         return restoreCommand;
     } catch (error) {
         throw new Error(`Error generating restore command: ${error}`);
     }
 }
 
-module.exports = { generateRestoreCommand };
+export default generateRestoreCommand;

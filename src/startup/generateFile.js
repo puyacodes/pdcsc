@@ -1,8 +1,8 @@
-const simpleGit = require("simple-git");
-const fs = require("fs");
-const path = require("path");
-const { extractDateFromString } = require("../utils/extractDateFromString");
-const { promptUser } = require("../utils/promptUser");
+import simpleGit from "simple-git";
+import fs from "fs";
+import path from "path";
+import extractDateFromString from "../utils/extractDateFromString";
+import promptUser from "../utils/promptUser";
 
 async function generateFile(changesetPath, now, config) {
     const git = simpleGit();
@@ -76,7 +76,7 @@ async function generateFile(changesetPath, now, config) {
             fileName = `${now}_${branchName}.txt`;
             fs.writeFileSync(path.join(changesetPath, fileName), fileContent.trim());
             //await git.add(`${props.config.paths.changesetFolderName}/${fileName}`);
-            //await git.commit(`Auto-Commit added ${fileName}.`);
+            //await git.commit(`pdcsc: added ${fileName}.`);
         }
 
         return fileName;
@@ -86,4 +86,4 @@ async function generateFile(changesetPath, now, config) {
     }
 }
 
-module.exports = { generateFile }
+export default generateFile;

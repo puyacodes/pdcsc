@@ -99,13 +99,14 @@ The configuration for the script is stored in the `config.json` file, which shou
     "password": "db_password",
     "databaseName": "my_database"
   },
+  "masterBranchName": "origin/dev",
+  "appVersionFormat": "YYYY-MM-DD_HH-mm-ss",
+  "timestampLocale": "fa",
+  "backupDbName": "TempBackupDB",
   "paths": {
     "basePath": "./",
     "backupDir": "./backups",
-    "changesetFolderName": "Changes",
-    "appVersionFormat": "YYYY-MM-DD_HH-mm-ss",
-    "timestampLocale": "fa",
-    "masterBranchName": "origin/dev"
+    "changesetFolderName": "Changes"
   }
 }
 ```

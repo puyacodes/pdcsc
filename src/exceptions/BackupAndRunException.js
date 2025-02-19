@@ -1,5 +1,5 @@
-const { Exception } = require("@locustjs/exception");
+import { Exception } from "@locustjs/exception";
 
 class BackupAndRunException extends Exception { }
 
-module.exports = { BackupAndRunException }
+export default BackupAndRunException;

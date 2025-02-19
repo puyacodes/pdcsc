@@ -1,4 +1,4 @@
-const { Exception } = require('@locustjs/exception');
+import { Exception } from "@locustjs/exception";
 
 class ExecuteBatchException extends Exception {
     constructor(query, ...args) {
@@ -8,4 +8,4 @@ class ExecuteBatchException extends Exception {
     }
 }
 
-module.exports = { ExecuteBatchException }
+export default ExecuteBatchException;

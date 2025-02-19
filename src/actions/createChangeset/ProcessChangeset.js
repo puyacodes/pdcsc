@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 class DbObject {
     constructor(name, type) {
@@ -170,7 +170,7 @@ function changes(config, tempFileName) {
     const changeFile = path.join(config.basePath, config.paths.changesetFolderName, `${tempFileName}.txt`);
     const scriptDir = path.join(config.basePath, config.paths.scriptsFolderName);
 
-    const result = scriptCopier(changeFile, scriptDir, config.options.debugMode);
+    const result = scriptCopier(changeFile, scriptDir, config.debugMode);
 
     return result;
 }
@@ -179,4 +179,4 @@ function processChangeset(props) {
     return changes(props.config, props.tempFileName);
 }
 
-module.exports = { processChangeset };
+export default processChangeset;

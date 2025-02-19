@@ -1,23 +1,21 @@
-const fs = require("fs");
-const path = require("path");
-const sql = require("mssql");
-const { executeQuery } = require("../executions/executeQuery");
-const { extractDateFromString } = require("../utils/extractDateFromString");
+import fs from "fs";
+import path from "path";
+import sql from "mssql";
+import extractDateFromString from "../../utils/extractDateFromString";
 
-async function getAllChangesetFiles(config, now) {
+async function getAllChangesetFiles(config) {
     try {
-        const changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
-        const allChangesetsScriptFilePath = path.join(changesetsPath, `${now}-update-${config.database.databaseName}.sql`);
+        const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.settings.now}-update-${config.database.databaseName}.sql`);
 
         const result = await getChangesetTable(config);
-        const pendingChangesets = getPendingChangesets(config, changesetsPath, result);
+        const pendingChangesets = getPendingChangesets(config, result);
         const combinedContent = generateCombinedContent(pendingChangesets);
 
         fs.writeFileSync(allChangesetsScriptFilePath, combinedContent, "utf-8");
+
         console.log("Pending changesets combined successfully!");
 
         return { allChangesetsScriptFilePath, pendingChangesets };
-
     } catch (error) {
         if (error.message.includes("No new changesets found.")) {
             console.log(error.message);
@@ -30,9 +28,10 @@ async function getAllChangesetFiles(config, now) {
 
 /* FUNCTIONS */
 async function getChangesetTable(config) {
-    await executeQuery({
-        query: `IF OBJECT_ID('${config.paths.changesetsTableName}', 'U') IS NULL CREATE TABLE ${config.paths.changesetsTableName} (ID INT IDENTITY(1,1) PRIMARY KEY, [NAME] NVARCHAR(255) NOT NULL, [DATE] DATETIME NOT NULL);`,
-        config: config
+    const { db, changesetsTableName } = config;
+
+    await db.executeQuery({
+        query: `IF OBJECT_ID('${changesetsTableName}', 'U') IS NULL CREATE TABLE ${changesetsTableName} (ID INT IDENTITY(1,1) PRIMARY KEY, [NAME] NVARCHAR(255) NOT NULL, [DATE] DATETIME NOT NULL);`
     });
 
     const pool = await sql.connect({
@@ -46,16 +45,16 @@ async function getChangesetTable(config) {
     try {
         result = await pool.request().query(`
                 SELECT TOP 1 [date], [name]
-                FROM ${config.paths.changesetsTableName} 
+                FROM ${changesetsTableName} 
                 ORDER BY [date] DESC
                 `);
 
     } catch (error) {
         if (error.message.includes("Invalid object name")) {
-            throw new Error(`${config.paths.changesetsTableName} table not found.`);
+            throw new Error(`${changesetsTableName} table not found.`);
         }
         else {
-            throw new Error(`Error during select last executed changeset from ${config.paths.changesetsTableName}: ${error.message}`);
+            throw new Error(`Error during select last executed changeset from ${changesetsTableName}: ${error.message}`);
         }
     } finally {
         sql.close();
@@ -63,18 +62,18 @@ async function getChangesetTable(config) {
     return result;
 }
 
-function getPendingChangesets(config, changesetsPath, result) {
-    const files = fs.readdirSync(changesetsPath);
+function getPendingChangesets(config, result) {
+    const files = fs.readdirSync(config.paths.changesetsPath);
     const sqlFiles = files.filter(file => path.extname(file) === ".sql");
     let lastExecutedChangesetName = result.recordset.length > 0 ? result.recordset[0].name : null;
     let lastExecutedDate = result.recordset.length > 0 ? extractDateFromString(config, lastExecutedChangesetName) : null;
     let pendingChangesets = [];
 
     for (const file of sqlFiles) {
-        const filePath = path.join(changesetsPath, file);
+        const filePath = path.join(config.paths.changesetsPath, file);
         const match = file.match(/(\d{12,14})/);
         if (!match) {
-            if (config.options.debugMode) {
+            if (config.debugMode) {
                 console.warn(`Skipping file with invalid format: ${file}`);
             }
             continue;
@@ -90,7 +89,7 @@ function getPendingChangesets(config, changesetsPath, result) {
         }
     }
 
-    if (config.options.debugMode) {
+    if (config.debugMode) {
         console.log("pendingChangesetsArray:", pendingChangesets.map(changeset => changeset.file));
     }
 
@@ -123,4 +122,4 @@ function generateCombinedContent(pendingChangesets) {
 }
 
 
-module.exports = { getAllChangesetFiles }
+export default getAllChangesetFiles;

@@ -1,4 +1,4 @@
-const readline = require("readline");
+import readline from "readline";
 
 function promptUser(question) {
     const rl = readline.createInterface({
@@ -14,4 +14,4 @@ function promptUser(question) {
     });
 }
 
-module.exports = { promptUser }
+export default promptUser;

@@ -1,4 +1,4 @@
-const { promptUser } = require("../utils/promptUser.js");
+import promptUser from "../utils/promptUser";
 const { validateChangedFiles } = require("../validations/validateChangedFiles.js");
 const { getAllStatuses } = require("../utils/getAllStatuses.js");
 const chalk = require('chalk');

@@ -1,81 +1,84 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { isObject } from "@locustjs/base";
+import { merge } from "@locustjs/extensions-object";
+import { ActionType } from "../enums";
+import { DbHelperSqlServer } from "../services/DbHelper";
 
-async function validateCommandLineArgs() {
-    let configPath;
-    let changesetFile;
-    let changesetsTableName;
-    let server;
+async function validateCommandLineArgs(args) {
+    function getArg(arg) {
+        const index = args.indexOf(arg);
+        const result = index >= 0 ? args[index + 1] : undefined;
+
+        return result;
+    }
+
     let config;
-    let user;
-    let password;
-    let databaseName;
+    let customConfig;
     const basePath = process.cwd();
-    const args = process.argv.slice(2);
-    const runOnPipline = args.includes("-rop") ? true : false;
-    const runAllChangesets = args.includes("-ud") ? true : false;
-    const debugMode = args.includes("-dbm") ? true : false;
-    const version = args.includes("-v") ? true : false;
-    const init = args.includes("-init") ? true : false;
-    const initfull = args.includes("-initfull") ? true : false;
+    const changesetFile = getArg("-cs");
+    const server = getArg("-s");
+    const user = getArg("-u");
+    const password = getArg("-p");
+    const databaseName = getArg("-d");
+    let configPath = getArg("-c");
+    let customizedConfigPath;
 
-    const changesetFileArgIndex = args.indexOf("-csf");
-    if (changesetFileArgIndex !== -1 && args[changesetFileArgIndex + 1]) {
-        changesetFile = args[changesetFileArgIndex + 1];
-    }
-
-    const changesetsTableNameArgIndex = args.indexOf("-cht");
-    if (changesetsTableNameArgIndex !== -1 && args[changesetsTableNameArgIndex + 1]) {
-        changesetsTableName = args[changesetsTableNameArgIndex + 1];
-        config.changesetsTableName = changesetsTableName;
-    }
-
-    const serverArgIndex = args.indexOf("-s");
-    if (serverArgIndex !== -1 && args[serverArgIndex + 1]) {
-        server = args[serverArgIndex + 1];
-    }
-
-    const userArgIndex = args.indexOf("-u");
-    if (userArgIndex !== -1 && args[userArgIndex + 1]) {
-        user = args[userArgIndex + 1];
-    }
-
-    const passwordArgIndex = args.indexOf("-p");
-    if (passwordArgIndex !== -1 && args[passwordArgIndex + 1]) {
-        password = args[passwordArgIndex + 1];
-    }
-
-    const databaseNameArgIndex = args.indexOf("-d");
-    if (databaseNameArgIndex !== -1 && args[databaseNameArgIndex + 1]) {
-        databaseName = args[databaseNameArgIndex + 1];
-    }
-
-    const configFileNameArgIndex = args.indexOf("-c");
-    if (configFileNameArgIndex !== -1 && args[configFileNameArgIndex + 1]) {
-        configPath = path.join(basePath, args[configFileNameArgIndex + 1]);
+    if (configPath) {
+        configPath = path.join(basePath, configPath);
 
         if (!fs.existsSync(configPath)) {
             throw `config file ${configPath} not found.`
         }
     } else {
-        configPath = path.join(basePath, "pdcsc-config.json");
+        const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
+        let config_mode = process.env[config_key];
+
+        if (config_mode) {
+            config_mode = '.' + config_mode
+        }
+
+        configPath = path.join(basePath, `pdcsc-config.json`);
+        customizedConfigPath = path.join(basePath, `pdcsc-config${config_mode}.json`);
     }
 
     if (fs.existsSync(configPath)) {
         config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    } else {
+    }
+
+    if (fs.existsSync(customizedConfigPath)) {
+        customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
+    }
+
+    if (!isObject(config)) {
         config = {}
     }
 
     const defaults = { configPath, changesetFile, basePath }
     const database = {
-        databaseName: databaseName || config.database?.databaseName,
-        server: server || config.database?.server,
-        user: user || config.database?.user,
-        password: password || config.database?.password
+        databaseName,
+        server,
+        user,
+        password
     }
 
-    return { ...config, options: { runOnPipline, runAllChangesets, version, debugMode, init, initfull }, database, ...defaults }
+    config = merge({}, { database }, config, customConfig, defaults)
+
+    if (args.includes("-rop")) {
+        config.action = ActionType.runOnPipline;
+    } else if (args.includes("-ud")) {
+        config.action = ActionType.runAllChangesets;
+    } else if (args.includes("-v")) {
+        config.action = ActionType.getVersion;
+    } else if (args.includes("-init")) {
+        config.action = ActionType.init;
+    } else if (args.includes("--init-full")) {
+        config.action = ActionType.initfull;
+    } else {
+        config.action = ActionType.createChangeset;
+    }
+
+    return config
 }
 
-module.exports = { validateCommandLineArgs }
+export default validateCommandLineArgs;

@@ -15,7 +15,7 @@ function extractDateFromString(config, inputString) {
             date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
             const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
 
-            if (config.options.debugMode) {
+            if (config.debugMode) {
                 console.log("Extracted Date:", formattedDate);
             }
 
@@ -28,4 +28,4 @@ function extractDateFromString(config, inputString) {
     }
 }
 
-module.exports = { extractDateFromString }
+export default extractDateFromString;

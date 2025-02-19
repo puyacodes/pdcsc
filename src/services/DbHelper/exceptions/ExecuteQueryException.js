@@ -1,4 +1,4 @@
-const { Exception } = require('@locustjs/exception');
+import { Exception } from "@locustjs/exception";
 
 class ExecuteQueryException extends Exception {
     constructor(query, ...args) {
@@ -8,4 +8,4 @@ class ExecuteQueryException extends Exception {
     }
 }
 
-module.exports = { ExecuteQueryException }
+export default ExecuteQueryException;

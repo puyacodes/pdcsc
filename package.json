@@ -13,7 +13,10 @@
   "license": "ISC",
   "description": "PDCSC tool for managing changeset scripts",
   "dependencies": {
-    "@locustjs/exception": "^2.0.3",
+    "@locustjs/base": "^4.4.1",
+    "@locustjs/enum": "^3.0.0",
+    "@locustjs/exception": "^2.2.0",
+    "@locustjs/extensions-object": "^2.3.2",
     "@puya/ts": "^1.1.2",
     "chalk": "^4.1.2",
     "mssql": "^11.0.1",

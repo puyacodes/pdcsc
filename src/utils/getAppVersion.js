@@ -3,9 +3,9 @@ const { Timestamper } = require('@puya/ts');
 function getAppVersion(config) {
     const appVersionSporcTemplate = `create or alter proc ${config.appVersionSprocName} as select '{ts}'`;
     const res = Timestamper({
-        locale: `${config.paths.timestampLocale}`,
+        locale: `${config.timestampLocale}`,
         template: `${appVersionSporcTemplate}`,
-        format: `${config.paths.appVersionFormat}`,
+        format: `${config.appVersionFormat}`,
         skipOutput: true
     });
 

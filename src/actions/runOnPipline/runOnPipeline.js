@@ -6,7 +6,7 @@ import { BackupAndRunException } from "../../exceptions";
 
 async function runOnPipeline(config, scriptFilePath) {
     const { db, backupDbName } = config;
-    const { databaseName } = config.database;
+    const { database } = config.database;
     const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
     let error;
 
@@ -17,7 +17,7 @@ async function runOnPipeline(config, scriptFilePath) {
         console.log("Creating database backup...");
 
         await db.executeQuery({
-            query: `BACKUP DATABASE[${databaseName}]TO DISK = '${config.settings.backupFile}' WITH INIT`,
+            query: `BACKUP DATABASE[${database}]TO DISK = '${config.settings.backupFile}' WITH INIT`,
         });
 
         if (config.debugMode) {
@@ -46,11 +46,11 @@ async function runOnPipeline(config, scriptFilePath) {
         }
 
         // Step 4: Execute script on Master DB
-        console.log(`Executing script on ${databaseName} database...`);
+        console.log(`Executing script on ${database} database...`);
 
         await db.executeBatch({ content: tempScriptContent });
 
-        console.log(`Script executed successfully on database: ${databaseName}`);
+        console.log(`Script executed successfully on database: ${database}`);
 
         // Step 5: Remove database and tempfile
         await dropTempDb(props.config);

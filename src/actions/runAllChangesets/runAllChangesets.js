@@ -7,18 +7,18 @@ import FileHelper from "../../services/FileHelper";
 
 async function runAllChangesets(result, config) {
     const { db, backupDbName } = config;
-    const { databaseName } = config.database;
+    const { database } = config.database;
     let error;
 
     try {
         // Step 4: Execute script on Master DB
-        console.log(`Executing script on ${databaseName} database...`);
+        console.log(`Executing script on ${database} database...`);
 
         const tempScriptContent = fs.readFileSync(result.allChangesetsScriptFilePath, "utf-8");
 
         await db.executeBatch({ content: tempScriptContent });
 
-        console.log(`Script executed successfully on database: ${databaseName}`);
+        console.log(`Script executed successfully on database: ${database}`);
 
         // Added changeset informations to table
         await updateChangesetsTable(config, result.pendingChangesets);

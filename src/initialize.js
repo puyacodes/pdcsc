@@ -18,7 +18,7 @@ async function initialize(config) {
     }
 
     const changesetPath = path.join(config.basePath, config.paths.changesetFolderName);
-    const backupFile = path.join(config.paths.backupDir, `backup-${config.database.databaseName}-temp.bak`);
+    const backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
 
     config.settings = {
         currentBranch,

@@ -1,12 +1,12 @@
 import sql from "mssql";
 
-async function getFileGroups({ config }) {
+async function getFileGroups(config) {
     try {
         const pool = await sql.connect({
             user: config.database.user,
             password: config.database.password,
             server: config.database.server,
-            database: config.database.databaseName,
+            database: config.database.database,
             options: { encrypt: false }
         });
         const query = `
@@ -19,7 +19,7 @@ async function getFileGroups({ config }) {
                 sys.master_files mf
             INNER JOIN 
                 sys.databases db ON db.database_id = mf.database_id
-            WHERE db.name = '${config.database.databaseName}'
+            WHERE db.name = '${config.database.database}'
         `;
         const result = await pool.request().query(query);
         await pool.close();

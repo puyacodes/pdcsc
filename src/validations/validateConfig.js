@@ -63,8 +63,8 @@ function validateConfig(config) {
         throw new Error(`password not specified`);
     }
 
-    if (isEmpty(config.database.databaseName)) {
-        throw new Error(`databaseName not specified`);
+    if (isEmpty(config.database.database)) {
+        throw new Error(`database not specified`);
     }
 
     if (!isObject(config.folders)) {

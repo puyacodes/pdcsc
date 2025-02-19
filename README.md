@@ -97,7 +97,7 @@ The configuration for the script is stored in the `config.json` file, which shou
     "server": "localhost",
     "user": "db_user",
     "password": "db_password",
-    "databaseName": "my_database"
+    "database": "my_database"
   },
   "masterBranchName": "origin/dev",
   "appVersionFormat": "YYYY-MM-DD_HH-mm-ss",

@@ -20,7 +20,7 @@ async function validateCommandLineArgs(args) {
     const server = getArg("-s");
     const user = getArg("-u");
     const password = getArg("-p");
-    const databaseName = getArg("-d");
+    const database = getArg("-d");
     let configPath = getArg("-c");
     let customizedConfigPath;
 
@@ -56,7 +56,7 @@ async function validateCommandLineArgs(args) {
 
     const defaults = { configPath, changesetFile, basePath }
     const database = {
-        databaseName,
+        database,
         server,
         user,
         password

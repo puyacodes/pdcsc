@@ -3,7 +3,7 @@
         "server": ".",
         "user": "sa",
         "password": "****",
-        "databaseName": "MyDb"
+        "database": "MyDb"
     },
     "pipeline": "gitlabs",
     "appVersionSprocName": "dbo.getAppVersion",

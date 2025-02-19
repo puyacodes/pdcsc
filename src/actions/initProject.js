@@ -69,7 +69,7 @@ function pdcscConfigContent(config) {
             server: ".",
             user: "sa",
             password: "****",
-            databaseName: "mydb"
+            database: "mydb"
         }
     };
 

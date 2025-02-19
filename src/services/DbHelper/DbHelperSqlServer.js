@@ -12,7 +12,7 @@ class DbHelperSqlServer extends DbHelperBase {
                 user: this.config.database.user,
                 password: this.config.database.password,
                 server: this.config.database.server,
-                database: dbName ?? this.config.database.databaseName,
+                database: dbName ?? this.config.database.database,
                 options: { encrypt: false }
             });
 

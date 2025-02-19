@@ -38,6 +38,8 @@ let changesetContent;
 
 async function createChangeset(config) {
     if (await compareWithDevBranch(config.settings)) {
+        let error;
+
         try {
             const status = await git.status();
             userChoice = await getUserChoice(status, config.folders, config);
@@ -78,6 +80,7 @@ async function createChangeset(config) {
 
                 const changedFiles = getChangedFiles({ status, debug: config.debugMode, currentBranch: config.settings.currentBranch });
                 const filteredFiles = changedFiles.filter((file) => isValidScriptFile({ config, file }));
+                
                 if (config.debugMode) {
                     console.log("Filtered Changed Files:", filteredFiles);
                     console.log("Filtered Deleted Files:", deletedFiles);
@@ -98,14 +101,18 @@ async function createChangeset(config) {
                 }
 
                 const allSections = categorizeFiles({ filteredFiles, tempSections, config, folders: config.folders });
+
                 if (deletedFiles.length > 0) {
                     const dropQueries = getDropScripts(deletedFiles, config.folders);
                     changesetContent = generateChangesetContent(allSections, dropQueries);
                 } else {
                     changesetContent = generateChangesetContent(allSections);
                 }
+
                 fs.writeFileSync(changesetTempFilePath, changesetContent.trim(), "utf-8");
+
                 console.log(`Changeset written to ${changesetFilePath}`);
+
                 const content = processChangeset({ config, tempFileName }) + `
     go
     ${getAppVersion(config)}
@@ -113,12 +120,12 @@ async function createChangeset(config) {
                 `;
 
                 fs.writeFileSync(tempScriptFilePath, content, "utf-8");
-                
+
                 if (config.debugMode) {
                     console.log(`Script written to: ${tempScriptFilePath}`);
                 }
 
-                await backupAndRun({
+                error = await backupAndRun({
                     tempScript: tempScriptFilePath,
                     temptxtfile: changesetTempFilePath,
                     scriptFile: scriptFilePath,
@@ -130,16 +137,18 @@ async function createChangeset(config) {
             } else {
                 throw new Error("Error: file not found!");
             }
-        } catch (error) {
-            if (!(error instanceof BackupAndRunException) && userChoice === "2") {
-                restoreCommitedChanges();
-            }
+        } catch (ex) {
+            error = ex;
 
             if (config.debugMode) {
                 throw new Error(error);
             } else {
                 throw new Error(error.message);
             }
+        }
+
+        if (error && userChoice === "2") {
+            restoreCommitedChanges();
         }
     }
 }

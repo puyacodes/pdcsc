@@ -5,7 +5,7 @@ import extractDateFromString from "../../utils/extractDateFromString";
 
 async function getAllChangesetFiles(config) {
     try {
-        const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.settings.now}-update-${config.database.databaseName}.sql`);
+        const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.settings.now}-update-${config.database.database}.sql`);
 
         const result = await getChangesetTable(config);
         const pendingChangesets = getPendingChangesets(config, result);
@@ -38,7 +38,7 @@ async function getChangesetTable(config) {
         user: config.database.user,
         password: config.database.password,
         server: config.database.server,
-        database: config.database.databaseName,
+        database: config.database.database,
         options: { encrypt: false }
     });
     let result;

@@ -27,4 +27,4 @@ function isValidScriptFile(props) {
     return true;
 }
 
-module.exports = { isValidScriptFile }
+export default isValidScriptFile;

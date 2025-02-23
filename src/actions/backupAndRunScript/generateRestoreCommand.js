@@ -1,4 +1,4 @@
-import getFileGroups from "../utils/getFileGroups";
+import getFileGroups from "./getFileGroups";
 
 async function generateRestoreCommand(config) {
     const { backupDbName } = config;
@@ -15,7 +15,7 @@ async function generateRestoreCommand(config) {
         const restoreCommand = `
 use master;
 
-RESTORE DATABASE [${backupDbName}] FROM DISK='${config.settings.backupFile}' WITH File = 1, ${moveString};`;
+RESTORE DATABASE [${backupDbName}] FROM DISK='${config.paths.backupFile}' WITH File = 1, ${moveString};`;
 
         return restoreCommand;
     } catch (error) {

@@ -1,17 +1,16 @@
 import processChangeset from "./ProcessChangeset.js";
 import backupAndRun from "./backupAndRun";
-import { validateChangedFiles } from "../../validations/validateChangedFiles.js";
-import { validateChangeSetFile } from "../../validations/validateChangeSetFile.js";
-import { isValidScriptFile } from "../../validations/isValidScriptFile.js";
-import { categorizeFiles } from "../../startup/categorizeFiles.js";
-import { generateChangesetContent } from "../../startup/generateChangesetContent.js";
-import { getAppVersion } from "../../utils/getAppVersion.js";
-import { getDropScripts } from "../../utils/getDropScripts.js";
-import { getUserChoice } from "../../startup/getUserChoice.js";
-import { generateFile } from "../../startup/generateFile.js";
-import { getChangedFiles } from "../../utils/getChangedFiles.js";
+import validateChangedFiles from "./validateChangedFiles.js";
+import validateChangeSetFile from "./validateChangeSetFile.js";
+import isValidScriptFile from "./isValidScriptFile.js";
+import categorizeFiles from "./categorizeFiles.js";
+import generateChangesetContent from "./generateChangesetContent.js";
+import getAppVersion from "./getAppVersion.js";
+import getDropScripts from "./getDropScripts.js";
+import getUserChoice from "./getUserChoice.js";
+import generateFile from "./generateFile.js";
+import getChangedFiles from "./getChangedFiles.js";
 import restoreCommitedChanges from "../../utils/restoreCommitedChanges.js";
-import { BackupAndRunException } from "../../exceptions";
 import compareWithDevBranch from "./compareWithDevBranch.js";
 import simpleGit from "simple-git";
 import fs from "fs";
@@ -37,8 +36,9 @@ let hasContent;
 let changesetContent;
 
 async function createChangeset(config) {
-    if (await compareWithDevBranch(config.settings)) {
+    if (await compareWithDevBranch(config)) {
         let error;
+        const { changesetsPath } = config.paths;
 
         try {
             const status = await git.status();
@@ -48,15 +48,15 @@ async function createChangeset(config) {
                 process.exit(1);
             }
             if (!config.changesetFile) {
-                config.changesetFile = await generateFile(config.settings.changesetPath, config.settings.now, config);
+                config.changesetFile = await generateFile(config);
             }
             const cleanFilename = path.parse(config.changesetFile).name;
             const tempFileName = `${path.parse(config.changesetFile).name}~`;
             const changesetTempFile = `${path.parse(config.changesetFile).name}~.txt`;
-            const changesetFilePath = path.join(config.settings.changesetPath, `${cleanFilename}.txt`);
-            const changesetTempFilePath = path.join(config.settings.changesetPath, changesetTempFile);
-            const tempScriptFilePath = path.join(config.settings.changesetPath, `${cleanFilename}~.sql`);
-            const scriptFilePath = path.join(config.settings.changesetPath, `${cleanFilename}.sql`);
+            const changesetFilePath = path.join(changesetsPath, `${cleanFilename}.txt`);
+            const changesetTempFilePath = path.join(changesetsPath, changesetTempFile);
+            const tempScriptFilePath = path.join(changesetsPath, `${cleanFilename}~.sql`);
+            const scriptFilePath = path.join(changesetsPath, `${cleanFilename}.sql`);
 
             if (fs.existsSync(changesetFilePath)) {
                 const deletedFiles = [];
@@ -78,14 +78,12 @@ async function createChangeset(config) {
                     tempSections: tempSections
                 });
 
-                const changedFiles = getChangedFiles({ status, debug: config.debugMode, currentBranch: config.settings.currentBranch });
+                const changedFiles = getChangedFiles({ status, debug: config.debugMode, currentBranch: config.currentBranch });
                 const filteredFiles = changedFiles.filter((file) => isValidScriptFile({ config, file }));
-                
-                if (config.debugMode) {
-                    console.log("Filtered Changed Files:", filteredFiles);
-                    console.log("Filtered Deleted Files:", deletedFiles);
-                }
 
+                config.debug("Filtered Changed Files:", filteredFiles);
+                config.debug("Filtered Deleted Files:", deletedFiles);
+                
                 if (filteredFiles.length === 0 &&
                     deletedFiles.length == 0 &&
                     (
@@ -121,10 +119,8 @@ async function createChangeset(config) {
 
                 fs.writeFileSync(tempScriptFilePath, content, "utf-8");
 
-                if (config.debugMode) {
-                    console.log(`Script written to: ${tempScriptFilePath}`);
-                }
-
+                config.debug(`Script written to: ${tempScriptFilePath}`);
+                
                 error = await backupAndRun({
                     tempScript: tempScriptFilePath,
                     temptxtfile: changesetTempFilePath,

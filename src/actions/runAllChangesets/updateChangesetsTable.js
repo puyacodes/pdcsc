@@ -10,7 +10,7 @@ async function updateChangesetsTable(config, pendingChangesets) {
 
     for (const changeset of pendingChangesets) {
         try {
-            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${extractDateFromString(config, config.settings.now)}')`;
+            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${extractDateFromString(config, config.now)}')`;
 
             await db.executeQuery({ query });
 

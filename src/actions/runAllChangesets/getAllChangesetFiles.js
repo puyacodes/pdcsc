@@ -5,7 +5,7 @@ import extractDateFromString from "../../utils/extractDateFromString";
 
 async function getAllChangesetFiles(config) {
     try {
-        const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.settings.now}-update-${config.database.database}.sql`);
+        const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.now}-update-${config.database.database}.sql`);
 
         const result = await getChangesetTable(config);
         const pendingChangesets = getPendingChangesets(config, result);
@@ -35,13 +35,12 @@ async function getChangesetTable(config) {
     });
 
     const pool = await sql.connect({
-        user: config.database.user,
-        password: config.database.password,
-        server: config.database.server,
-        database: config.database.database,
+        ...config.database,
         options: { encrypt: false }
     });
+
     let result;
+    
     try {
         result = await pool.request().query(`
                 SELECT TOP 1 [date], [name]
@@ -72,10 +71,10 @@ function getPendingChangesets(config, result) {
     for (const file of sqlFiles) {
         const filePath = path.join(config.paths.changesetsPath, file);
         const match = file.match(/(\d{12,14})/);
+
         if (!match) {
-            if (config.debugMode) {
-                console.warn(`Skipping file with invalid format: ${file}`);
-            }
+            config.warn(`Skipping file with invalid format: ${file}`);
+            
             continue;
         }
 
@@ -89,10 +88,8 @@ function getPendingChangesets(config, result) {
         }
     }
 
-    if (config.debugMode) {
-        console.log("pendingChangesetsArray:", pendingChangesets.map(changeset => changeset.file));
-    }
-
+    config.debug("pendingChangesetsArray:", pendingChangesets.map(changeset => changeset.file));
+    
     if (pendingChangesets.length === 0) {
         throw new Error("No new changesets found.");
     }

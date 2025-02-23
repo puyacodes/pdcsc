@@ -1,5 +1,4 @@
 import fs from "fs";
-import restoreCommitedChanges from "../../utils/restoreCommitedChanges.js";
 import FileHelper from "../../services/FileHelper";
 import simpleGit from "simple-git";
 import backupAndRunScript from "../backupAndRunScript";
@@ -9,10 +8,9 @@ async function backupAndRun({
     temptxtfile,
     scriptFile,
     txtFile,
-    config,
-    userChoice
+    config
 }) {
-    const { settings } = config;
+    const { paths } = config;
 
     const tempScriptContent = fs.readFileSync(tempScript, "utf-8");
 
@@ -32,7 +30,7 @@ async function backupAndRun({
         }
     }
 
-    FileHelper.deleteFiles(tempScript, temptxtfile, settings.backupFile);
+    FileHelper.deleteFiles(tempScript, temptxtfile, paths.backupFile);
 
     return error;
 }

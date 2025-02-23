@@ -1,10 +1,12 @@
 import simpleGit from "simple-git";
 import fs from "fs";
 import path from "path";
-import extractDateFromString from "../utils/extractDateFromString";
-import promptUser from "../utils/promptUser";
+import extractDateFromString from "../../utils/extractDateFromString";
+import promptUser from "../../utils/promptUser";
 
-async function generateFile(changesetPath, now, config) {
+async function generateFile(config) {
+    const { changesetsPath } = config.paths;
+    const { now } = config;
     const git = simpleGit();
     let userChoice;
     const fileContent = `
@@ -42,7 +44,7 @@ async function generateFile(changesetPath, now, config) {
     try {
         const branch = (await git.branch()).current;
         const branchName = branch.replace("/", "_");
-        const files = fs.readdirSync(changesetPath);
+        const files = fs.readdirSync(changesetsPath);
         let fileName;
         let fileExists = false;
         const regex = new RegExp(`^\\d+_${branchName}\\.txt$`);
@@ -51,7 +53,7 @@ async function generateFile(changesetPath, now, config) {
             if (regex.test(file)) {
                 fileExists = true;
                 fileName = file;
-                console.warn(`Changeset file already exists in ${changesetPath}${fileName}`);
+                console.warn(`Changeset file already exists in ${changesetsPath}${fileName}`);
 
                 if (files.filter(file => file.endsWith(".sql")).some(x => (extractDateFromString(config, x)) > (extractDateFromString(config, file)))) {
                     do {
@@ -74,7 +76,7 @@ async function generateFile(changesetPath, now, config) {
 
         if (!fileExists) {
             fileName = `${now}_${branchName}.txt`;
-            fs.writeFileSync(path.join(changesetPath, fileName), fileContent.trim());
+            fs.writeFileSync(path.join(changesetsPath, fileName), fileContent.trim());
             //await git.add(`${props.config.paths.changesetFolderName}/${fileName}`);
             //await git.commit(`pdcsc: added ${fileName}.`);
         }

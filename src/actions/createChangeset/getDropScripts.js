@@ -78,4 +78,4 @@ GO`;
     return dropQuery;
 }
 
-module.exports = { getDropScripts }
+export default getDropScripts;

@@ -1,21 +1,25 @@
-const simpleGit = require("simple-git");
+import simpleGit from "simple-git";
 
-async function getAllStatuses(props) {
+async function getAllStatuses(status, exclude, debugMode) {
     const git = simpleGit();
-    const status = props.status ?? await git.status();
+
+    const status = status ?? await git.status();
     const allStatuses = [];
     const statuses = ['not_added', 'conflicted', 'created', 'deleted', 'ignored', 'modified', 'renamed'];
+
     statuses.forEach(state => {
         if (Array.isArray(status[state])) {
-            if (state != props.exclude) {
+            if (state != exclude) {
                 allStatuses.push(...status[state]);
             }
         }
     });
-    if (props.config.debugMode) {
+
+    if (debugMode) {
         console.log("allStatuses", allStatuses);
     }
+
     return allStatuses;
 }
 
-module.exports = { getAllStatuses }
+export default getAllStatuses;

@@ -1,4 +1,4 @@
-const { Timestamper } = require('@puya/ts');
+import { Timestamper } from '@puya/ts';
 
 function getAppVersion(config) {
     const appVersionSporcTemplate = `create or alter proc ${config.appVersionSprocName} as select '{ts}'`;
@@ -16,4 +16,4 @@ function getAppVersion(config) {
     return res.data;
 }
 
-module.exports = { getAppVersion }
+export default getAppVersion;

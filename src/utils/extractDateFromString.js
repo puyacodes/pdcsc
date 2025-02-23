@@ -15,10 +15,8 @@ function extractDateFromString(config, inputString) {
             date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
             const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
 
-            if (config.debugMode) {
-                console.log("Extracted Date:", formattedDate);
-            }
-
+            config.debug("Extracted Date:", formattedDate);
+            
             return formattedDate;
         } else {
             throw new Error("No date found in the input string.");

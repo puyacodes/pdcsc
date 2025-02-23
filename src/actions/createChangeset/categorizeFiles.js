@@ -1,4 +1,5 @@
-const path = require("path");
+import path from "path";
+
 function categorizeFiles({ filteredFiles, tempSections, config, folders }) {
     filteredFiles.forEach((file) => {
         let fileName = path.basename(file);
@@ -13,9 +14,7 @@ function categorizeFiles({ filteredFiles, tempSections, config, folders }) {
                     tempSections[section].push(fileName);
                     return;
                 } else {
-                    if (config.debugMode) {
-                        console.warn(`File '${fileName}' already exists in section '${section}'.`);
-                    }
+                    config.warn(`File '${fileName}' already exists in section '${section}'.`);
                 }
             }
         }
@@ -24,4 +23,4 @@ function categorizeFiles({ filteredFiles, tempSections, config, folders }) {
     return tempSections;
 }
 
-module.exports = { categorizeFiles }
+export default categorizeFiles;

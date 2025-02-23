@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 import updateChangesetsTable from "./updateChangesetsTable";
-import { BackupAndRunException } from "../../exceptions";
 import { ExecuteQueryException } from "../../services/DbHelper/exceptions";
 import FileHelper from "../../services/FileHelper";
 
@@ -24,8 +23,9 @@ async function runAllChangesets(result, config) {
         await updateChangesetsTable(config, result.pendingChangesets);
     } catch (ex) {
         error = ex;
-        console.error("Error during updating database with all scripts:", error.message);
-        const logFile = path.join(config.settings.changesetPath, "error.log");
+        console.error("Error during updating database with all scripts:", error);
+
+        const logFile = path.join(config.paths.changesetsPath, "error.log");
 
         try {
             fs.writeFileSync(logFile, "", "utf-8");
@@ -35,6 +35,7 @@ async function runAllChangesets(result, config) {
 
                 if (error instanceof ExecuteQueryException) {
                     fs.appendFileSync(logFile, error.query + "\n\n", "utf-8");
+
                     error.query = null;
                 }
             } catch (ex) {
@@ -54,9 +55,7 @@ async function runAllChangesets(result, config) {
         FileHelper.deleteFile(result.allChangesetsScriptFilePath);
     }
 
-    if (error) {
-        throw new BackupAndRunException(error);
-    }
+    return error;
 }
 
 export default runAllChangesets;

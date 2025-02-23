@@ -3,9 +3,8 @@ import path from "path";
 import { isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
 import { ActionType } from "../enums";
-import { DbHelperSqlServer } from "../services/DbHelper";
 
-async function validateCommandLineArgs(args) {
+async function process(args) {
     function getArg(arg) {
         const index = args.indexOf(arg);
         const result = index >= 0 ? args[index + 1] : undefined;
@@ -20,7 +19,7 @@ async function validateCommandLineArgs(args) {
     const server = getArg("-s");
     const user = getArg("-u");
     const password = getArg("-p");
-    const database = getArg("-d");
+    const dbName = getArg("-d");
     let configPath = getArg("-c");
     let customizedConfigPath;
 
@@ -54,15 +53,14 @@ async function validateCommandLineArgs(args) {
         config = {}
     }
 
-    const defaults = { configPath, changesetFile, basePath }
     const database = {
-        database,
+        database: dbName,
         server,
         user,
         password
     }
 
-    config = merge({}, { database }, config, customConfig, defaults)
+    config = merge({}, { database }, config, customConfig, { configPath, changesetFile, basePath })
 
     if (args.includes("-rop")) {
         config.action = ActionType.runOnPipline;
@@ -78,7 +76,11 @@ async function validateCommandLineArgs(args) {
         config.action = ActionType.createChangeset;
     }
 
+    config.debugMode = args.includes("-dbm");
+    config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
+    config.cliMode = !(config.runMode || config.action == ActionType.createChangeset);
+
     return config
 }
 
-export default validateCommandLineArgs;
+export default process;

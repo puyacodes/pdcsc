@@ -1,4 +1,4 @@
-const moment = require("jalali-moment");
+import moment from "jalali-moment";
 
 function convertJalaliToGregorian(jalaliDateStr) {
     let year = parseInt(jalaliDateStr.substring(0, 4));
@@ -17,4 +17,4 @@ function convertJalaliToGregorian(jalaliDateStr) {
     return gregorianDate;
 }
 
-module.exports = { convertJalaliToGregorian }
+export default convertJalaliToGregorian;

@@ -6,8 +6,8 @@
         "database": "MyDb"
     },
     "pipeline": "gitlabs",
-    "appVersionSprocName": "dbo.getAppVersion",
     "masterBranchName": "origin/main",
+    "appVersionSprocName": "dbo.getAppVersion",
     "appVersionFormat": "YYYY-MM-DD HH:mm:ss",
     "timestampLocale": "en",
     "changesetsTableName": "Changesets",

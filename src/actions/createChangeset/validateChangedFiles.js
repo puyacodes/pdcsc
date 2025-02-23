@@ -1,4 +1,4 @@
-const simpleGit = require("simple-git");
+import simpleGit from "simple-git";
 
 async function validateChangedFiles({
     status,
@@ -15,10 +15,8 @@ async function validateChangedFiles({
         return isInAllowedFolder && isSqlFile;
     });
 
-    if (config.debugMode) {
-        console.log("filtered Uncommited files:", filteredFiles);
-    }
-
+    config.debug("filtered Uncommited files:", filteredFiles);
+    
     if (filteredFiles.length > 0) {
         if (!commit) {
             listName.push(...filteredFiles.map(file => file));
@@ -33,4 +31,4 @@ async function validateChangedFiles({
     }
 }
 
-module.exports = { validateChangedFiles }
+export default validateChangedFiles;

@@ -1,4 +1,4 @@
-const { execSync } = require("child_process");
+import { execSync } from "child_process";
 
 function getChangedFiles({ debug, currentBranch }) {
     try {
@@ -43,4 +43,4 @@ function getChangedFiles({ debug, currentBranch }) {
     }
 }
 
-module.exports = { getChangedFiles }
+export default getChangedFiles;

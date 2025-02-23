@@ -1,7 +1,8 @@
-import promptUser from "../utils/promptUser";
-const { validateChangedFiles } = require("../validations/validateChangedFiles.js");
-const { getAllStatuses } = require("../utils/getAllStatuses.js");
-const chalk = require('chalk');
+import promptUser from "../../utils/promptUser.js";
+import getAllStatuses from "./getAllStatuses.js";
+
+import { validateChangedFiles } from "./validateChangedFiles.js";
+import chalk from 'chalk';
 
 async function getUserChoice(status, folders, config) {
     const uncommittedChanges = [];
@@ -9,7 +10,7 @@ async function getUserChoice(status, folders, config) {
 
     do {
         await validateChangedFiles({
-            status: await getAllStatuses({ status, config }),
+            status: await getAllStatuses(status),
             listName: uncommittedChanges,
             commit: false,
             folders,
@@ -30,7 +31,7 @@ async function getUserChoice(status, folders, config) {
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
                 await validateChangedFiles({
-                    status: await getAllStatuses({ status, config }),
+                    status: await getAllStatuses(status),
                     listName: null,
                     commit: true,
                     folders,
@@ -96,4 +97,4 @@ async function getUserChoice(status, folders, config) {
     return userChoice;
 }
 
-module.exports = { getUserChoice }
+export default getUserChoice;

@@ -43,4 +43,4 @@ function generateChangesetContent(sections, dropQuery) {
     `
 };
 
-module.exports = { generateChangesetContent }
+export default generateChangesetContent;

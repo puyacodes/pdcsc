@@ -1,5 +1,4 @@
-const fs = require("fs");
-const { default: del } = require("rollup-plugin-delete");
+import fs from "fs";
 
 function validateChangeSetFile(props) {
     let content = fs.readFileSync(props.changesetFilePath, "utf-8");
@@ -101,4 +100,4 @@ function validateChangeSetFile(props) {
     return props.tempSections;
 }
 
-module.exports = { validateChangeSetFile }
+export default validateChangeSetFile;

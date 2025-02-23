@@ -1,6 +1,6 @@
-import { execSync } from "child_process";
 import semver from "semver";
-import { name, version } from "../../package.json";
+import { execSync } from "child_process";
+import { name, version } from "../package.json";
 
 function checkForUpdate(config) {
     try {
@@ -11,9 +11,7 @@ function checkForUpdate(config) {
             console.warn(`⚠️  Update available for ${name}: ${currentVersion} → ${latest}`);
             console.log(`Run "npm update ${name}" to update.`);
         } else {
-            if (config.debugMode) {
-                console.log(`✅  ${name} is up-to-date! (version: ${currentVersion})`);
-            }
+            config.debug(`✅  ${name} is up-to-date! (version: ${currentVersion})`);
         }
     } catch (err) {
         console.error(`Failed to check for updates: ${err}`);

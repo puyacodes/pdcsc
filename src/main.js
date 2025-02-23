@@ -1,7 +1,4 @@
-import validateCommandLineArgs from "./validations/validateCommandLineArgs.js";
-import initialize from "./initialize.js";
-import validateConfig from './validations/validateConfig.js';
-import checkForUpdate from './checks/checkForUpdate.js';
+import checkForUpdate from './checkForUpdate.js';
 import { ActionType } from "./enums";
 import { version } from "../package.json";
 import {
@@ -10,18 +7,19 @@ import {
     runAllChangesets,
     runOnPipline
 } from "./actions";
+import getConfig from "./config";
 
 async function main() {
     let exitCode = 0;
     let config;
+    let error;
 
     try {
+        checkForUpdate(config);
+
         const args = process.argv.slice(2);
 
-        config = await validateCommandLineArgs(args);
-
-        validateConfig(config);
-        checkForUpdate(config);
+        config = await getConfig(args);
 
         switch (config.action) {
             case ActionType.getVersion:
@@ -29,29 +27,25 @@ async function main() {
                 break;
             case ActionType.init:
             case ActionType.initfull:
-                initProject(config);
+                error = initProject(config);
                 break;
-            default:
-                await initialize(config);
-
-                switch (config.action) {
-                    case ActionType.runOnPipline:
-                        await runOnPipline(config);
-                        break;
-                    case ActionType.runAllChangesets:
-                        await runAllChangesets(config);
-                        break;
-                    case ActionType.createChangeset:
-                        await createChangeset(config);
-                        break;
-                }
-
+            case ActionType.runOnPipline:
+                error = await runOnPipline(config);
+                break;
+            case ActionType.runAllChangesets:
+                error = await runAllChangesets(config);
+                break;
+            case ActionType.createChangeset:
+                error = await createChangeset(config);
                 break;
         }
-    } catch (ex) {
-        console.error(ex);
-        
+    } catch (error) {
         exitCode = 1;
+    }
+    finally {
+        if (error) {
+            console.error(error);
+        }
     }
 
     process.exit(exitCode);

@@ -5,9 +5,7 @@ async function run(config) {
     try {
         const result = await getAllChangesetFiles(config);
 
-        if (config.debugMode) {
-            console.log("allChangesetsScriptFilePath:", result.allChangesetsScriptFilePath)
-        }
+        config.debug("allChangesetsScriptFilePath:", result.allChangesetsScriptFilePath)
         
         if (result?.allChangesetsScriptFilePath) {
             await runAllChangesets(result, config);

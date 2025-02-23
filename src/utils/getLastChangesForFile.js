@@ -1,4 +1,5 @@
-const simpleGit = require("simple-git");
+import simpleGit from "simple-git";
+
 const git = simpleGit();
 
 async function getLastChangesForFile(config, filePath) {
@@ -32,15 +33,14 @@ async function findLastCommitForFile(filePath) {
 async function showFileChanges(config, commitHash, filePath) {
     try {
         const changes = await git.show([`${commitHash}:${filePath}`]);
-        if (config.debugMode) {
-            console.log(`last commit for file: ${commitHash}:\n`);
-            console.log(`last changes for file: ${changes}`);
-        }
+        
+        config.debug(`last commit for file: ${commitHash}:\n`);
+        config.debug(`last changes for file: ${changes}`);
+        
         return JSON.parse(changes);
     } catch (error) {
         throw new Error(`Error during show last changes for file: ${error.message}`);
     }
 }
 
-
-module.exports = { getLastChangesForFile }
+export default getLastChangesForFile;

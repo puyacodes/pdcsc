@@ -1,10 +1,11 @@
 import { execSync } from "child_process";
+import { ActionType } from "../enums";
 
 function getCurrentBranch(config) {
     let currentBranch;
     let realBranchName;
 
-    if (config.options.runOnPipline) {
+    if (config.action == ActionType.runOnPipline) {
         if (config.pipeline === "gitlabs") {
             currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
             realBranchName = process.env.CI_COMMIT_REF_NAME;

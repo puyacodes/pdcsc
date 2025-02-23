@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { ExecuteQueryException } from "../../services/DbHelper/exceptions/index.js";
-import generateRestoreCommand from "../../startup/generateRestoreCommand.js";
+import generateRestoreCommand from "./generateRestoreCommand.js";
+import dropTempDb from "./dropTempDb.js";
 
 async function backupAndRunScript(config, script) {
-    const { settings, database, db, backupDbName } = config;
+    const { database, db, backupDbName, paths } = config;
+    const { changesetsPath } = config.paths;
     const dbName = database.database
     let error;
 
@@ -13,12 +15,10 @@ async function backupAndRunScript(config, script) {
         console.log("Creating database backup...");
 
         await db.executeQuery({
-            query: `BACKUP DATABASE [${dbName}] TO DISK = '${settings.backupFile}' WITH INIT`
+            query: `BACKUP DATABASE [${dbName}] TO DISK = '${paths.backupFile}' WITH INIT`
         });
 
-        if (config.debugMode) {
-            console.log(`Database backup created at: ${settings.backupFile}`);
-        }
+        config.debug(`Database backup created at: ${paths.backupFile}`);
 
         // Step 2: Restore database
         console.log("Restoring backup to temporary database...");
@@ -27,11 +27,8 @@ async function backupAndRunScript(config, script) {
 
         await db.executeQuery({ query: restoreCommand });
 
-        if (config.debugMode) {
-            //tempScripttemptxtfile
-            console.log(`Backup restored as: ${backupDbName}`);
-        }
-
+        config.debug(`Backup restored as: ${backupDbName}`);
+        
         // Step 3: Execute script on backup database
         console.log("Executing script on temporary database...");
 
@@ -49,7 +46,7 @@ async function backupAndRunScript(config, script) {
         error = ex;
         console.error("Error during script execution:", error);
 
-        const logFile = path.join(settings.changesetPath, "error.log");
+        const logFile = path.join(changesetsPath, "error.log");
 
         try {
             fs.writeFileSync(logFile, "", "utf-8");
@@ -82,23 +79,5 @@ async function backupAndRunScript(config, script) {
 
     return error;
 }
-
-/* FUNCTIONS */
-
-async function dropTempDb(config) {
-    const { db, backupDbName } = config;
-
-    await db.executeQuery({
-        query: `IF EXISTS(SELECT name FROM sys.databases WHERE name = '${backupDbName}')
-        DROP DATABASE[${backupDbName}]`
-    });
-
-    if (config.debugMode) {
-        console.log(`Temporary database ${backupDbName} dropped successfully.`);
-    } else {
-        console.log(`Temporary database dropped successfully.`);
-    }
-}
-
 
 export default backupAndRunScript;

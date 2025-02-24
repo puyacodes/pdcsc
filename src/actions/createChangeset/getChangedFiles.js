@@ -1,3 +1,4 @@
+import { Exception } from "@locustjs/exception";
 import { execSync } from "child_process";
 
 function getChangedFiles({ debug, currentBranch }) {
@@ -38,8 +39,8 @@ function getChangedFiles({ debug, currentBranch }) {
 
         const allFiles = [...modifiedFiles, ...renamedFiles];
         return allFiles;
-    } catch (error) {
-        throw new Error(`Error fetching modified and untracked files: ${error.message}`);
+    } catch (ex) {
+        throw new Exception(`Error fetching modified and untracked files`, ex);
     }
 }
 

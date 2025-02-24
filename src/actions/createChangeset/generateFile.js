@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import extractDateFromString from "../../utils/extractDateFromString";
 import promptUser from "../../utils/promptUser";
+import { Exception } from "@locustjs/exception";
 
 async function generateFile(config) {
     const { changesetsPath } = config.paths;
@@ -41,11 +42,12 @@ async function generateFile(config) {
 ## ===================== Custom-End ( end ) ======================
     `;
 
+    let fileName;
+
     try {
         const branch = (await git.branch()).current;
         const branchName = branch.replace("/", "_");
         const files = fs.readdirSync(changesetsPath);
-        let fileName;
         let fileExists = false;
         const regex = new RegExp(`^\\d+_${branchName}\\.txt$`);
 
@@ -82,9 +84,8 @@ async function generateFile(config) {
         }
 
         return fileName;
-    }
-    catch (error) {
-        throw new Error(error);
+    } catch (ex) {
+        throw new Exception(`generating file ${fileName} failed`, ex);
     }
 }
 

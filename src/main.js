@@ -8,18 +8,19 @@ import {
     runOnPipline
 } from "./actions";
 import getConfig from "./config";
+import checkDbExistence from './checkDbExistence.js';
 
 async function main() {
     let exitCode = 0;
-    let config;
     let error;
 
     try {
-        checkForUpdate(config);
-
         const args = process.argv.slice(2);
+        
+        const config = await getConfig(args);
 
-        config = await getConfig(args);
+        checkForUpdate(config);
+        checkDbExistence(config);
 
         switch (config.action) {
             case ActionType.getVersion:
@@ -39,10 +40,10 @@ async function main() {
                 error = await createChangeset(config);
                 break;
         }
-    } catch (error) {
+    } catch (ex) {
+        error = ex;
         exitCode = 1;
-    }
-    finally {
+    } finally {
         if (error) {
             console.error(error);
         }

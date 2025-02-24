@@ -51,7 +51,7 @@ async function initProject(config) {
                 git.add(filePath);
                 git.commit("pdcsc: initialized files and folders.");
             }
-        } catch (error) { }
+        } catch (ex) { error = ex }
     } while (false);
 
     return error;

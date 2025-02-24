@@ -11,7 +11,8 @@ async function initGitRepo(git) {
                 await git.init();
 
                 console.log("Git repository initialized successfully.");
-            } catch (error) {
+            } catch (ex) {
+                error = ex;
                 console.log("Initializing git repository failed");
             }
 

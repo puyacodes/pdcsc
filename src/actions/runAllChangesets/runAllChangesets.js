@@ -43,7 +43,8 @@ async function runAllChangesets(result, config) {
                 fs.appendFileSync(logFile, error.message, "utf-8");
             }
             console.error(`Error log written to: ${logFile}`);
-        } catch (error) {
+        } catch (ex) {
+            error = ex;
             console.error(`Error creating log file: ${logFile}`);
         }
 

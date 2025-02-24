@@ -37,13 +37,8 @@ async function compareWithDevBranch({ masterBranchName, realBranchName }) {
                 result = false;
             }
         } while (false);
-    } catch (error) {
-        console.error(`Error checking the ${masterBranchName} branch:`, error.message || error);
-        result = false;
-    }
-
-    if (!result) {
-        throw new Exception();
+    } catch (ex) {
+        throw new Exception(`Error checking the ${masterBranchName} branch:`, ex);
     }
 
     return result;

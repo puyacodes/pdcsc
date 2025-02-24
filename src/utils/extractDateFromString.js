@@ -1,3 +1,5 @@
+import { Exception } from "@locustjs/exception";
+
 function extractDateFromString(config, inputString) {
     try {
         let date;
@@ -16,13 +18,13 @@ function extractDateFromString(config, inputString) {
             const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
 
             config.debug("Extracted Date:", formattedDate);
-            
+
             return formattedDate;
         } else {
             throw new Error("No date found in the input string.");
         }
-    } catch (error) {
-        throw new Error(error.message);
+    } catch (ex) {
+        throw new Exception(ex);
     }
 }
 

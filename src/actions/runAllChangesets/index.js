@@ -1,5 +1,6 @@
 import runAllChangesets from "./runAllChangesets.js";
 import getAllChangesetFiles from "./getAllChangesetFiles.js";
+import { Exception } from "@locustjs/exception";
 
 async function run(config) {
     try {
@@ -9,15 +10,9 @@ async function run(config) {
         
         if (result?.allChangesetsScriptFilePath) {
             await runAllChangesets(result, config);
-        } else {
-            return;
         }
-    } catch (error) {
-        if (config.debugMode) {
-            throw new Error(error);
-        } else {
-            throw new Error(error.message);
-        }
+    } catch (ex) {
+        throw new Exception('executing changesets was not successful', ex)
     }
 }
 

@@ -1,3 +1,4 @@
+import { Exception } from "@locustjs/exception";
 import simpleGit from "simple-git";
 
 const git = simpleGit();
@@ -9,8 +10,8 @@ async function getLastChangesForFile(config, filePath) {
             return null;
         }
         return await showFileChanges(config, lastCommitHash, filePath);
-    } catch (error) {
-        console.error(`Error during find lasr changes for ${filePath}:`, error.message);
+    } catch (ex) {
+        console.error(`Error during find lasr changes for ${filePath}:`, ex.message);
         return null;
     }
 }
@@ -25,8 +26,8 @@ async function findLastCommitForFile(filePath) {
             throw new Error(`No changes found for ${filePath}`);
         }
         return log.all[0].hash;
-    } catch (error) {
-        throw new Error(`Error during git log: ${error.message}`);
+    } catch (ex) {
+        throw new Exception(`Error during git log`, ex);
     }
 }
 
@@ -38,8 +39,8 @@ async function showFileChanges(config, commitHash, filePath) {
         config.debug(`last changes for file: ${changes}`);
         
         return JSON.parse(changes);
-    } catch (error) {
-        throw new Error(`Error during show last changes for file: ${error.message}`);
+    } catch (ex) {
+        throw new Exception(`Error during show last changes for file`, ex);
     }
 }
 

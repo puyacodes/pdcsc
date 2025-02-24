@@ -1,5 +1,7 @@
 import fileNameWithoutExtension from "../../utils/fileNameWithoutExtentions.js";
 import extractDateFromString from "../../utils/extractDateFromString.js";
+import { Exception } from "@locustjs/exception";
+import moment from "jalali-moment";
 
 async function updateChangesetsTable(config, pendingChangesets) {
     const { db, changesetsTableName } = config;
@@ -10,13 +12,17 @@ async function updateChangesetsTable(config, pendingChangesets) {
 
     for (const changeset of pendingChangesets) {
         try {
-            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${extractDateFromString(config, config.now)}')`;
+            const gregorianDateTime = moment(extractDateFromString(config, now), 'jYYYY-jMM-jDD HH:mm:ss')
+                                    .locale('en')
+                                    .format('YYYY-MM-DD HH:mm:ss');
+
+            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${extractDateFromString(config, gregorianDateTime)}')`;
 
             await db.executeQuery({ query });
 
             console.log(`Inserted changeset: ${changeset.file}`);
-        } catch (error) {
-            throw new Error(`Error inserting changeset ${changeset.file}: ${error}`);
+        } catch (ex) {
+            throw new Exception(`Error inserting changeset ${changeset.file}`, ex);
         }
     }
 

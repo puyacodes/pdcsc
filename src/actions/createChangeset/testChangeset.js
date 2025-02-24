@@ -1,9 +1,10 @@
 import fs from "fs";
 import FileHelper from "../../services/FileHelper";
 import simpleGit from "simple-git";
-import backupAndRunScript from "../backupAndRunScript";
+import testChangesetScript from "../testChangesetScript";
+import { Exception } from "@locustjs/exception";
 
-async function backupAndRun({
+async function testChangeset({
     tempScript,
     temptxtfile,
     scriptFile,
@@ -14,7 +15,7 @@ async function backupAndRun({
 
     const tempScriptContent = fs.readFileSync(tempScript, "utf-8");
 
-    let error = await backupAndRunScript(config, tempScriptContent);
+    let error = await testChangesetScript(config, tempScriptContent);
 
     if (!error) {
         try {
@@ -25,8 +26,8 @@ async function backupAndRun({
 
             // Step 7: Commit changeset files
             await commitChanges([txtFile, scriptFile]);
-        } catch (e) {
-            error = e;
+        } catch (ex) {
+            error = ex;
         }
     }
 
@@ -35,7 +36,6 @@ async function backupAndRun({
     return error;
 }
 
-/* FUNCTIONS */
 async function commitChanges(files) {
     const git = simpleGit();
     
@@ -45,9 +45,9 @@ async function commitChanges(files) {
         }
 
         await git.commit("pdcsc: changeset created.");
-    } catch (error) {
-        throw new Error(`Error during commiting changes: ${error}`);
+    } catch (ex) {
+        throw new Exception(`Error during commiting changes`, ex);
     }
 }
 
-export default backupAndRun;
+export default testChangeset;

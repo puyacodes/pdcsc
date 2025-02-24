@@ -1,5 +1,5 @@
 import processChangeset from "./ProcessChangeset.js";
-import backupAndRun from "./backupAndRun";
+import testChangeset from "./testChangeset";
 import validateChangedFiles from "./validateChangedFiles.js";
 import validateChangeSetFile from "./validateChangeSetFile.js";
 import isValidScriptFile from "./isValidScriptFile.js";
@@ -121,7 +121,7 @@ async function createChangeset(config) {
 
                 config.debug(`Script written to: ${tempScriptFilePath}`);
                 
-                error = await backupAndRun({
+                error = await testChangeset({
                     tempScript: tempScriptFilePath,
                     temptxtfile: changesetTempFilePath,
                     scriptFile: scriptFilePath,

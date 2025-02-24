@@ -4,6 +4,8 @@ import sql from "mssql";
 import extractDateFromString from "../../utils/extractDateFromString";
 
 async function getAllChangesetFiles(config) {
+    let error;
+
     try {
         const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.now}-update-${config.database.database}.sql`);
 
@@ -16,18 +18,22 @@ async function getAllChangesetFiles(config) {
         console.log("Pending changesets combined successfully!");
 
         return { allChangesetsScriptFilePath, pendingChangesets };
-    } catch (error) {
-        if (error.message.includes("No new changesets found.")) {
-            console.log(error.message);
+    } catch (ex) {
+        error = ex;
+        if (ex.message.includes("No new changesets found.")) {
+            console.log(ex.message);
             process.exit(0);
         } else {
-            console.error('Error combining files:', error);
+            console.error('Error combining files:', ex);
         }
     }
+
+    return error;
 }
 
 /* FUNCTIONS */
 async function getChangesetTable(config) {
+    let error;
     const { db, changesetsTableName } = config;
 
     await db.executeQuery({
@@ -48,16 +54,19 @@ async function getChangesetTable(config) {
                 ORDER BY [date] DESC
                 `);
 
-    } catch (error) {
-        if (error.message.includes("Invalid object name")) {
+    } catch (ex) {
+        error = ex;
+
+        if (ex.message.includes("Invalid object name")) {
             throw new Error(`${changesetsTableName} table not found.`);
         }
         else {
-            throw new Error(`Error during select last executed changeset from ${changesetsTableName}: ${error.message}`);
+            throw new Error(`Error during select last executed changeset from ${changesetsTableName}: ${ex.message}`);
         }
     } finally {
         sql.close();
     }
+    
     return result;
 }
 

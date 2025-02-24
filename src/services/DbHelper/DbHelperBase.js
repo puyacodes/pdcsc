@@ -12,6 +12,9 @@ class DbHelperBase {
     async executeBatch({ content }) {
         throwNotImplementedException(`${this.constructor.name}.executeBatch`, this);
     }
+    async dbExists(dbName) {
+        throwNotImplementedException(`${this.constructor.name}.dbExists`, this);
+    }
 }
 
 export default DbHelperBase;

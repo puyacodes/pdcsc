@@ -40,7 +40,7 @@ async function backupAndRunScript(props) {
         // Step 3: Execute script on backup database
         console.log("Executing script on temporary database...");
         const tempScriptContent = fs.readFileSync(props.tempScript, "utf-8");
-        await executeBatch({ content: tempScriptContent, dbName: null, config: props.config });
+        await executeBatch({ content: tempScriptContent, dbName: props.backupDbName, config: props.config });
         if (props.config.options.debugMode) {
             console.log(`Script executed successfully on database: ${props.backupDbName}`);
         } else {

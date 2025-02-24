@@ -1,14 +1,15 @@
 const sql = require("mssql");
 
 async function getFileGroups({ config }) {
+    const _config = {
+        user: config.database.user,
+        password: config.database.password,
+        server: config.database.server,
+        database: config.database.databaseName,
+        options: { encrypt: false }
+    }
     try {
-        const pool = await sql.connect({
-            user: config.database.user,
-            password: config.database.password,
-            server: config.database.server,
-            database: config.database.databaseName,
-            options: { encrypt: false }
-        });
+        const pool = await sql.connect(_config);
         const query = `
             SELECT
                 db.name AS DBName,

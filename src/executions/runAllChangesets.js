@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+let moment = require("jalali-moment");
 const { executeBatch } = require("./executeBatch.js");
 const { executeQuery } = require("./executeQuery.js");
 const { ExecuteQueryException } = require("../exceptions/ExecuteQueryException.js");
@@ -65,13 +66,16 @@ async function runAllChangesets(result, defaults, backupDbName, config) {
 /* FUNCTIONS */
 
 async function updateChangesetsTable(changesetsTableName, config, pendingChangesets, now) {
+    const gregorianDateTime = moment(extractDateFromString(config, now), 'jYYYY-jMM-jDD HH:mm:ss')
+        .locale('en')
+        .format('YYYY-MM-DD HH:mm:ss');
     await executeQuery({
         query: `IF OBJECT_ID('${changesetsTableName}', 'U') IS NULL CREATE TABLE ${changesetsTableName} (ID INT IDENTITY(1,1) PRIMARY KEY, [NAME] NVARCHAR(255) NOT NULL, [DATE] DATETIME NOT NULL);`,
         config: config
     });
     for (const changeset of pendingChangesets) {
         try {
-            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${extractDateFromString(config, now)}')`;
+            const query = `INSERT INTO ${changesetsTableName} ([name], [date]) VALUES ('${fileNameWithoutExtension(changeset.file)}', '${gregorianDateTime}')`;
 
             await executeQuery({
                 query: query,

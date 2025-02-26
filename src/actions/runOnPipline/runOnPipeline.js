@@ -1,12 +1,12 @@
 import fs from "fs";
-import testChangeset from "../testChangesetScript";
+import testScript from "../testScript";
 
 async function runOnPipeline(config, scriptFilePath) {
     const { db } = config;
     const { database } = config.database;
     const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
 
-    const error = await testChangeset(config, tempScriptContent);
+    const error = await testScript(config, tempScriptContent);
 
     if (!error) {
         // Step 4: Execute script on Master DB

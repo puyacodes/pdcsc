@@ -15,45 +15,61 @@ function getDropScripts(deletedFiles, folders) {
         switch (objectType) {
             case "PROCEDURE":
             case "FUNCTION":
-                return `IF OBJECT_ID(N'${objectName}', N'${objectType[0]}') IS NOT NULL
+                return `
+IF OBJECT_ID(N'${objectName}', N'${objectType[0]}') IS NOT NULL
 DROP ${objectType} ${objectName};
-GO`;
+GO
+`;
 
             case "TABLE":
-                return `/*Note: Drop Table
+                return `
+/*Note: Drop Table
 IF OBJECT_ID(N'${objectName}', N'U') IS NOT NULL
 DROP TABLE ${objectName};
-GO*/`;
+GO
+*/`;
 
             case "FOREIGN KEY":
-                return `/*Note: Drop the FOREIGN KEY from its table
+                return `
+/*Note: Drop the FOREIGN KEY from its table
 ALTER TABLE table_name DROP CONSTRAINT ${objectName};
-GO*/`;
+GO
+*/`;
 
             case "TYPE":
-                return `IF EXISTS (SELECT 1 FROM sys.types WHERE name = '${objectName}')
+                return `
+IF EXISTS (SELECT 1 FROM sys.types WHERE name = '${objectName}')
 DROP TYPE ${objectName};
-GO`;
+GO
+`;
 
             case "VIEW":
-                return `IF OBJECT_ID(N'${objectName}', N'V') IS NOT NULL
+                return `
+IF OBJECT_ID(N'${objectName}', N'V') IS NOT NULL
 DROP VIEW ${objectName};
-GO`;
+GO
+`;
 
             case "INDEX":
-                return `/*Note: Drop the index from its table
+                return `
+/*Note: Drop the index from its table
 DROP INDEX ${objectName} ON table_name;
-GO*/`;
+GO
+*/`;
 
             case "TRIGGER":
-                return `IF OBJECT_ID(N'${objectName}', N'TR') IS NOT NULL
+                return `
+IF OBJECT_ID(N'${objectName}', N'TR') IS NOT NULL
 DROP TRIGGER ${objectName};
-GO`;
+GO
+`;
 
             case "SCHEMA":
-                return `IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '${objectName}')
+                return `
+IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '${objectName}')
 DROP SCHEMA ${objectName};
-GO`;
+GO
+`;
 
             default:
                 return null;
@@ -65,8 +81,8 @@ GO`;
             const parts = file.split('/');
             const folderName = parts[1]; // exp: 07-Procedures
             const objectName = parts.slice(parts.length - 1).join('.').replace('.sql', ''); // exp: dbo.sp01
-
             const objectType = folderToObjectMap[folderName];
+
             if (!objectType) return null;
 
             // Generate the appropriate DROP query

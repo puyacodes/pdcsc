@@ -83,6 +83,26 @@ function validate(config) {
     )) {
         throw new Error("Please specify the subfolders and their names in the 'folders' section of the config file.");
     }
+
+    if (config.changeset) {
+        config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
+
+        if (!fs.existsSync(config.changesetFilePath)) {
+            if (!config.changeset.endsWith(".txt") && config.changeset.lastIndexOf(".") < 0) {
+                const _changeset = `${config.changeset}.txt`;
+                const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
+
+                if (!fs.existsSync(_changesetFilePath)) {
+                    throw new Error(`Changeset file ${config.changeset} or ${_changeset} not found.`)
+                } else {
+                    config.changeset = _changeset;
+                    config.changesetFilePath = _changesetFilePath;
+                }
+            } else {
+                throw new Error(`Changeset file ${config.changeset} not found.`)
+            }
+        }
+    }
 }
 
 

@@ -1,13 +1,13 @@
-function isValidScriptFile(props) {
-    if (!props.file.startsWith(props.config.paths.scriptsFolderName)) {
+function isValidScriptFile(config, file) {
+    if (!file.startsWith(config.paths.scriptsFolderName)) {
         return false
     }
 
-    if (!props.file.toLowerCase().endsWith('.sql')) {
+    if (!file.toLowerCase().endsWith('.sql')) {
         return false;
     }
 
-    const segments = props.file.split('/');
+    const segments = file.split('/');
 
     if (!segments.length) {
         return false;
@@ -16,9 +16,10 @@ function isValidScriptFile(props) {
     if (segments.length < 2) {
         return false;
     }
+    
     const subdir = segments[1].toLowerCase();
 
-    const validFolders = Object.values(props.config.folders).map(folder => folder.toLowerCase());
+    const validFolders = Object.values(config.folders).map(folder => folder.toLowerCase());
 
     if (!validFolders.some(folder => subdir.startsWith(folder))) {
         return false;

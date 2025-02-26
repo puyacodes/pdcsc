@@ -1,100 +1,79 @@
+import { isSomeArray } from "@locustjs/base";
 import promptUser from "../../utils/promptUser.js";
-import getAllStatuses from "./getAllStatuses.js";
-
-import { validateChangedFiles } from "./validateChangedFiles.js";
+import commitChanges from "../../utils/commitChanges.js";
+import getUncommittedSqlChanges from "./getUncommittedSqlChanges.js";
 import chalk from 'chalk';
+import { Exception } from "@locustjs/exception";
 
-async function getUserChoice(status, folders, config) {
-    const uncommittedChanges = [];
-    let userChoice;
+async function getUserChoice(config) {
+    let error;
+    let userChoice = ".";
+    let generateDrops = false;
 
-    do {
-        await validateChangedFiles({
-            status: await getAllStatuses(status),
-            listName: uncommittedChanges,
-            commit: false,
-            folders,
-            config
-        });
+    const changes = await getUncommittedSqlChanges(config);
 
-        if (uncommittedChanges.length > 0) {
-            console.warn(
-                "Warning: You have uncommitted changes. Only committed changes will be included in the script."
-            );
+    if (changes.all.length > 0) {
+        do {
+            console.warn("\nWarning: You have uncommitted changes.");
+
             userChoice = await promptUser(
-                "Choose an option:\n1. Ignore changes and continue\n2. Commit changes and continue\n3. Show uncommitted changes.\n4. Cancel\nEnter your choice: "
-            );
+                `\nChoose an option:
+    1. Ignore
+    2. Commit
+    3. Show
+    4. Cancel
+    Enter your choice: `);
 
             if (userChoice === "1") {
-                console.log("Ignoring changes and continuing...");
                 break;
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
-                await validateChangedFiles({
-                    status: await getAllStatuses(status),
-                    listName: null,
-                    commit: true,
-                    folders,
-                    config
-                });
+
+                error = await commitChanges(changes.all, "pdcsc: commited current changes")
                 break;
             } else if (userChoice === "3") {
-                uncommittedChanges.length = 0;
-                if (status.modified.length > 0) {
-                    uncommittedChanges.push(chalk.blue("Modified files:"));
-                    validateChangedFiles({
-                        status: status.modified,
-                        listName: uncommittedChanges,
-                        commit: false,
-                        folders,
-                        config
-                    });
-                }
-                if (status.not_added.length > 0) {
-                    uncommittedChanges.push(chalk.green("Untracked files:"));
-                    validateChangedFiles({
-                        status: status.not_added,
-                        listName: uncommittedChanges,
-                        commit: false,
-                        folders,
-                        config
-                    });
+                const files = [];
 
+                if (changes.modified.length > 0) {
+                    files.push(chalk.blue("Modified files:"));
+                    files.push(...changes.modified);
                 }
-                if (status.deleted.length > 0) {
-                    uncommittedChanges.push(chalk.red("Deleted files:"));
-                    validateChangedFiles({
-                        status: status.deleted,
-                        listName: uncommittedChanges,
-                        commit: false,
-                        folders,
-                        config
-                    });
+                if (changes.not_added.length > 0) {
+                    files.push(chalk.green("Untracked files:"));
+                    files.push(...changes.not_added);
+                }
+                if (changes.deleted.length > 0) {
+                    files.push(chalk.red("Deleted files:"));
+                    files.push(...changes.deleted);
                 }
 
-                if (uncommittedChanges.length > 0) {
-                    console.log("Uncommitted changes:");
-                    console.log(uncommittedChanges.join("\n"));
+                if (files.length) {
+                    console.log("Uncommitted changes:\n");
+                    console.log(files.join("\n"));
                 } else {
-                    console.log("No uncommitted changes found.");
+                    console.log("No uncommitted changes found!");
                 }
-
             } else if (userChoice === "4") {
-                // if (!fs.existsSync(scriptFilePath)) {
-                //     fs.unlinkSync(changesetFilePath);
-                // };
                 console.log("Operation cancelled by the user.");
-                process.exit(0);
+                userChoice = "";
+                break;
             } else {
-                console.log("Invalid choice. Please enter a valid option.");
+                console.log("Invalid choice.");
             }
-        } else {
-            userChoice = "1";
-            break;
-        }
-    } while (true);
+        } while (true);
+    }
 
-    return userChoice;
+    if (isSomeArray(changes.deleted)) {
+        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s)? `);
+
+        generateDrops = answer == "y" || answer == "Y";
+    }
+
+    if (error) {
+        throw new Exception("committing changes failed", error);
+    }
+    
+    return { userChoice, changes, generateDrops };
 }
 
 export default getUserChoice;

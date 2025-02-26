@@ -5,8 +5,7 @@
   "scripts": {
     "clean": "rimraf bin",
     "copy": "cp-cli src bin/ && npm link",
-    "build": "npm run clean && rollup -c",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "npm run clean && rollup -c"
   },
   "keywords": [],
   "author": "",

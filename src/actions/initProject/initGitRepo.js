@@ -6,7 +6,7 @@ async function initGitRepo(git) {
     do {
         const choice = await promptUser("Would you like to initialize a git repository(Y/N)? ");
 
-        if (choice.toLowerCase() === "y") {
+        if (choice === "y") {
             try {
                 await git.init();
 
@@ -17,7 +17,7 @@ async function initGitRepo(git) {
             }
 
             break;
-        } else if (choice.toLowerCase() === "n") {
+        } else if (choice === "n") {
             break;
         } else {
             console.log("Invalid choice. Please enter a valid option.");

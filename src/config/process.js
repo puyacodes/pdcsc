@@ -15,7 +15,7 @@ async function process(args) {
     let config;
     let customConfig;
     const basePath = process.cwd();
-    const changesetFile = getArg("-cs");
+    const changeset = getArg("-cs");
     const server = getArg("-s");
     const user = getArg("-u");
     const password = getArg("-p");
@@ -60,7 +60,7 @@ async function process(args) {
         password
     }
 
-    config = merge({}, { database }, config, customConfig, { configPath, changesetFile, basePath })
+    config = merge({}, { database }, config, customConfig, { configPath, changeset, basePath })
 
     if (args.includes("-rop")) {
         config.action = ActionType.runOnPipline;

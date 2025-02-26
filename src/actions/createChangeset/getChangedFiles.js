@@ -1,19 +1,20 @@
 import { Exception } from "@locustjs/exception";
 import { execSync } from "child_process";
+import isValidScriptFile from "./isValidScriptFile";
 
-function getChangedFiles({ debug, currentBranch }) {
+function getChangedFiles(config) {
+    const { currentBranch } = config;
+
     try {
         const mergeBase = execSync(
             `git merge-base HEAD origin/dev`,
             { encoding: "utf-8" }
         ).trim();
 
-        if (debug) {
-            console.log(`Current Branch: ${currentBranch}`);
-            console.log(`Merge Base: ${mergeBase}`);
-        }
+        config.debug(`Current Branch: ${currentBranch}`);
+        config.debug(`Merge Base: ${mergeBase}`);
 
-        const modifiedFiles = execSync(
+        const modifiedAndAddedFiles = execSync(
             `git diff --name-only --diff-filter=MA ${mergeBase} HEAD`,
             { encoding: "utf-8" }
         )
@@ -37,8 +38,12 @@ function getChangedFiles({ debug, currentBranch }) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        const allFiles = [...modifiedFiles, ...renamedFiles];
-        return allFiles;
+        const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
+        const finalFiles = allFiles.filter((file) => isValidScriptFile(config, file));
+
+        config.debug("Final .sql files:", finalFiles);
+
+        return finalFiles;
     } catch (ex) {
         throw new Exception(`Error fetching modified and untracked files`, ex);
     }

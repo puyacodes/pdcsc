@@ -15,9 +15,10 @@ function extractDateFromString(config, inputString) {
             const second = match[6] ? parseInt(match[6], 10) : 0;
 
             date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+            
             const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
 
-            config.debug("Extracted Date:", formattedDate);
+            //config.debug("Extracted Date:", formattedDate);
 
             return formattedDate;
         } else {

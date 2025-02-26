@@ -1,7 +1,21 @@
+import { Exception } from "@locustjs/exception";
 import fs from "fs";
 
-function validateChangeSetFile(props) {
-    let content = fs.readFileSync(props.changesetFilePath, "utf-8");
+function validateChangeSetFile(config) {
+    const tempSections = {
+        customStart: "",
+        procedures: [],
+        functions: [],
+        tables: [],
+        relations: [],
+        types: [],
+        views: [],
+        indexes: [],
+        triggers: [],
+        schemas: [],
+        customEnd: ""
+    };
+    const content = fs.readFileSync(config.changesetFilePath, "utf-8");
 
     const sections = [
         { name: "customStart", start: "## ===================== Custom-Start (start) ======================", end: "## ===================== Custom-Start ( end ) ======================" },
@@ -16,14 +30,10 @@ function validateChangeSetFile(props) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
-    const normalizeFileName = (fileName) => {
-        return fileName.trim().split("/").pop().replace(/^dbo\./i, "");
-    };
-
     sections.forEach(section => {
         // Check if the section exists
         if (!content.includes(section.start) || !content.includes(section.end)) {
-            throw new Error(`Error: Section '${section.name}' not found.`);
+            throw new Exception(`Error: Section '${section.name}' was not found in changeset.`);
         }
 
         // Extract current section content
@@ -33,71 +43,29 @@ function validateChangeSetFile(props) {
             .trim();
 
         if (innerContent.length > 0) {
-            props.hasContent = true;
             if (section.name != "customStart" && section.name != "customEnd") {
                 const lines = innerContent.split("\n");
+
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
-                    const lineFileName = normalizeFileName(trimmedLine);
-                    const isDeleted = props.deletedFiles.some(file => normalizeFileName(file) === lineFileName);
-                    if (!isDeleted) {
-                        if (!props.tempSections[section.name].includes(trimmedLine)) {
-                            props.tempSections[section.name].push(trimmedLine);
-                        }
+
+                    if (!tempSections[section.name].includes(trimmedLine)) {
+                        tempSections[section.name].push(trimmedLine);
                     }
+                    
+                    // TODO: check object's file existence and throw error if it was not found
                 });
             } else {
-                const lines = innerContent.split("\n");
-                lines.forEach(line => {
-                    const trimmedLine = line.trim();
-                    if (props.tempSections[section.name] != trimmedLine) {
-                        props.tempSections[section.name] += `\n${trimmedLine}`;
-                    }
-                });
+                tempSections[section.name] = innerContent;
             };
         };
 
-        // Remove deleted files from the section
-        if (props.deletedFiles && props.deletedFiles.length > 0) {
-            props.deletedFiles.forEach(file => {
-                const deletedFileName = normalizeFileName(file);
-                content = content.replace(new RegExp(`.*${deletedFileName}.*\\n?`, "g"), "");
-            });
-        }
-
-        // Add new files or queries to the section
-        if (props.newContent && props.newContent.length > 0) {
-            const matchingLines = props.newContent.filter(line => line.includes(section.name));
-            const nonMatchingLines = props.newContent.filter(line => !sections.some(sec => line.includes(sec.name)));
-
-            if (matchingLines.length > 0) {
-                const updatedInnerContent = `${innerContent}\n${matchingLines.join("\n")}`.trim();
-                content = content.replace(
-                    `${section.start}\n${innerContent}\n${section.end}`,
-                    `${section.start}\n${updatedInnerContent}\n${section.end}`
-                );
-
-                // Update innerContent to reflect the changes
-                innerContent = updatedInnerContent;
-            }
-
-            // Handle uncategorized lines for Custom section
-            if (section.name === "Custom-Start" && nonMatchingLines.length > 0) {
-                const updatedInnerContent = `${innerContent}\n${nonMatchingLines.join("\n")}`.trim();
-                content = content.replace(
-                    `${section.start}\n${innerContent}\n${section.end}`,
-                    `${section.start}\n${updatedInnerContent}\n${section.end}`
-                );
-
-                // Update innerContent to reflect the changes
-                innerContent = updatedInnerContent;
-            }
-        }
     });
 
     // Write the updated content back to the file
-    fs.writeFileSync(props.changesetFilePath, content, "utf-8");
-    return props.tempSections;
+    fs.writeFileSync(config.changesetFilePath, content, "utf-8");
+
+    return tempSections;
 }
 
 export default validateChangeSetFile;

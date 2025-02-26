@@ -47,11 +47,9 @@ function createErrorLog(config, ex) {
         ex.query = null;
     }
 
-    error = new Exception("backup/restore/exec script on a temp database failed", ex);
-
     const logFile = path.join(changesetsPath, "error.log");
-
-    console.error(`Error during script execution. see 'error.log' for more details.`);
+    
+    error = new Exception(`Error during script execution. see '${logFile}' for more details.`, ex);
 
     try {
         fs.writeFileSync(logFile, "", "utf-8");
@@ -71,10 +69,8 @@ function createErrorLog(config, ex) {
         if (query) {
             fs.appendFileSync(logFile, query + "\n\n", "utf-8");
         }
-
-        console.error(`Error log written to: ${logFile}`);
     } catch (ex) {
-        console.error(`Error creating log file: ${logFile}`);
+        console.error(`Error creating log file`, ex);
     }
 
     return error;
@@ -104,7 +100,7 @@ async function dropTempDb(config) {
 
     return error;
 }
-async function testChangesetScript(config, script) {
+async function testScript(config, script) {
     let error;
 
     try {
@@ -112,7 +108,7 @@ async function testChangesetScript(config, script) {
         await restoreTempDatabase(config);
         await executeScript(config, script);
     } catch (ex) {
-        error = createErrorLog(ex);
+        error = createErrorLog(config, ex);
     } finally {
         error = await dropTempDb(config);
     }
@@ -120,4 +116,4 @@ async function testChangesetScript(config, script) {
     return error;
 }
 
-export default testChangesetScript;
+export default testScript;

@@ -13,11 +13,12 @@ import checkDbExistence from './checkDbExistence.js';
 async function main() {
     let exitCode = 0;
     let error;
+    let config;
 
     try {
         const args = process.argv.slice(2);
         
-        const config = await getConfig(args);
+        config = await getConfig(args);
 
         checkForUpdate(config);
         checkDbExistence(config);
@@ -45,7 +46,11 @@ async function main() {
         exitCode = 1;
     } finally {
         if (error) {
-            console.error(error);
+            console.error(error.toString());
+
+            if (config && config.debugMode && error.stackTrace) {
+                console.log(error.stackTrace)
+            }
         }
     }
 

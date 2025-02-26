@@ -2,10 +2,9 @@ import fs from "fs";
 import path from "path";
 import sql from "mssql";
 import extractDateFromString from "../../utils/extractDateFromString";
+import { Exception } from "@locustjs/exception";
 
 async function getAllChangesetFiles(config) {
-    let error;
-
     try {
         const allChangesetsScriptFilePath = path.join(config.paths.changesetsPath, `${config.now}-update-${config.database.database}.sql`);
 
@@ -19,16 +18,8 @@ async function getAllChangesetFiles(config) {
 
         return { allChangesetsScriptFilePath, pendingChangesets };
     } catch (ex) {
-        error = ex;
-        if (ex.message.includes("No new changesets found.")) {
-            console.log(ex.message);
-            process.exit(0);
-        } else {
-            console.error('Error combining files:', ex);
-        }
+        throw new Exception('error getting changesets and combining them', ex)
     }
-
-    return error;
 }
 
 /* FUNCTIONS */

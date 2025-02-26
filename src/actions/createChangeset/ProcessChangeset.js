@@ -166,17 +166,14 @@ ${customEnd}
 }
 
 
-function changes(config, tempFileName) {
+function processChangeset(config) {
+    const tempFileName = config.changesetTemp;
     const changeFile = path.join(config.basePath, config.paths.changesetFolderName, `${tempFileName}.txt`);
     const scriptDir = path.join(config.basePath, config.paths.scriptsFolderName);
 
     const result = scriptCopier(changeFile, scriptDir, config.debugMode);
 
     return result;
-}
-
-function processChangeset(props) {
-    return changes(props.config, props.tempFileName);
 }
 
 export default processChangeset;

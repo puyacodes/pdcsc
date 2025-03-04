@@ -12,9 +12,10 @@ import FileHelper from "../../services/FileHelper/index.js";
 import updateSections from "./updateSections.js";
 
 async function createChangeset(config) {
+    let error;
+
     if (await compareWithDevBranch(config)) {
         let userChoice;
-        let error;
 
         try {
             const guc = await getUserChoice(config);
@@ -40,7 +41,7 @@ async function createChangeset(config) {
         } catch (ex) {
             error = ex;
         }
-        
+
         if (error && config.isNewChangeset) {
             FileHelper.deleteFile(config.changesetFilePath);
         }
@@ -49,6 +50,8 @@ async function createChangeset(config) {
             restoreCommittedChanges(config.changesetCommitted ? 2 : 1);
         }
     }
+
+    return error;
 }
 
 export default createChangeset;

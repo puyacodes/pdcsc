@@ -17,7 +17,7 @@ async function main() {
 
     try {
         const args = process.argv.slice(2);
-        
+
         config = await getConfig(args);
 
         checkForUpdate(config);

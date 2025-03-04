@@ -1,4 +1,4 @@
-import promptUser from "../utils/promptUser";
+import promptUser from "../../utils/promptUser";
 
 async function initGitRepo(git) {
     let error;

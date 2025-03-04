@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "PDCSC tool for managing changeset scripts",
+  "description": "PDCSC is a tool for managing database repositories, creating changeset scripts and updating databases",
   "dependencies": {
     "@locustjs/base": "^4.4.1",
     "@locustjs/enum": "^3.0.0",

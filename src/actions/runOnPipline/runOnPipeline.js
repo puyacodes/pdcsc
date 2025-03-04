@@ -4,6 +4,8 @@ import testScript from "../testScript";
 async function runOnPipeline(config, scriptFilePath) {
     const { db } = config;
     const { database } = config.database;
+
+    //TODO - Run all changesets on a temprorary database
     const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
 
     const error = await testScript(config, tempScriptContent);

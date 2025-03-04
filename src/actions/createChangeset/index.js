@@ -15,6 +15,11 @@ async function createChangeset(config) {
     let error;
 
     if (await compareWithDevBranch(config)) {
+        // TODO: if current branch already merged with origin, exit.
+        // we should not allow changing previous branches. we show a message
+        // that user should create a new branch if he intends to change prev
+        // branches
+
         let userChoice;
 
         try {

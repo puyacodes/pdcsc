@@ -87,8 +87,9 @@ function scriptCopier(changeFile, dir, debug) {
         let found = false;
 
         for (const filePath of files) {
-            const fileName = path.basename(filePath); // فقط نام فایل
+            const fileName = path.basename(filePath);
 
+            // TODO - Filepath must be checked - Relation and Table conflict here (same names)
             if (fileName.includes(obj.name)) {
                 const content = fs.readFileSync(filePath, "utf-8");
 

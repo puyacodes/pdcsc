@@ -15,6 +15,8 @@ async function runAllChangesets(result, config) {
 
         const tempScriptContent = fs.readFileSync(result.allChangesetsScriptFilePath, "utf-8");
 
+        // TODO: run changeset one by one instead of merging them together and create a large script and run that.
+
         await db.executeBatch({ content: tempScriptContent });
 
         console.log(`Script executed successfully on database: ${database}`);
@@ -24,6 +26,7 @@ async function runAllChangesets(result, config) {
     } catch (ex) {
         error = ex;
         console.error("Error during updating database with all scripts:", error);
+        // TODO: add filename to log or output (the changeset that produced the error)
 
         const logFile = path.join(config.paths.changesetsPath, "error.log");
 

@@ -48,6 +48,7 @@ class DbHelperSqlServer extends DbHelperBase {
         const parts = content.split(/\s+GO\s+/i);
 
         for (let part of parts) {
+            // TODO: add line number to potential errors
             await this.executeQuery({ query: part, dbName });
         }
     }

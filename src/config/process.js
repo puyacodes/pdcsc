@@ -76,6 +76,10 @@ async function process(args) {
         config.action = ActionType.createChangeset;
     }
 
+    // TODO: new action ==> update timestamp
+    // if user asks us to update changeset timestamp, update existing
+    // changeset's timestamp with current ts
+
     config.debugMode = args.includes("-dbm");
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = !(config.runMode || config.action == ActionType.createChangeset);

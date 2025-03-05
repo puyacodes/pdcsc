@@ -5,6 +5,10 @@ function generateChangesetContent(sections, dropQuery) {
     ${sections.customStart}
     ## ===================== Custom-Start ( end ) ======================
     
+    ## ===================== Schemas (start) ======================
+    ${sections.schemas.join("\n")}
+    ## ===================== Schemas ( end ) ======================
+
     ## ===================== Types (start) ======================
     ${sections.types.join("\n")}
     ## ===================== Types ( end ) ======================

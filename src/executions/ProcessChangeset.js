@@ -37,7 +37,9 @@ function getAllSqlFiles(dir) {
     return results;
 }
 
-function scriptCopier(changeFile, dir, debug) {
+function scriptCopier(changeFile, dir, config) {
+    const debug = config.options.debugMode;
+    const sbSchemas = [];
     const sbProcedures = [];
     const sbFunctions = [];
     const sbTables = [];
@@ -58,14 +60,15 @@ function scriptCopier(changeFile, dir, debug) {
         const trimmed = line.trim();
 
         if (trimmed.startsWith("##")) {
-            if (trimmed.includes("Procedure") || trimmed.includes("SPROCs")) currentSection = "procedure";
-            else if (trimmed.includes("Function")) currentSection = "function";
-            else if (trimmed.includes("Tables")) currentSection = "table";
-            else if (trimmed.includes("Types")) currentSection = "type";
-            else if (trimmed.includes("Index")) currentSection = "index";
-            else if (trimmed.includes("Trigger")) currentSection = "trigger";
-            else if (trimmed.includes("Relation")) currentSection = "relation";
-            else if (trimmed.includes("View")) currentSection = "view";
+            if (trimmed.includes("Procedure") || trimmed.includes("SPROCs")) currentSection = "procedures";
+            else if (trimmed.includes("Function")) currentSection = "functions";
+            else if (trimmed.includes("Tables")) currentSection = "tables";
+            else if (trimmed.includes("Types")) currentSection = "types";
+            else if (trimmed.includes("Index")) currentSection = "indexes";
+            else if (trimmed.includes("Trigger")) currentSection = "triggers";
+            else if (trimmed.includes("Relation")) currentSection = "relations";
+            else if (trimmed.includes("View")) currentSection = "views";
+            else if (trimmed.includes("Schema")) currentSection = "schemas";
             else if (trimmed.includes("Custom-Start")) currentSection = "customStart";
             else if (trimmed.includes("Custom-End")) currentSection = "customEnd";
         } else if (currentSection === "customStart") {
@@ -89,33 +92,36 @@ function scriptCopier(changeFile, dir, debug) {
         for (const filePath of files) {
             const fileName = path.basename(filePath); // فقط نام فایل
 
-            if (fileName.includes(obj.name)) {
+            if (filePath.includes(config.folders[obj.type]) && fileName.includes(obj.name)) {
                 const content = fs.readFileSync(filePath, "utf-8");
 
                 switch (obj.type) {
-                    case "procedure":
+                    case "procedures":
                         sbProcedures.push(content);
                         break;
-                    case "function":
+                    case "functions":
                         sbFunctions.push(content);
                         break;
-                    case "table":
+                    case "tables":
                         sbTables.push(content);
                         break;
-                    case "relation":
+                    case "relations":
                         sbRelations.push(content);
                         break;
-                    case "index":
+                    case "indexes":
                         sbIndexes.push(content);
                         break;
-                    case "type":
+                    case "types":
                         sbTypes.push(content);
                         break;
-                    case "view":
+                    case "views":
                         sbViews.push(content);
                         break;
-                    case "trigger":
+                    case "triggers":
                         sbTriggers.push(content);
+                        break;
+                    case "schemas":
+                        sbSchemas.push(content);
                         break;
                 }
 
@@ -138,6 +144,10 @@ function scriptCopier(changeFile, dir, debug) {
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
+
+-- ===================== Schemas (start) ======================
+${sbSchemas.join("\n")}
+-- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
 ${sbTypes.join("\n")}
@@ -170,7 +180,7 @@ function changes(config, tempFileName) {
     const changeFile = path.join(config.basePath, config.paths.changesetFolderName, `${tempFileName}.txt`);
     const scriptDir = path.join(config.basePath, config.paths.scriptsFolderName);
 
-    const result = scriptCopier(changeFile, scriptDir, config.options.debugMode);
+    const result = scriptCopier(changeFile, scriptDir, config);
 
     return result;
 }

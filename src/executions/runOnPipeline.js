@@ -36,7 +36,7 @@ async function runOnPipeline(config, defaults, scriptFilePath, backupDbName) {
 
         // Step 3: Execute script on backup database
         console.log("Executing script on temporary database...");
-        await executeBatch({ content: tempScriptContent, dbName: props.backupDbName, config: config });
+        await executeBatch({ content: tempScriptContent, dbName: backupDbName, config: config });
         if (config.options.debugMode) {
             console.log(`Script executed successfully on database: ${backupDbName}`);
         } else {
@@ -51,7 +51,7 @@ async function runOnPipeline(config, defaults, scriptFilePath, backupDbName) {
     } catch (ex) {
         error = ex;
         console.error("Error during executing script on pipeline:", error.message);
-        const logFile = path.join(changesetPath, "error.log");
+        const logFile = path.join(defaults.changesetPath, "error.log");
 
         try {
             fs.writeFileSync(logFile, "", "utf-8");

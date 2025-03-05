@@ -83,7 +83,7 @@ function getPendingChangesets(config, changesetsPath, result) {
         let fileDateStr = match[1]; //exp: 140311131345
         let fileDate = extractDateFromString(config, fileDateStr);
 
-        if (!lastExecutedDate || fileDate > lastExecutedDate && file != lastExecutedChangesetName) {
+        if (!lastExecutedDate || (fileDate > lastExecutedDate && file != `${lastExecutedChangesetName}.sql`)) {
             if (!file.includes("update")) {
                 pendingChangesets.push({ file, fileDate, filePath });
             }

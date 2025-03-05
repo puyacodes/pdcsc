@@ -8,6 +8,11 @@ const { fileNameWithoutExtension } = require("../utils/fileNameWithoutExtentions
 const { extractDateFromString } = require("../utils/extractDateFromString.js");
 const { BackupAndRunException } = require("../exceptions/BackupAndRunException.js");
 
+/*
+    test
+    test & update
+    update
+*/
 async function runAllChangesets(result, defaults, backupDbName, config) {
     const databaseName = config.database.databaseName;
     const changesetsTableName = config.paths.changesetsTableName;

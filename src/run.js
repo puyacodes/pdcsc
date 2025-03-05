@@ -78,7 +78,7 @@ async function run(config, defaults) {
                     tempSections: tempSections
                 });
 
-                const changedFiles = getChangedFiles({ status, debug: config.options.debugMode, currentBranch: defaults.currentBranch });
+                const changedFiles = getChangedFiles({ status, debug: config.options.debugMode, currentBranch: defaults.currentBranch, masterBranch: defaults.masterBranchName });
                 const filteredFiles = changedFiles.filter((file) => isValidScriptFile({ config, file }));
                 if (config.options.debugMode) {
                     console.log("Filtered Changed Files:", filteredFiles);
@@ -92,7 +92,7 @@ async function run(config, defaults) {
                         !status.modified.some(file => path.basename(changesetFilePath).includes(path.basename(file)))
                     )) {
                     console.log("No relevant modified files found.");
-                    
+
                     if (userChoice === "2") {
                         restoreCommitedChanges();
                     }

@@ -1,9 +1,9 @@
 const { execSync } = require("child_process");
 
-function getChangedFiles({ debug, currentBranch }) {
+function getChangedFiles({ debug, currentBranch, masterBranch }) {
     try {
         const mergeBase = execSync(
-            `git merge-base HEAD origin/dev`,
+            `git merge-base HEAD ${masterBranch}`,
             { encoding: "utf-8" }
         ).trim();
 

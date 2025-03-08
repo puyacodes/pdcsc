@@ -6,9 +6,9 @@ async function run(config) {
     const changesetFileName = await getChangesetFile(config);
 
     if (changesetFileName) {
-        const scriptFilePath = path.join(config.paths.changesetsPath, `${changesetFileName}`);
+        const changesetPath = path.join(config.paths.changesetsPath, `${changesetFileName}`);
 
-        await runOnPipeline(config, scriptFilePath);
+        await runOnPipeline(config, changesetPath);
     }
 }
 

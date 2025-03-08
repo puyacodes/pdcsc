@@ -1,20 +1,19 @@
 import fs from "fs";
 import testScript from "../testScript";
 
-async function runOnPipeline(config, scriptFilePath) {
+async function runOnPipeline(config, changesetPath) {
     const { db } = config;
     const { database } = config.database;
 
-    //TODO - Run all changesets on a temprorary database
-    const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
+    const content = fs.readFileSync(changesetPath, "utf-8");
 
-    const error = await testScript(config, tempScriptContent);
+    const error = await testScript(config, content);
 
     if (!error) {
         // Step 4: Execute script on Master DB
-        console.log(`Executing script on ${database} database...`);
+        console.log(`Executing changeset on ${database} database...`);
 
-        await db.executeBatch({ content: tempScriptContent });
+        await db.executeBatch({ content });
 
         console.log(`Script executed successfully on database: ${database}`);
     }

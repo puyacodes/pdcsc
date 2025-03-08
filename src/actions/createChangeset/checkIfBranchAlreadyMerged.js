@@ -1,7 +1,7 @@
 import { Exception } from "@locustjs/exception";
 import { execSync } from "child_process";
 
-function isNotBranchAlreadyMerged({ currentBranch, masterBranchName }) {
+function checkIfBranchAlreadyMerged({ currentBranch, masterBranchName }) {
     let error;
 
     try {
@@ -22,4 +22,4 @@ Create a new branch from ${currentBranch} if you have any changes.`)
     return error;
 }
 
-export default isNotBranchAlreadyMerged;
+export default checkIfBranchAlreadyMerged;

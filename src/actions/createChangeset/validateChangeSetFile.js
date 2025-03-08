@@ -20,6 +20,7 @@ function validateChangeSetFile(config) {
     const sections = [
         { name: "customStart", start: "## ===================== Custom-Start (start) ======================", end: "## ===================== Custom-Start ( end ) ======================" },
         { name: "customEnd", start: "## ===================== Custom-End (start) ======================", end: "## ===================== Custom-End ( end ) ======================" },
+        { name: "schemas", start: "## ===================== Schemas (start) ======================", end: "## ===================== Schemas ( end ) ======================" },
         { name: "types", start: "## ===================== Types (start) ======================", end: "## ===================== Types ( end ) ======================" },
         { name: "tables", start: "## ===================== Tables (start) ======================", end: "## ===================== Tables ( end ) ======================" },
         { name: "relations", start: "## ===================== Relations (start) ======================", end: "## ===================== Relations ( end ) ======================" },
@@ -52,8 +53,6 @@ function validateChangeSetFile(config) {
                     if (!tempSections[section.name].includes(trimmedLine)) {
                         tempSections[section.name].push(trimmedLine);
                     }
-                    
-                    // TODO: check object's file existence and throw error if it was not found
                 });
             } else {
                 tempSections[section.name] = innerContent;

@@ -13,6 +13,7 @@ function init(config) {
         config.currentBranch = currentBranch;
         config.realBranchName = realBranchName;
         config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
+        config.paths.scriptsPath = path.join(config.basePath, config.paths.scriptsFolderName);
         config.paths.backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
         config.logger = new ConsoleLogger({ env: "node" });
         config.debug = (...args) => {

@@ -1,24 +1,39 @@
+import { Exception } from "@locustjs/exception";
 import fs from "fs";
 import path from "path";
+import detectEncoding from "detect-file-encoding-and-language";
+import iconv from 'iconv-lite';
+import { isNullOrEmpty } from "@locustjs/base";
 
-class DbObject {
-    constructor(name, type) {
-        this.name = name;
-        this.type = type;
+async function getEncoding(filepath) {
+    const info = await detectEncoding(filepath);
+    let result = (info.encoding || "").toLowerCase().replace("-", "");
+
+    if (result == "utf8") {
+        result = "utf-8";
     }
-}
-
-function prepareDir(dir) {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    } else {
-        fs.readdirSync(dir).forEach((file) => {
-            fs.unlinkSync(path.join(dir, file));
-        });
+    if (!result) {
+        result = "latin1";
     }
-}
+    if (["utf-8", "utf16le", "ascii", "latin1"].indexOf(result) < 0) {
+        throw new Exception(`unsupported encoding ${result} (${info.encoding}) in ${filePath}`);
+    }
 
-// تابع بازگشتی برای خواندن فایل‌های SQL
+    return result;
+}
+async function readFile(filepath, codepage) {
+    const encoding = await getEncoding(filepath);
+
+    let content = fs.readFileSync(filepath, encoding);
+
+    if (encoding == "latin1" && codepage) {
+        const bytes = fs.readFileSync(filepath, "binary");
+
+        content = iconv.decode(bytes, codepage);
+    }
+
+    return content;
+}
 function getAllSqlFiles(dir) {
     let results = [];
     const list = fs.readdirSync(dir);
@@ -28,7 +43,7 @@ function getAllSqlFiles(dir) {
         const stat = fs.statSync(fullPath);
 
         if (stat && stat.isDirectory()) {
-            results = results.concat(getAllSqlFiles(fullPath)); // بازگشتی
+            results = results.concat(getAllSqlFiles(fullPath));
         } else if (fullPath.endsWith(".sql")) {
             results.push(fullPath);
         }
@@ -36,52 +51,62 @@ function getAllSqlFiles(dir) {
 
     return results;
 }
-
-function scriptCopier(changeFile, dir, debug) {
-    const sbProcedures = [];
-    const sbFunctions = [];
-    const sbTables = [];
-    const sbRelations = [];
-    const sbIndexes = [];
-    const sbTypes = [];
-    const sbViews = [];
-    const sbTriggers = [];
+function extractObjects(config) {
+    const objects = [];
+    let currentSection = "";
     let customStart = "";
     let customEnd = "";
 
-    let currentSection = "";
-    const objects = [];
-
-    const lines = fs.readFileSync(changeFile, "utf-8").split("\n");
+    const lines = fs.readFileSync(config.changesetTempFilePath, "utf-8").split("\n");
 
     for (const line of lines) {
         const trimmed = line.trim();
 
         if (trimmed.startsWith("##")) {
-            if (trimmed.includes("Procedure") || trimmed.includes("SPROCs")) currentSection = "procedure";
-            else if (trimmed.includes("Function")) currentSection = "function";
-            else if (trimmed.includes("Tables")) currentSection = "table";
-            else if (trimmed.includes("Types")) currentSection = "type";
-            else if (trimmed.includes("Index")) currentSection = "index";
-            else if (trimmed.includes("Trigger")) currentSection = "trigger";
-            else if (trimmed.includes("Relation")) currentSection = "relation";
-            else if (trimmed.includes("View")) currentSection = "view";
-            else if (trimmed.includes("Custom-Start")) currentSection = "customStart";
-            else if (trimmed.includes("Custom-End")) currentSection = "customEnd";
+            if (trimmed.containsAny("Procedure", "Sproc")) currentSection = "procedures";
+            else if (trimmed.containsAny("Function", "udf")) currentSection = "functions";
+            else if (trimmed.contains("Table")) currentSection = "tables";
+            else if (trimmed.contains("Type")) currentSection = "types";
+            else if (trimmed.contains("Index")) currentSection = "indexes";
+            else if (trimmed.contains("Trigger")) currentSection = "triggers";
+            else if (trimmed.contains("Relation")) currentSection = "relations";
+            else if (trimmed.contains("View")) currentSection = "views";
+            else if (trimmed.contains("Schema")) currentSection = "schemas";
+            else if (trimmed.contains("Custom-Start")) currentSection = "customStart";
+            else if (trimmed.contains("Custom-End")) currentSection = "customEnd";
         } else if (currentSection === "customStart") {
             customStart += `\n${trimmed}`;
         } else if (currentSection === "customEnd") {
             customEnd += `\n${trimmed}`;
         } else if (trimmed && !trimmed.startsWith("##")) {
-            objects.push(new DbObject(trimmed, currentSection));
+            if (currentSection) {
+                objects.push({ type: currentSection, name: trimmed });
+            } else {
+                console.warn("\tOrphan line ignored: " + trimmed);
+            }
         }
     }
 
-    if (debug) {
-        console.log(`Total objects: ${objects.length}\n`);
+    config.debug(`Total objects: ${objects.length}\n`);
+
+    return { objects, customStart, customEnd };
+}
+
+async function processChangeset(config) {
+    const sb = {
+        schemas: [],
+        procedures: [],
+        functions: [],
+        tables: [],
+        relations: [],
+        indexes: [],
+        types: [],
+        views: [],
+        triggers: []
     }
 
-    const files = getAllSqlFiles(dir);
+    const { objects, customStart, customEnd } = extractObjects(config);
+    const files = getAllSqlFiles(config.paths.scriptsPath);
 
     for (const obj of objects) {
         let found = false;
@@ -89,92 +114,67 @@ function scriptCopier(changeFile, dir, debug) {
         for (const filePath of files) {
             const fileName = path.basename(filePath);
 
-            // TODO - Filepath must be checked - Relation and Table conflict here (same names)
-            if (fileName.includes(obj.name)) {
-                const content = fs.readFileSync(filePath, "utf-8");
+            if (isNullOrEmpty(config.folders[obj.type])) {
+                throw new Exception(`missing script folder for ${obj.type}`)
+            }
 
-                switch (obj.type) {
-                    case "procedure":
-                        sbProcedures.push(content);
-                        break;
-                    case "function":
-                        sbFunctions.push(content);
-                        break;
-                    case "table":
-                        sbTables.push(content);
-                        break;
-                    case "relation":
-                        sbRelations.push(content);
-                        break;
-                    case "index":
-                        sbIndexes.push(content);
-                        break;
-                    case "type":
-                        sbTypes.push(content);
-                        break;
-                    case "view":
-                        sbViews.push(content);
-                        break;
-                    case "trigger":
-                        sbTriggers.push(content);
-                        break;
-                }
+            // TODO: Done
+            // Filepath must be checked - Relation and Table conflict here (same names)
+            if (filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name)) {
+                // TODO: Done
+                // read files based on their encoding
+                const content = await readFile(filePath, config.defaultCodePage);
+
+                sb[obj.type].push(content);
 
                 found = true;
-                if (debug) {
-                    console.log(`${obj.type}: ${obj.name} copied.`);
-                }
+
+                config.debug(`${obj.type}: ${obj.name} copied.`);
+
                 break;
             }
         }
 
+        // TODO: Done
+        // check object's file existence and throw error if not found
         if (!found) {
-            if (debug) {
-                console.log(`${obj.type}: ${obj.name} not found!`);
-            }
+            throw new Exception(`${config.folders[obj.type]}: ${obj.name} file not found!`);
         }
     }
 
-    return `
--- ===================== Custom-Start (start) ======================
+    return `-- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
 
+-- ===================== Schemas (start) ======================
+${sb.schemas.join("\n")}
+-- ===================== Schemas (end) ======================
+
 -- ===================== Types (start) ======================
-${sbTypes.join("\n")}
+${sb.types.join("\n")}
 -- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${sbTables.join("\n")}
+${sb.tables.join("\n")}
 -- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${sbRelations.join("\n")}
+${sb.relations.join("\n")}
 -- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${sbFunctions.join("\n")}
+${sb.functions.join("\n")}
 -- ===================== Functions (end) ======================
 
--- ===================== SPROCs (start) ======================
-${sbProcedures.join("\n")}
--- ===================== SPROCs (end) ======================
+-- ===================== Procedures (start) ======================
+${sb.procedures.join("\n")}
+-- ===================== Procedures (end) ======================
 
 -- ===================== Custom-End (start) ======================
 ${customEnd}
 -- ===================== Custom-End ( end ) ======================
-    `;
+`;
 }
 
-
-function processChangeset(config) {
-    const tempFileName = config.changesetTemp;
-    const changeFile = path.join(config.basePath, config.paths.changesetFolderName, `${tempFileName}.txt`);
-    const scriptDir = path.join(config.basePath, config.paths.scriptsFolderName);
-
-    const result = scriptCopier(changeFile, scriptDir, config.debugMode);
-
-    return result;
-}
 
 export default processChangeset;

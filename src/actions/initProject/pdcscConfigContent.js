@@ -18,6 +18,7 @@ function pdcscConfigContent(config) {
         configContent.timestampLocale = "en";
         configContent.changesetsTableName = "Changesets";
         configContent.backupDbName = "TempBackupDB";
+        configContent.defaultCodePage = "";
         configContent.paths = {
             backupDir: "C:\\temp\\",
             changesetFolderName: "Changes",

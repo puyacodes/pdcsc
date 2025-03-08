@@ -1,6 +1,6 @@
 import { Exception } from "@locustjs/exception";
 
-function extractDateFromString(config, inputString) {
+function extractDateFromString(inputString) {
     try {
         let date;
         const regex = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/;
@@ -17,8 +17,6 @@ function extractDateFromString(config, inputString) {
             date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
             
             const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
-
-            //config.debug("Extracted Date:", formattedDate);
 
             return formattedDate;
         } else {

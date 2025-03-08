@@ -3,15 +3,15 @@ import { execSync } from "child_process";
 import isValidScriptFile from "./isValidScriptFile";
 
 function getChangedFiles(config) {
-    const { currentBranch } = config;
+    const { currentBranch, masterBranchName } = config;
 
     try {
         const mergeBase = execSync(
-            `git merge-base HEAD origin/dev`,
+            `git merge-base HEAD ${masterBranchName}`,
             { encoding: "utf-8" }
         ).trim();
 
-        config.debug(`Current Branch: ${currentBranch}`);
+        config.debug(`Current Branch: ${currentBranch}, Master Branch: ${masterBranchName}`);
         config.debug(`Merge Base: ${mergeBase}`);
 
         const modifiedAndAddedFiles = execSync(

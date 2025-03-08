@@ -10,7 +10,7 @@ import compareWithDevBranch from "./compareWithDevBranch.js";
 import saveFinalScript from "./saveFinalScript.js";
 import FileHelper from "../../services/FileHelper/index.js";
 import updateSections from "./updateSections.js";
-import isNotBranchAlreadyMerged from "./isNotBranchAlreadyMerged.js";
+import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 
 async function createChangeset(config) {
     let error;
@@ -22,7 +22,7 @@ async function createChangeset(config) {
         // we should not allow changing previous branches.
         // we show a message that user should create a new branch
         // if he intends to change previous branches.
-        error = isNotBranchAlreadyMerged(config);
+        error = checkIfBranchAlreadyMerged(config);
 
         if (!error) {
             let userChoice;

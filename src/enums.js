@@ -6,7 +6,14 @@ const ActionType = Enum.define({
     runAllChangesets: 2,
     getVersion: 3,
     init: 4,
-    initfull: 5
+    initfull: 5,
+    updateTimestamp: 6
 }, 'ActionType');
 
-export { ActionType };
+const UpdateMode = Enum.define({
+    TestAndUpdate: 0,
+    Test: 1,
+    Update: 2
+}, 'UpdateMode');
+
+export { ActionType, UpdateMode };

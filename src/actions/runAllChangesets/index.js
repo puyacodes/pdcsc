@@ -1,19 +1,48 @@
-import runAllChangesets from "./runAllChangesets.js";
-import getAllChangesetFiles from "./getAllChangesetFiles.js";
+import ensureChangesTableCreated from "./ensureChangesTableCreated.js";
 import { Exception } from "@locustjs/exception";
+import runChangeset from "./runAndAddChangeset.js";
+import testPendingChangesets from "./testPendingChangesets.js";
+import { UpdateMode } from "../../enums.js";
 
 async function run(config) {
-    try {
-        const result = await getAllChangesetFiles(config);
+    let error;
+    const { updateMode } = config;
 
-        config.debug("allChangesetsScriptFilePath:", result.allChangesetsScriptFilePath)
-        
-        if (result?.allChangesetsScriptFilePath) {
-            await runAllChangesets(result, config);
+    // TODO: Done
+    // exec mode
+    //  test
+    //  test & update   * default
+    //  update
+
+    try {
+        await ensureChangesTableCreated(config);
+
+        const lastExecutedChangeset = await getLastExecutedChangeset(config);
+        const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset);
+
+        if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Test) {
+            error = testPendingChangesets(config, pendingChangesets);
+        }
+
+        if (!error) {
+            // TODO: Done
+            // run changeset one by one instead of merging them together and create a large script and run that.
+
+            if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Update) {
+                for (let changeset of pendingChangesets) {
+                    error = await runChangeset(config, changeset);
+
+                    if (error) {
+                        break;
+                    }
+                }
+            }
         }
     } catch (ex) {
-        throw new Exception('executing changesets was not successful', ex)
+        error = new Exception('updating database failed', ex);
     }
+
+    return error;
 }
 
 export default run;

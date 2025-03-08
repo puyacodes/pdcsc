@@ -6,6 +6,10 @@ function finalizeChangeset(config, sections, dropStatements) {
 ${sections.customStart}${dropStatements}
 ## ===================== Custom-Start ( end ) ======================
 
+## ===================== Schemas (start) ======================
+${sections.schemas.join("\n")}
+## ===================== Schemas ( end ) ======================
+
 ## ===================== Types (start) ======================
 ${sections.types.join("\n")}
 ## ===================== Types ( end ) ======================

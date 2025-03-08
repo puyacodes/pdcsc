@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
-import { ActionType } from "../enums";
+import { ActionType, UpdateMode } from "../enums";
 
 async function process(args) {
     function getArg(arg) {
@@ -66,19 +66,21 @@ async function process(args) {
         config.action = ActionType.runOnPipline;
     } else if (args.includes("-ud")) {
         config.action = ActionType.runAllChangesets;
+
+        const updatesMode = getArg("-rum");
+        config.updateMode = UpdateMode.isValid(updatesMode) ?
+                                UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
     } else if (args.includes("-v")) {
         config.action = ActionType.getVersion;
     } else if (args.includes("-init")) {
         config.action = ActionType.init;
     } else if (args.includes("--init-full")) {
         config.action = ActionType.initfull;
+    } else if (args.includes("-uts")) {
+        config.action = ActionType.updateTimestamp
     } else {
         config.action = ActionType.createChangeset;
     }
-
-    // TODO: new action ==> update timestamp
-    // if user asks us to update changeset timestamp, update existing
-    // changeset's timestamp with current ts
 
     config.debugMode = args.includes("-dbm");
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;

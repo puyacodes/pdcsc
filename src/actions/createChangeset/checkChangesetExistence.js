@@ -14,9 +14,11 @@ async function checkChangesetExistence(config) {
         if (regex.test(fileName)) {
             changesetExists = true;
             changeset = fileName;
+            const existingDate = extractDateFromString(fileName);
+
             console.warn(`Changeset file already exists: ${changeset}`);
 
-            if (fileNames.filter(file => file.endsWith(".sql")).some(x => (extractDateFromString(config, x)) > (extractDateFromString(config, fileName)))) {
+            if (fileNames.filter(file => file.endsWith(".sql")).some(x => extractDateFromString(x) > existingDate)) {
                 do {
                     console.warn("The changeset is followed by other changesets.");
 

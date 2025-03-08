@@ -9,6 +9,7 @@ import {
 } from "./actions";
 import getConfig from "./config";
 import checkDbExistence from './checkDbExistence.js';
+import "./extensions";
 
 async function main() {
     let exitCode = 0;
@@ -39,6 +40,11 @@ async function main() {
                 break;
             case ActionType.createChangeset:
                 error = await createChangeset(config);
+                break;
+            case ActionType.updateTimestamp:
+                // TODO: new action ==> update timestamp
+                // if user asks us to update changeset timestamp, update existing
+                // changeset's timestamp with current ts
                 break;
         }
     } catch (ex) {

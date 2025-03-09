@@ -16,7 +16,7 @@ module.exports = {
     plugins: [
         del({ targets: 'bin/*' }),
         resolve(), // Allows Rollup to resolve modules in 'node_modules'
-        // terser(),
+        terser(),
         commonjs(), // Convert CommonJS modules to ES6, so Rollup can bundle them
         json(),
     ],

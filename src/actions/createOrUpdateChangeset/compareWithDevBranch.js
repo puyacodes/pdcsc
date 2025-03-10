@@ -24,28 +24,29 @@ async function compareWithDevBranch(config) {
 
                 const [origin, branch] = masterBranchName.split("/");
 
-                config.debug({ origin, branch })
+                config.debug2({ origin, branch })
 
-                config.debug('fetching ...')
+                git.fetch(origin, branch);
 
-                await git.fetch(origin, branch);
-
-                config.debug('fetched')
-                config.debug('getting remote branches ...')
-                
                 const branches = await git.branch(['-r']);
 
-                config.debug('branches', branches)
+                config.debug2('remote branches', branches)
 
-                if (!branches.all.includes(masterBranchName)) {
+                if (!branches.all || !branches.all.includes(masterBranchName)) {
                     throw new Exception(`Remote branch ${masterBranchName} does not exist.`);
                 }
 
                 const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
-                const log = await git.log({ from: base.trim(), to: masterBranchName });
 
-                if (log.total > 0) {
-                    console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${log.total} commits.`);
+                config.debug2('merge-base =', base)
+                config.debug3(`getting git logs from base ${base} to ${masterBranchName}...`)
+                
+                const logs = await git.log({ from: base.trim(), to: masterBranchName });
+                
+                config.debug2('logs', logs)
+
+                if (logs.total > 0) {
+                    console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run "git pull ${masterBranchName}" to sync with the latest changes.`);
 
                     result = false;

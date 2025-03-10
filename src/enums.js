@@ -16,4 +16,11 @@ const UpdateMode = Enum.define({
     Update: 2
 }, 'UpdateMode');
 
-export { ActionType, UpdateMode };
+const DebugLevel = Enum.define({
+    None: 0,
+    Level1: 1,
+    Level2: 2,
+    Level3: 3
+}, 'DebugLevel');
+
+export { ActionType, UpdateMode, DebugLevel };

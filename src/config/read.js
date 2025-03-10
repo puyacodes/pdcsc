@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
-import { ActionType, UpdateMode } from "../enums";
+import { ActionType, DebugLevel, UpdateMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 
 async function read(args) {
@@ -95,6 +95,8 @@ async function read(args) {
     }
 
     config.debugMode = args.includes("-dbm");
+    config.debugLevel = DebugLevel.getNumber(getArg("-dbl"), DebugLevel.None);
+
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
 

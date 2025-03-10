@@ -5,6 +5,24 @@ import getCurrentBranch from "./getCurrentBranch.js"
 import { DbHelperSqlServer } from '../services/DbHelper/index.js';
 import { ConsoleLogger } from "@locustjs/logging";
 import { Exception } from "@locustjs/exception";
+import { DebugLevel } from "../enums.js";
+import { isString } from "@locustjs/base";
+
+function getDebugArgs(args) {
+    const _args = [];
+
+    for (let i = 0; i < args.length; i++) {
+        let arg = args[i]
+
+        if (isString(arg) && i == 0) {
+            arg = '\n\t' + arg;
+        }
+
+        _args.push(arg)
+    }
+
+    return _args;
+}
 
 function init(config) {
     if (!config.cliMode) {
@@ -43,6 +61,21 @@ function init(config) {
                 console.log(...args);
             }
         }
+        config.debug1 = (...args) => {
+            if (config.debugMode && (config.debugLevel == DebugLevel.Level1 || config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+                console.log(...getDebugArgs(args));
+            }
+        }
+        config.debug2 = (...args) => {
+            if (config.debugMode && (config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+                console.log(...getDebugArgs(args));
+            }
+        }
+        config.debug3 = (...args) => {
+            if (config.debugMode && config.debugLevel == DebugLevel.Level3) {
+                console.log(...getDebugArgs(args));
+            }
+        }
         config.warn = (...args) => {
             if (config.debugMode) {
                 console.warn(...args);
@@ -55,7 +88,7 @@ function init(config) {
             console.logger.danger(...args);
         }
 
-        config.debug(`config = `, config);
+        config.debug3(`config = `, config);
     }
 }
 

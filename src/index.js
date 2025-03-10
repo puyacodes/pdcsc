@@ -2,4 +2,4 @@
 "use strict";
 import main from "./main"
 
-main();
+main().catch(console.error);

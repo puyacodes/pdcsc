@@ -54,6 +54,13 @@ const UpdateMode = _enum.Enum.define({
     Update: 2
 }, 'UpdateMode');
 
+const DebugLevel = _enum.Enum.define({
+    None: 0,
+    Level1: 1,
+    Level2: 2,
+    Level3: 3
+}, 'DebugLevel');
+
 class FileHelper {
     static deleteFile(filepath) {
         if (fs.existsSync(filepath)) {
@@ -927,28 +934,29 @@ async function compareWithDevBranch(config) {
 
                 const [origin, branch] = masterBranchName.split("/");
 
-                config.debug({ origin, branch });
+                config.debug2({ origin, branch });
 
-                config.debug('fetching ...');
+                git.fetch(origin, branch);
 
-                await git.fetch(origin, branch);
-
-                config.debug('fetched');
-                config.debug('getting remote branches ...');
-                
                 const branches = await git.branch(['-r']);
 
-                config.debug('branches', branches);
+                config.debug2('remote branches', branches);
 
-                if (!branches.all.includes(masterBranchName)) {
+                if (!branches.all || !branches.all.includes(masterBranchName)) {
                     throw new exception.Exception(`Remote branch ${masterBranchName} does not exist.`);
                 }
 
                 const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
-                const log = await git.log({ from: base.trim(), to: masterBranchName });
 
-                if (log.total > 0) {
-                    console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${log.total} commits.`);
+                config.debug2('merge-base =', base);
+                config.debug3(`getting git logs from base ${base} to ${masterBranchName}...`);
+                
+                const logs = await git.log({ from: base.trim(), to: masterBranchName });
+                
+                config.debug2('logs', logs);
+
+                if (logs.total > 0) {
+                    console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run "git pull ${masterBranchName}" to sync with the latest changes.`);
 
                     result = false;
@@ -1213,7 +1221,7 @@ Create a new branch from ${realBranchName} if you have any new changes.`);
     return error;
 }
 
-async function createChangeset(config) {
+async function createOrUpdateChangeset(config) {
     let error;
 
     if (await compareWithDevBranch(config)) {
@@ -1770,6 +1778,22 @@ class DbHelperSqlServer extends DbHelperBase {
     }
 }
 
+function getDebugArgs(args) {
+    const _args = [];
+
+    for (let i = 0; i < args.length; i++) {
+        let arg = args[i];
+
+        if (base.isString(arg) && i == 0) {
+            arg = '\n\t' + arg;
+        }
+
+        _args.push(arg);
+    }
+
+    return _args;
+}
+
 function init(config) {
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
@@ -1807,6 +1831,21 @@ function init(config) {
                 console.log(...args);
             }
         };
+        config.debug1 = (...args) => {
+            if (config.debugMode && (config.debugLevel == DebugLevel.Level1 || config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+                console.log(...getDebugArgs(args));
+            }
+        };
+        config.debug2 = (...args) => {
+            if (config.debugMode && (config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+                console.log(...getDebugArgs(args));
+            }
+        };
+        config.debug3 = (...args) => {
+            if (config.debugMode && config.debugLevel == DebugLevel.Level3) {
+                console.log(...getDebugArgs(args));
+            }
+        };
         config.warn = (...args) => {
             if (config.debugMode) {
                 console.warn(...args);
@@ -1819,7 +1858,7 @@ function init(config) {
             console.logger.danger(...args);
         };
 
-        config.debug(`config = `, config);
+        config.debug3(`config = `, config);
     }
 }
 
@@ -1913,6 +1952,8 @@ async function read(args) {
     }
 
     config.debugMode = args.includes("-dbm");
+    config.debugLevel = DebugLevel.getNumber(getArg("-dbl"), DebugLevel.None);
+
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
 
@@ -2126,7 +2167,7 @@ async function main() {
                 error = await run$1(config);
                 break;
             case ActionType.createOrUpdateChangeset:
-                error = await createChangeset(config);
+                error = await createOrUpdateChangeset(config);
                 break;
             case ActionType.updateTimestamp:
                 // TODO:
@@ -2151,4 +2192,4 @@ async function main() {
     process.exit(exitCode);
 }
 
-main();
+main().catch(console.error);

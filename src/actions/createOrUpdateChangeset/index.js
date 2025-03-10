@@ -12,7 +12,7 @@ import FileHelper from "../../services/FileHelper/index.js";
 import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 
-async function createChangeset(config) {
+async function createOrUpdateChangeset(config) {
     let error;
 
     if (await compareWithDevBranch(config)) {
@@ -65,4 +65,4 @@ async function createChangeset(config) {
     return error;
 }
 
-export default createChangeset;
+export default createOrUpdateChangeset;

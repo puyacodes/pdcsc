@@ -1,9 +1,9 @@
 import init from "./init";
-import process from "./process";
+import read from "./read";
 import validate from "./validate";
 
 async function getConfig(args) {
-    const config = await process(args);
+    const config = await read(args);
 
     validate(config);
     init(config);

@@ -5,7 +5,7 @@ import { merge } from "@locustjs/extensions-object";
 import { ActionType, UpdateMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 
-async function process(args) {
+async function read(args) {
     function getArg(arg) {
         const index = args.indexOf(arg);
         const result = index >= 0 ? args[index + 1] : undefined;
@@ -101,4 +101,4 @@ async function process(args) {
     return config
 }
 
-export default process;
+export default read;

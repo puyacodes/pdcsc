@@ -1814,7 +1814,7 @@ function init(config) {
     }
 }
 
-async function process$1(args) {
+async function read(args) {
     function getArg(arg) {
         const index = args.indexOf(arg);
         const result = index >= 0 ? args[index + 1] : undefined;
@@ -1824,7 +1824,7 @@ async function process$1(args) {
 
     let config;
     let customConfig;
-    const basePath = process$1.cwd();
+    const basePath = process.cwd();
     const changeset = getArg("-cs");
     const server = getArg("-s");
     const user = getArg("-u");
@@ -1840,8 +1840,8 @@ async function process$1(args) {
             throw new exception.Exception(`config file ${configPath} not found.`);
         }
     } else {
-        const config_key = process$1.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
-        let config_mode = process$1.env[config_key];
+        const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
+        let config_mode = process.env[config_key];
 
         if (config_mode) {
             config_mode = '.' + config_mode;
@@ -1993,7 +1993,7 @@ function validate(config) {
 }
 
 async function getConfig(args) {
-    const config = await process$1(args);
+    const config = await read(args);
 
     validate(config);
     init(config);

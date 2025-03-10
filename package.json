@@ -1,10 +1,10 @@
 {
   "name": "@puya/pdcsc",
-  "version": "1.5.15",
+  "version": "2.0.0",
   "main": "bin/index.js",
   "scripts": {
     "clean": "rimraf bin",
-    "cp": "rimraf bin && cp-cli src bin/ && npm link",
+    "cp": "rollup -c rollup.config.dev.js && npm link",
     "build": "npm run clean && rollup -c"
   },
   "keywords": [],

@@ -927,9 +927,18 @@ async function compareWithDevBranch(config) {
 
                 const [origin, branch] = masterBranchName.split("/");
 
+                config.debug({ origin, branch });
+
+                config.debug('fetching ...');
+
                 await git.fetch(origin, branch);
 
+                config.debug('fetched');
+                config.debug('getting remote branches ...');
+                
                 const branches = await git.branch(['-r']);
+
+                config.debug('branches', branches);
 
                 if (!branches.all.includes(masterBranchName)) {
                     throw new exception.Exception(`Remote branch ${masterBranchName} does not exist.`);
@@ -941,7 +950,7 @@ async function compareWithDevBranch(config) {
                 if (log.total > 0) {
                     console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${log.total} commits.`);
                     console.log(`Please run "git pull ${masterBranchName}" to sync with the latest changes.`);
-                    
+
                     result = false;
                 }
             } while (false);
@@ -2133,8 +2142,8 @@ async function main() {
         if (error) {
             console.error(error.toString());
 
-            if (config && config.debugMode && error.stackTrace) {
-                console.log(error.stackTrace);
+            if (config && config.debugMode) {
+                console.error(JSON.stringify(error, null, 4));
             }
         }
     }

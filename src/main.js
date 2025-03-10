@@ -55,8 +55,8 @@ async function main() {
         if (error) {
             console.error(error.toString());
 
-            if (config && config.debugMode && error.stackTrace) {
-                console.log(error.stackTrace)
+            if (config && config.debugMode) {
+                console.error(JSON.stringify(error, null, 4))
             }
         }
     }

@@ -3,6 +3,7 @@ import path from "path";
 import { isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
 import { ActionType, UpdateMode } from "../enums";
+import { Exception } from "@locustjs/exception";
 
 async function process(args) {
     function getArg(arg) {
@@ -27,7 +28,7 @@ async function process(args) {
         configPath = path.join(basePath, configPath);
 
         if (!fs.existsSync(configPath)) {
-            throw `config file ${configPath} not found.`
+            throw new Exception(`config file ${configPath} not found.`);
         }
     } else {
         const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
@@ -53,38 +54,49 @@ async function process(args) {
         config = {}
     }
 
-    const database = {
-        database: dbName,
-        server,
-        user,
-        password
+    config = merge({}, config, customConfig, { configPath, changeset, basePath })
+
+    if (!isObject(config.database)) {
+        config.database = {}
     }
 
-    config = merge({}, { database }, config, customConfig, { configPath, changeset, basePath })
+    if (dbName) {
+        config.database.database = dbName;
+    }
+    if (server) {
+        config.database.server = server;
+    }
+    if (user) {
+        config.database.user = user;
+    }
+    if (password) {
+        config.database.password = password;
+    }
 
-    if (args.includes("-rop")) {
-        config.action = ActionType.runOnPipline;
-    } else if (args.includes("-ud")) {
-        config.action = ActionType.runAllChangesets;
-
-        const updatesMode = getArg("-rum");
-        config.updateMode = UpdateMode.isValid(updatesMode) ?
-                                UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
-    } else if (args.includes("-v")) {
+    if (args.includes("-v")) {
         config.action = ActionType.getVersion;
     } else if (args.includes("-init")) {
         config.action = ActionType.init;
     } else if (args.includes("--init-full")) {
         config.action = ActionType.initfull;
+    } else if (args.includes("-rop")) {
+        config.action = ActionType.runOnPipline;
+    } else if (args.includes("-ud")) {
+        config.action = ActionType.runAllChangesets;
+
+        const updatesMode = getArg("-rum");
+
+        config.updateMode = UpdateMode.isValid(updatesMode) ?
+            UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
     } else if (args.includes("-uts")) {
         config.action = ActionType.updateTimestamp
     } else {
-        config.action = ActionType.createChangeset;
+        config.action = ActionType.createOrUpdateChangeset;
     }
 
     config.debugMode = args.includes("-dbm");
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
-    config.cliMode = !(config.runMode || config.action == ActionType.createChangeset);
+    config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
 
     return config
 }

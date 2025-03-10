@@ -54,13 +54,13 @@ class DbHelperSqlServer extends DbHelperBase {
     }
     async dbExists(dbName) {
         try {
-            await this.executeNonQuery({ query: 'declare @a int', dbName: "Master" });
+            await this.executeNonQuery({ query: 'declare @a int', dbName: "master" });
         } catch (ex) {
             throw new Exception(`error connecting to database server`, ex);
         }
 
         try {
-            await this.executeNonQuery({ query: 'use ' + dbName, dbName: "Master" });
+            await this.executeNonQuery({ query: 'use ' + dbName, dbName: "master" });
         } catch (ex) {
             throw new Exception(`database ${dbName} does not exist`, ex);
         }

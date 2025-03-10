@@ -1,15 +1,20 @@
-import getChangesetFile from "./getChangesetFile.js";
-import runOnPipeline from "./runOnPipeline.js";
-import path from "path";
+import getChangesetContent from "./getChangesetContent.js";
+import testScript from "../testScript";
+import executeChangeset from "./executeChangeset";
 
 async function run(config) {
-    const changesetFileName = await getChangesetFile(config);
+    let error;
+    const content = getChangesetContent(config);
 
-    if (changesetFileName) {
-        const changesetPath = path.join(config.paths.changesetsPath, `${changesetFileName}`);
+    if (content) {
+        let error = await testScript(config, content);
 
-        await runOnPipeline(config, changesetPath);
+        if (!error) {
+            error = await executeChangeset(config, content);
+        }
     }
+
+    return error;
 }
 
 export default run;

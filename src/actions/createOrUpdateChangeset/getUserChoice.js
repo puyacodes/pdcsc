@@ -29,7 +29,7 @@ async function getUserChoice(config) {
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
 
-                error = await commitChanges(changes.all, "pdcsc: commited current changes")
+                error = await commitChanges(changes.all, "pdcsc: commited current changes");
                 break;
             } else if (userChoice === "3") {
                 const files = [];
@@ -66,7 +66,7 @@ async function getUserChoice(config) {
     if (isSomeArray(changes.deleted)) {
         const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s)? `);
 
-        generateDrops = answer == "y" || answer == "Y";
+        generateDrops = answer == "y";
     }
 
     if (error) {

@@ -3,8 +3,6 @@ import path from "path";
 import { Exception } from "@locustjs/exception";
 
 function createNewChangeset(config) {
-    let changeset;
-
     try {
         const { now, currentBranch } = config;
         const content = `
@@ -43,6 +41,7 @@ function createNewChangeset(config) {
 `;
 
         const { changesetsPath } = config.paths;
+
         config.changeset = `${now}_${currentBranch}.txt`;
         config.changesetFilePath = path.join(changesetsPath, config.changeset);
 
@@ -50,7 +49,7 @@ function createNewChangeset(config) {
 
         console.log(`New empty changeset ${config.changeset} created.`)
     } catch (ex) {
-        throw new Exception(`generating new changeset ${changeset} failed`, ex);
+        throw new Exception(`generating new changeset ${config.changeset} failed`, ex);
     }
 }
 

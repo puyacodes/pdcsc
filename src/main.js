@@ -2,7 +2,7 @@ import checkForUpdate from './checkForUpdate.js';
 import { ActionType } from "./enums";
 import { version } from "../package.json";
 import {
-    createChangeset,
+    createOrUpdateChangeset,
     initProject,
     runAllChangesets,
     runOnPipline
@@ -26,7 +26,7 @@ async function main() {
 
         switch (config.action) {
             case ActionType.getVersion:
-                console.log("PDCSC version ", version);
+                console.log("pdcsc version ", version);
                 break;
             case ActionType.init:
             case ActionType.initfull:
@@ -38,11 +38,12 @@ async function main() {
             case ActionType.runAllChangesets:
                 error = await runAllChangesets(config);
                 break;
-            case ActionType.createChangeset:
-                error = await createChangeset(config);
+            case ActionType.createOrUpdateChangeset:
+                error = await createOrUpdateChangeset(config);
                 break;
             case ActionType.updateTimestamp:
-                // TODO: new action ==> update timestamp
+                // TODO:
+                // new action ==> update timestamp
                 // if user asks us to update changeset timestamp, update existing
                 // changeset's timestamp with current ts
                 break;

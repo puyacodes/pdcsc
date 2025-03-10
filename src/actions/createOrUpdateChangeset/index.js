@@ -43,7 +43,7 @@ async function createChangeset(config) {
 
                         finalizeChangeset(sections, drops);
 
-                        saveFinalScript(config);
+                        await saveFinalScript(config);
 
                         error = await testAndCommitChangeset(config);
                     }

@@ -1,25 +1,22 @@
-import { isEmpty, isObject } from "@locustjs/base";
 import fs from "fs";
+import { isEmpty, isObject } from "@locustjs/base";
+import { Exception } from "@locustjs/exception";
 
 function validate(config) {
-    if (!isObject(config.database)) {
-        config.database = {}
-    }
-
     if (isEmpty(config.database.server)) {
-        throw new Error(`server not specified`);
+        throw new Exception(`server not specified`);
     }
 
     if (isEmpty(config.database.user)) {
-        throw new Error(`user not specified`);
+        throw new Exception(`user not specified`);
     }
 
     if (isEmpty(config.database.password)) {
-        throw new Error(`password not specified`);
+        throw new Exception(`password not specified`);
     }
 
     if (isEmpty(config.database.database)) {
-        throw new Error(`database not specified`);
+        throw new Exception(`database not specified`);
     }
 
     if (!isObject(config.paths)) {
@@ -66,24 +63,6 @@ function validate(config) {
         config.appVersionSprocName = "dbo.getAppVersion";
     }
 
-    config.folders = Object.assign({
-        "procedures": "Procedures",
-        "functions": "Functions",
-        "tables": "Tables",
-        "relations": "Relations",
-        "types": "Types",
-        "views": "Views",
-        "indexes": "Indexes",
-        "triggers": "Triggers",
-        "schemas": "Schemas"
-    }, config.folders)
-
-    if (!fs.readdirSync(path.join(config.basePath, config.paths.scriptsFolderName)).some(folder =>
-        Object.values(config.folders).some(templateFolder => folder === templateFolder)
-    )) {
-        throw new Error("Please specify the subfolders and their names in the 'folders' section of the config file.");
-    }
-
     if (config.changeset) {
         config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
 
@@ -93,13 +72,13 @@ function validate(config) {
                 const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
 
                 if (!fs.existsSync(_changesetFilePath)) {
-                    throw new Error(`Changeset file ${config.changeset} or ${_changeset} not found.`)
+                    throw new Exception(`Changeset file ${config.changeset} or ${_changeset} not found.`)
                 } else {
                     config.changeset = _changeset;
                     config.changesetFilePath = _changesetFilePath;
                 }
             } else {
-                throw new Error(`Changeset file ${config.changeset} not found.`)
+                throw new Exception(`Changeset file ${config.changeset} not found.`)
             }
         }
     }

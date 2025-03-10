@@ -1,5 +1,7 @@
 function checkDbExistence(config) {
-    return config.db.dbExists(config.database.database);
+    if (!config.cliMode) {
+        config.db.dbExists(config.database.database);
+    }
 }
 
 

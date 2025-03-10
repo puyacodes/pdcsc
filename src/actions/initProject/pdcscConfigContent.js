@@ -3,7 +3,7 @@ import { ActionType } from "../../enums";
 function pdcscConfigContent(config) {
     const configContent = {
         database: {
-            server: ".",
+            server: "127.0.0.1",
             user: "sa",
             password: "****",
             database: "mydb"

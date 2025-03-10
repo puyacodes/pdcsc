@@ -1,3 +1,4 @@
+import fs from "fs";
 import extractDateFromString from "../../utils/extractDateFromString";
 import promptUser from "../../utils/promptUser";
 
@@ -5,9 +6,9 @@ async function checkChangesetExistence(config) {
     let changeset;
     let changesetExists = false;
     let exit = false;
+    const { currentBranch } = config;
     const { changesetsPath } = config.paths;
     const fileNames = fs.readdirSync(changesetsPath);
-    const { currentBranch } = config;
     const regex = new RegExp(`^\\d+_${currentBranch}\\.txt$`);
 
     for (const fileName of fileNames) {

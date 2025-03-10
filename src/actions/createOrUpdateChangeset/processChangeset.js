@@ -16,7 +16,7 @@ async function getEncoding(filepath) {
         result = "latin1";
     }
     if (["utf-8", "utf16le", "ascii", "latin1"].indexOf(result) < 0) {
-        throw new Exception(`unsupported encoding ${result} (${info.encoding}) in ${filePath}`);
+        throw new Exception(`unsupported encoding ${result} (${info.encoding}) in ${filepath}`);
     }
 
     return result;
@@ -35,7 +35,7 @@ async function readFile(filepath, codepage) {
     return content;
 }
 function getAllSqlFiles(dir) {
-    let results = [];
+    let result = [];
     const list = fs.readdirSync(dir);
 
     list.forEach((file) => {
@@ -43,13 +43,13 @@ function getAllSqlFiles(dir) {
         const stat = fs.statSync(fullPath);
 
         if (stat && stat.isDirectory()) {
-            results = results.concat(getAllSqlFiles(fullPath));
-        } else if (fullPath.endsWith(".sql")) {
-            results.push(fullPath);
+            result = result.concat(getAllSqlFiles(fullPath));
+        } else if (fullPath.toLowerCase().endsWith(".sql")) {
+            result.push(fullPath);
         }
     });
 
-    return results;
+    return result;
 }
 function extractObjects(config) {
     const objects = [];
@@ -142,7 +142,8 @@ async function processChangeset(config) {
         }
     }
 
-    return `-- ===================== Custom-Start (start) ======================
+    return `-- ***               Changeset ${config.changeset}             ***
+-- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
 

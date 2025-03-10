@@ -1,14 +1,14 @@
 import getAppVersion from "./getAppVersion";
-import processChangeset from "./ProcessChangeset";
+import processChangeset from "./processChangeset";
 import fs from "fs";
 
-function saveFinalScript(config) {
+async function saveFinalScript(config) {
     const { scriptTempFilePath } = config;
-    const script = processChangeset(config) + `
-    go
-    ${getAppVersion(config)}
-    go
-                `;
+    const script = await processChangeset(config) + `
+go
+${getAppVersion(config)}
+go
+`;
 
     fs.writeFileSync(scriptTempFilePath, script, "utf-8");
 

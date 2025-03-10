@@ -8,7 +8,7 @@ async function getOrCreateChangeset(config) {
     let { changesetsPath } = config.paths;
 
     if (!config.changeset) {
-        const cce = checkChangesetExistence(config);
+        const cce = await checkChangesetExistence(config);
 
         changesetExists = cce.changesetExists;
 
@@ -30,8 +30,8 @@ async function getOrCreateChangeset(config) {
 
     config.changesetTemp = `${cleanFilename}~.txt`;
     config.changesetTempFilePath = path.join(changesetsPath, config.changesetTemp);
-    config.scriptTempFilePath = path.join(changesetsPath, `${cleanFilename}~.sql`);
     config.scriptFilePath = path.join(changesetsPath, `${cleanFilename}.sql`);
+    config.scriptTempFilePath = path.join(changesetsPath, `${cleanFilename}~.sql`);
 
     config.isNewChangeset = !changesetExists;
 

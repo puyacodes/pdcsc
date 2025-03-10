@@ -18,7 +18,7 @@ async function testAndCommitChangeset(config) {
 
     if (!error) {
         try {
-            error = await commitChanges([changesetFilePath, scriptFilePath], `pdcsc: changeset ${config.isNewChangeset ? "created" : "updated"}.`);
+            error = await commitChanges([changesetFilePath, scriptFilePath], `pdcsc: changeset ${config.changeset} ${config.isNewChangeset ? "created" : "updated"}.`);
 
             config.changesetCommitted = true;
 

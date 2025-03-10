@@ -48,7 +48,7 @@ function containsAny(str, ...args) {
 
 if (String.prototype.contains === undefined) {
     String.prototype.contains = function (...args) {
-        return contains(this, ...args);
+        return containsAll(this, ...args);
     }
 }
 

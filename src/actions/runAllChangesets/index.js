@@ -3,6 +3,8 @@ import { Exception } from "@locustjs/exception";
 import runChangeset from "./runAndAddChangeset.js";
 import testPendingChangesets from "./testPendingChangesets.js";
 import { UpdateMode } from "../../enums.js";
+import getLastExecutedChangeset from "./getLastExecutedChangeset.js";
+import getPendingChangesets from "./getPendingChangesets.js";
 
 async function run(config) {
     let error;
@@ -20,20 +22,22 @@ async function run(config) {
         const lastExecutedChangeset = await getLastExecutedChangeset(config);
         const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset);
 
-        if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Test) {
-            error = testPendingChangesets(config, pendingChangesets);
-        }
+        if (pendingChangesets.length) {
+            if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Test) {
+                error = await testPendingChangesets(config, pendingChangesets);
+            }
 
-        if (!error) {
-            // TODO: Done
-            // run changeset one by one instead of merging them together and create a large script and run that.
+            if (!error) {
+                // TODO: Done
+                // run changeset one by one instead of merging them together and create a large script and run that.
 
-            if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Update) {
-                for (let changeset of pendingChangesets) {
-                    error = await runChangeset(config, changeset);
+                if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Update) {
+                    for (let changeset of pendingChangesets) {
+                        error = await runChangeset(config, changeset);
 
-                    if (error) {
-                        break;
+                        if (error) {
+                            break;
+                        }
                     }
                 }
             }

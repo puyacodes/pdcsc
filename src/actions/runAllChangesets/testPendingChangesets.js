@@ -1,8 +1,8 @@
-import { Exception } from "@locustjs/exception";
 import fs from "fs";
+import { Exception } from "@locustjs/exception";
 import testScript from "../testScript";
 
-function testPendingChangesets(config, pendingChangesets) {
+async function testPendingChangesets(config, pendingChangesets) {
     let error;
 
     try {
@@ -14,7 +14,7 @@ function testPendingChangesets(config, pendingChangesets) {
             scripts.push(content);
         }
 
-        error = testScript(config, scripts.join("\ngo\n"));
+        error = await testScript(config, scripts.join("\ngo\n"));
     } catch (ex) {
         error = new Exception("Bundling changesets failed", ex);
     }

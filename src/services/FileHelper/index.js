@@ -22,6 +22,8 @@ class FileHelper {
                 console.log(`Created file: ${fileName}`);
             }
         }
+
+        return filepath;
     }
     static createDir(basePath, folder, log = false) {
         const folderPath = path.join(basePath, folder);

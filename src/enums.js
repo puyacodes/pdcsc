@@ -1,7 +1,7 @@
 import { Enum } from '@locustjs/enum';
 
 const ActionType = Enum.define({
-    createChangeset: 0,
+    createOrUpdateChangeset: 0,
     runOnPipline: 1,
     runAllChangesets: 2,
     getVersion: 3,

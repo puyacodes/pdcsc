@@ -1,3 +1,5 @@
+import { Exception } from "@locustjs/exception";
+
 async function getLastExecutedChangeset(config) {
     const { db, changesetsTableName } = config;
 
@@ -8,13 +10,9 @@ async function getLastExecutedChangeset(config) {
             query: `SELECT TOP 1 [date], [name] FROM ${changesetsTableName} ORDER BY [date] DESC`
         });
 
-        result = rs.length > 0 ? rs[0] : null;
+        result = rs && rs.length ? rs[0] : null;
     } catch (ex) {
-        if (ex.message.includes("Invalid object name")) {
-            throw new Error(`${changesetsTableName} table not found.`, ex);
-        } else {
-            throw new Error(`cannot fetch last executed changeset from ${changesetsTableName}`, ex);
-        }
+        throw new Exception(`cannot fetch last executed changeset`, ex);
     }
 
     return result;

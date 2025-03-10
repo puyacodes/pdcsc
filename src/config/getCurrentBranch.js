@@ -7,10 +7,14 @@ function getCurrentBranch(config) {
 
     if (config.action == ActionType.runOnPipline) {
         if (config.pipeline === "gitlabs") {
-            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            if (process.env.CI_COMMIT_REF_NAME) {
+                currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            }
             realBranchName = process.env.CI_COMMIT_REF_NAME;
         } else if (config.pipeline === "azuredevops") {
-            currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            if (process.env.CI_COMMIT_REF_NAME) {
+                currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
+            }
             realBranchName = process.env.CI_COMMIT_REF_NAME;
         }
     } else {

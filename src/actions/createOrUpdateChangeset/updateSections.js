@@ -6,6 +6,8 @@ function updateSections(config, sections, allChanges) {
     allChanges.forEach((file) => {
         let fileName = path.basename(file);
 
+        // QUESTION: why we should omit dbo. prefix.
+        //           this can lead to bugs.
         if (fileName.toLowerCase().startsWith("dbo.")) {
             fileName = fileName.substring(4);
         }

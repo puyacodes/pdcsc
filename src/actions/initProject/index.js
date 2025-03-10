@@ -4,6 +4,7 @@ import initGitRepo from "./initGitRepo";
 import gitignoreContent from "./gitignoreContent";
 import pdcscConfigContent from "./pdcscConfigContent";
 import gitlabCiContent from "./gitlabCiContent";
+import commitChanges from "../../utils/commitChanges";
 
 async function initProject(config) {
     let error;
@@ -42,15 +43,11 @@ async function initProject(config) {
 
             folders.forEach(folder => FileHelper.createDir(basePath, folder, true));
 
-            FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), true);
-            FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), true);
+            const gitlabCI = FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), true);
+            const pdcscConfig = FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), true);
+            const gitIgnore = FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), true);
 
-            if (hasGitRepo) {
-                FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), true);
-
-                git.add(filePath);
-                git.commit("pdcsc: initialized files and folders.");
-            }
+            error = await commitChanges([gitlabCI, pdcscConfig, gitIgnore], "pdcsc: initialized files and folders.")
         } catch (ex) { error = ex }
     } while (false);
 

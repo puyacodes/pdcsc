@@ -56,11 +56,12 @@ function validateChangeSetFile(config) {
                 });
             } else {
                 tempSections[section.name] = innerContent;
-            };
-        };
-
+            }
+        }
     });
 
+    // QUESTION: why we should write back content to changeset?
+    //           content is not changed!
     // Write the updated content back to the file
     fs.writeFileSync(config.changesetFilePath, content, "utf-8");
 

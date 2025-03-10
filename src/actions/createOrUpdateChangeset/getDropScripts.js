@@ -83,7 +83,11 @@ GO
             const objectName = parts.slice(parts.length - 1).join('.').replace('.sql', ''); // exp: dbo.sp01
             const objectType = folderToObjectMap[folderName];
 
-            if (!objectType) return null;
+            if (!objectType) {
+                console.warn(`Warning: sql deleted file ignored ${file} (unknown type).`);
+                
+                return null;
+            }
 
             // Generate the appropriate DROP query
             return generateDropQuery(objectType, objectName);

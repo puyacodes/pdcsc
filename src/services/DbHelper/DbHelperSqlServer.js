@@ -4,42 +4,88 @@ import { ExecuteQueryException } from "./exceptions";
 import { Exception } from "@locustjs/exception";
 
 class DbHelperSqlServer extends DbHelperBase {
+    constructor(config) {
+        super(config)
+    }
     async executeNonQuery({ query, dbName }) {
+        let pool;
+        let conn_ok = false;
+        let error;
+
         try {
-            const pool = await sql.connect({
-                user: this.config.database.user,
-                password: this.config.database.password,
-                server: this.config.database.server,
-                database: dbName ?? this.config.database.database,
-                options: { encrypt: false }
-            });
+            try {
+                pool = await sql.connect({
+                    user: this.config.user,
+                    password: this.config.password,
+                    server: this.config.server,
+                    database: dbName ?? this.config.database,
+                    options: { encrypt: false }
+                });
 
-            result = await pool.request().query(query);
+                conn_ok = true;
+            } catch (e) {
+                console.log(e);
+            }
 
-            await pool.close();
+            if (conn_ok) {
+                await pool.request().query(query);
+            }
         } catch (ex) {
-            throw new ExecuteQueryException(query, ex);
+            error = new ExecuteQueryException(query, ex);
+        } finally {
+            if (pool && conn_ok) {
+                try {
+                    await pool.close();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        if (error) {
+            throw error;
         }
     }
     async executeQuery({ query, dbName, noCatch = true }) {
         let result;
+        let pool;
+        let error;
+        let conn_ok = false;
 
         try {
-            const pool = await sql.connect({
-                user: this.config.database.user,
-                password: this.config.database.password,
-                server: this.config.database.server,
-                database: dbName ?? this.config.database.database,
-                options: { encrypt: false }
-            });
+            try {
+                pool = await sql.connect({
+                    user: this.config.database.user,
+                    password: this.config.database.password,
+                    server: this.config.database.server,
+                    database: dbName ?? this.config.database.database,
+                    options: { encrypt: false }
+                });
 
-            result = await pool.request().query(query);
+                conn_ok = true;
+            } catch (e) {
+                console.log(e);
+            }
 
-            await pool.close();
+            if (conn_ok) {
+                result = await pool.request().query(query);
 
-            result = result.recordset;
+                result = result.recordset;
+            }
         } catch (ex) {
-            throw new ExecuteQueryException(query, ex);
+            error = new ExecuteQueryException(query, ex);
+        } finally {
+            if (pool && conn_ok) {
+                try {
+                    await pool.close();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        if (error) {
+            throw error;
         }
 
         return result;

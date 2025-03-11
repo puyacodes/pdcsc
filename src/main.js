@@ -22,31 +22,32 @@ async function main() {
         config = await getConfig(args);
 
         checkForUpdate(config);
-        checkDbExistence(config);
 
-        switch (config.action) {
-            case ActionType.getVersion:
-                console.log("pdcsc version ", version);
-                break;
-            case ActionType.init:
-            case ActionType.initfull:
-                error = initProject(config);
-                break;
-            case ActionType.runOnPipline:
-                error = await runOnPipline(config);
-                break;
-            case ActionType.runAllChangesets:
-                error = await runAllChangesets(config);
-                break;
-            case ActionType.createOrUpdateChangeset:
-                error = await createOrUpdateChangeset(config);
-                break;
-            case ActionType.updateTimestamp:
-                // TODO:
-                // new action ==> update timestamp
-                // if user asks us to update changeset timestamp, update existing
-                // changeset's timestamp with current ts
-                break;
+        if (await checkDbExistence(config)) {
+            switch (config.action) {
+                case ActionType.getVersion:
+                    console.log("pdcsc version ", version);
+                    break;
+                case ActionType.init:
+                case ActionType.initfull:
+                    error = initProject(config);
+                    break;
+                case ActionType.runOnPipline:
+                    error = await runOnPipline(config);
+                    break;
+                case ActionType.runAllChangesets:
+                    error = await runAllChangesets(config);
+                    break;
+                case ActionType.createOrUpdateChangeset:
+                    error = await createOrUpdateChangeset(config);
+                    break;
+                case ActionType.updateTimestamp:
+                    // TODO:
+                    // new action ==> update timestamp
+                    // if user asks us to update changeset timestamp, update existing
+                    // changeset's timestamp with current ts
+                    break;
+            }
         }
     } catch (ex) {
         error = ex;
@@ -61,7 +62,7 @@ async function main() {
         }
     }
 
-    process.exit(exitCode);
+    return exitCode;
 }
 
 export default main;

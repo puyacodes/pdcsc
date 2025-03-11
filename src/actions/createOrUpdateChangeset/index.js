@@ -13,10 +13,10 @@ import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 
 async function createOrUpdateChangeset(config) {
-    let error;
+    let error = await compareWithDevBranch(config);
 
-    if (await compareWithDevBranch(config)) {
-        
+    if (!error) {
+
         // TODO: Done
         // if current branch already merged with origin, exit.
         // we should not allow changing previous branches.
@@ -28,6 +28,8 @@ async function createOrUpdateChangeset(config) {
             let userChoice;
 
             try {
+                config.debug2("checking changed files ...");
+                
                 const guc = await getUserChoice(config);
 
                 userChoice = guc.userChoice;

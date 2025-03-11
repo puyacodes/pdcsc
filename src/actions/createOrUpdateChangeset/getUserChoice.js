@@ -10,7 +10,11 @@ async function getUserChoice(config) {
     let userChoice = ".";
     let generateDrops = false;
 
+    config.debug2("getting uncommitted sql changes ...");
+    
     const changes = await getUncommittedSqlChanges(config);
+    
+    config.debug("uncommitted sql changes", changes);
 
     if (changes.all.length > 0) {
         do {
@@ -61,6 +65,8 @@ async function getUserChoice(config) {
                 console.log("Invalid choice.");
             }
         } while (true);
+    } else {
+        config.debug2("no uncommitted sql changes found");
     }
 
     if (isSomeArray(changes.deleted)) {

@@ -1,5 +1,6 @@
 import simpleGit from "simple-git";
 import filterChanges from "./filterChanges";
+import { isIterable } from "@locustjs/base";
 
 async function getUncommittedSqlChanges(config, exclude) {
     const git = simpleGit();
@@ -7,6 +8,8 @@ async function getUncommittedSqlChanges(config, exclude) {
     const statuses = ['not_added', 'conflicted', 'created', 'deleted', 'ignored', 'modified', 'renamed'];
     const result = {}
     const all = [];
+
+    config.debug3("git status", changes)
 
     statuses.filter(state => state != exclude)
         .forEach(state => {
@@ -18,8 +21,6 @@ async function getUncommittedSqlChanges(config, exclude) {
         });
 
     result.all = all;
-
-    config.debug("Uncommited .sql files", result);
 
     return result;
 }

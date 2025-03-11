@@ -2,4 +2,8 @@
 "use strict";
 import main from "./main"
 
-main().catch(console.error);
+let exitCode;
+
+main().then(ec => { exitCode = ec }).catch(console.error);
+
+

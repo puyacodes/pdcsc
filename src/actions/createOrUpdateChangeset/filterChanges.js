@@ -1,4 +1,4 @@
-async function filterChanges(config, changes) {
+function filterChanges(config, changes) {
     const folders = Object.values(config.folders);
     const result = changes.filter(file => {
         const isInScriptsFolder = folders.some(folder => file.startsWith(`${config.paths.scriptsFolderName}/${folder}`));

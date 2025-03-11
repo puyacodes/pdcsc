@@ -555,7 +555,7 @@ function promptUser(question, toLower = true) {
     });
 }
 
-async function filterChanges(config, changes) {
+function filterChanges(config, changes) {
     const folders = Object.values(config.folders);
     const result = changes.filter(file => {
         const isInScriptsFolder = folders.some(folder => file.startsWith(`${config.paths.scriptsFolderName}/${folder}`));
@@ -563,6 +563,8 @@ async function filterChanges(config, changes) {
 
         return isInScriptsFolder && isSqlFile;
     });
+
+    config.debug2("filtering changes", { result });
 
     return result;
 }
@@ -574,12 +576,22 @@ async function getUncommittedSqlChanges(config, exclude) {
     const result = {};
     const all = [];
 
+    // config.debug3("git status", changes)
+
     statuses.filter(state => state != exclude)
         .forEach(state => {
             if (Array.isArray(changes[state])) {
                 result[state] = filterChanges(config, changes[state]);
 
-                all.push(...result[state]);
+                if (base.isIterable(result[state])) {
+                    for (let ch of result[state]) {
+                        config.debug2(ch);
+    
+                        all.push(ch);
+                    }
+                } else {
+                    config.debug2(`changes ${state} is not iterable`, { r: result[state] });
+                }
             }
         });
 
@@ -595,7 +607,11 @@ async function getUserChoice(config) {
     let userChoice = ".";
     let generateDrops = false;
 
+    config.debug2("getting uncommitted sql changes ...");
+    
     const changes = await getUncommittedSqlChanges(config);
+    
+    config.debug2("uncommitted sql changes", changes);
 
     if (changes.all.length > 0) {
         do {
@@ -646,6 +662,8 @@ async function getUserChoice(config) {
                 console.log("Invalid choice.");
             }
         } while (true);
+    } else {
+        config.debug2("no uncommitted sql changes found");
     }
 
     if (base.isSomeArray(changes.deleted)) {
@@ -912,21 +930,29 @@ function restoreCommittedChanges(num) {
 }
 
 async function compareWithDevBranch(config) {
-    let result = true;
+    let error;
     const { masterBranchName, realBranchName } = config;
     const git = simpleGit();
 
     if (masterBranchName) {
         try {
             do {
-                git.checkIsRepo((err, isRepo) => {
-                    if (err || !isRepo) {
-                        console.log('This is not a git repository.');
-                        result = false;
-                    };
-                });
+                config.debug2(`checking if we are in a git repo ...`);
 
-                if (!result) {
+                let isRepo = false;
+
+                try {
+                    isRepo = await git.checkIsRepo();
+                } catch (ex) {
+                    error = ex;
+                }
+
+                if (error) {
+                    break;
+                }
+
+                if (!isRepo) {
+                    console.log('This is not a git repository.');
                     break;
                 }
 
@@ -936,41 +962,43 @@ async function compareWithDevBranch(config) {
 
                 config.debug2({ origin, branch });
 
-                git.fetch(origin, branch);
+                await git.fetch(origin, branch);
 
                 const branches = await git.branch(['-r']);
 
-                config.debug2('remote branches', branches);
+                config.debug3('remote branches', branches);
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    throw new exception.Exception(`Remote branch ${masterBranchName} does not exist.`);
+                    error = new exception.Exception(`Remote branch ${masterBranchName} does not exist.`);
+                    break;
                 }
 
                 const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
 
                 config.debug2('merge-base =', base);
                 config.debug3(`getting git logs from base ${base} to ${masterBranchName}...`);
-                
+
                 const logs = await git.log({ from: base.trim(), to: masterBranchName });
-                
-                config.debug2('logs', logs);
+
+                config.debug3('logs', logs);
 
                 if (logs.total > 0) {
                     console.log(`Your '${realBranchName}' branch is behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run "git pull ${masterBranchName}" to sync with the latest changes.`);
 
-                    result = false;
+                    error = ".";
                 }
             } while (false);
         } catch (ex) {
-            throw new exception.Exception(`Error checking ${masterBranchName} branch:`, ex);
+            error = new exception.Exception(`Error checking ${masterBranchName} branch:`, ex);
         }
     } else {
         console.log(`no master branch is specified.`);
     }
 
-    return result;
+    return error;
 }
+// export default c1;
 
 function getAppVersion(config) {
     const appVersionSporcTemplate = base.isSomeString(config.appVersionSprocTemplate) ?
@@ -1204,6 +1232,8 @@ function checkIfBranchAlreadyMerged(config) {
     const { realBranchName, masterBranchName } = config;
 
     try {
+        config.debug2("checking if branch alrady merged ...");
+        
         const result = child_process.execSync(
             `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,
             { encoding: "utf-8" }
@@ -1222,10 +1252,10 @@ Create a new branch from ${realBranchName} if you have any new changes.`);
 }
 
 async function createOrUpdateChangeset(config) {
-    let error;
+    let error = await compareWithDevBranch(config);
 
-    if (await compareWithDevBranch(config)) {
-        
+    if (!error) {
+
         // TODO: Done
         // if current branch already merged with origin, exit.
         // we should not allow changing previous branches.
@@ -1237,6 +1267,8 @@ async function createOrUpdateChangeset(config) {
             let userChoice;
 
             try {
+                config.debug2("checking changed files ...");
+                
                 const guc = await getUserChoice(config);
 
                 userChoice = guc.userChoice;
@@ -1715,42 +1747,88 @@ class DbHelperBase {
 }
 
 class DbHelperSqlServer extends DbHelperBase {
+    constructor(config) {
+        super(config);
+    }
     async executeNonQuery({ query, dbName }) {
+        let pool;
+        let conn_ok = false;
+        let error;
+
         try {
-            const pool = await sql.connect({
-                user: this.config.database.user,
-                password: this.config.database.password,
-                server: this.config.database.server,
-                database: dbName ?? this.config.database.database,
-                options: { encrypt: false }
-            });
+            try {
+                pool = await sql.connect({
+                    user: this.config.user,
+                    password: this.config.password,
+                    server: this.config.server,
+                    database: dbName ?? this.config.database,
+                    options: { encrypt: false }
+                });
 
-            result = await pool.request().query(query);
+                conn_ok = true;
+            } catch (e) {
+                console.log(e);
+            }
 
-            await pool.close();
+            if (conn_ok) {
+                await pool.request().query(query);
+            }
         } catch (ex) {
-            throw new ExecuteQueryException(query, ex);
+            error = new ExecuteQueryException(query, ex);
+        } finally {
+            if (pool && conn_ok) {
+                try {
+                    await pool.close();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        if (error) {
+            throw error;
         }
     }
     async executeQuery({ query, dbName, noCatch = true }) {
         let result;
+        let pool;
+        let error;
+        let conn_ok = false;
 
         try {
-            const pool = await sql.connect({
-                user: this.config.database.user,
-                password: this.config.database.password,
-                server: this.config.database.server,
-                database: dbName ?? this.config.database.database,
-                options: { encrypt: false }
-            });
+            try {
+                pool = await sql.connect({
+                    user: this.config.database.user,
+                    password: this.config.database.password,
+                    server: this.config.database.server,
+                    database: dbName ?? this.config.database.database,
+                    options: { encrypt: false }
+                });
 
-            result = await pool.request().query(query);
+                conn_ok = true;
+            } catch (e) {
+                console.log(e);
+            }
 
-            await pool.close();
+            if (conn_ok) {
+                result = await pool.request().query(query);
 
-            result = result.recordset;
+                result = result.recordset;
+            }
         } catch (ex) {
-            throw new ExecuteQueryException(query, ex);
+            error = new ExecuteQueryException(query, ex);
+        } finally {
+            if (pool && conn_ok) {
+                try {
+                    await pool.close();
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        if (error) {
+            throw error;
         }
 
         return result;
@@ -1785,7 +1863,7 @@ function getDebugArgs(args) {
         let arg = args[i];
 
         if (base.isString(arg) && i == 0) {
-            arg = '\n\t' + arg;
+            arg = '\t' + arg;
         }
 
         _args.push(arg);
@@ -2051,10 +2129,26 @@ async function getConfig(args) {
     return config;
 }
 
-function checkDbExistence(config) {
+async function checkDbExistence(config) {
+    let result = false;
+
+    config.debug2(`checking if database ${config.database.database} exists ...`);
+
     if (!config.cliMode) {
-        config.db.dbExists(config.database.database);
+        try {
+            await config.db.dbExists(config.database.database);
+
+            config.debug2(`database ${config.database.database} exists`);
+
+            result = true;
+        } catch (ex) {
+            config.debug2(ex);
+        }
+    } else {
+        result = true;
     }
+
+    return result;
 }
 
 function containsAll(str, ...args) {
@@ -2150,31 +2244,32 @@ async function main() {
         config = await getConfig(args);
 
         checkForUpdate(config);
-        checkDbExistence(config);
 
-        switch (config.action) {
-            case ActionType.getVersion:
-                console.log("pdcsc version ", version);
-                break;
-            case ActionType.init:
-            case ActionType.initfull:
-                error = initProject(config);
-                break;
-            case ActionType.runOnPipline:
-                error = await run(config);
-                break;
-            case ActionType.runAllChangesets:
-                error = await run$1(config);
-                break;
-            case ActionType.createOrUpdateChangeset:
-                error = await createOrUpdateChangeset(config);
-                break;
-            case ActionType.updateTimestamp:
-                // TODO:
-                // new action ==> update timestamp
-                // if user asks us to update changeset timestamp, update existing
-                // changeset's timestamp with current ts
-                break;
+        if (await checkDbExistence(config)) {
+            switch (config.action) {
+                case ActionType.getVersion:
+                    console.log("pdcsc version ", version);
+                    break;
+                case ActionType.init:
+                case ActionType.initfull:
+                    error = initProject(config);
+                    break;
+                case ActionType.runOnPipline:
+                    error = await run(config);
+                    break;
+                case ActionType.runAllChangesets:
+                    error = await run$1(config);
+                    break;
+                case ActionType.createOrUpdateChangeset:
+                    error = await createOrUpdateChangeset(config);
+                    break;
+                case ActionType.updateTimestamp:
+                    // TODO:
+                    // new action ==> update timestamp
+                    // if user asks us to update changeset timestamp, update existing
+                    // changeset's timestamp with current ts
+                    break;
+            }
         }
     } catch (ex) {
         error = ex;
@@ -2189,7 +2284,7 @@ async function main() {
         }
     }
 
-    process.exit(exitCode);
+    return exitCode;
 }
 
-main().catch(console.error);
+main().then(ec => { }).catch(console.error);

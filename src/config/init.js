@@ -15,7 +15,7 @@ function getDebugArgs(args) {
         let arg = args[i]
 
         if (isString(arg) && i == 0) {
-            arg = '\n\t' + arg;
+            arg = '\t' + arg;
         }
 
         _args.push(arg)

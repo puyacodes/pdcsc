@@ -85,7 +85,7 @@ GO
 
             if (!objectType) {
                 console.warn(`Warning: sql deleted file ignored ${file} (unknown type).`);
-                
+
                 return null;
             }
 

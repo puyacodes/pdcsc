@@ -272,12 +272,12 @@ async function testScript(config, script) {
 async function commitChanges(files, message) {
     let error;
     const git = simpleGit();
-    
+
     try {
-        for (const file of files) {
+        for (let file of files) {
             await git.add(file);
         }
-    
+
         await git.commit(message);
     } catch (ex) {
         error = ex;
@@ -300,6 +300,8 @@ async function testAndCommitChangeset(config) {
 
     if (!error) {
         try {
+            config.debug2("commiting changes", [changesetFilePath, scriptFilePath]);
+
             error = await commitChanges([changesetFilePath, scriptFilePath], `pdcsc: changeset ${config.changeset} ${config.isNewChangeset ? "created" : "updated"}.`);
 
             config.changesetCommitted = true;
@@ -313,9 +315,9 @@ async function testAndCommitChangeset(config) {
         } catch (ex) {
             error = new exception.Exception('error happened while renaming changeset files.', ex);
         }
+    } else {
+        config.debug2("testScript didn't succeed");
     }
-
-    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath, paths.backupFile);
 
     return error;
 }
@@ -525,7 +527,7 @@ GO
 
             if (!objectType) {
                 console.warn(`Warning: sql deleted file ignored ${file} (unknown type).`);
-                
+
                 return null;
             }
 
@@ -564,8 +566,6 @@ function filterChanges(config, changes) {
         return isInScriptsFolder && isSqlFile;
     });
 
-    config.debug2("filtering changes", { result });
-
     return result;
 }
 
@@ -576,28 +576,18 @@ async function getUncommittedSqlChanges(config, exclude) {
     const result = {};
     const all = [];
 
-    // config.debug3("git status", changes)
+    config.debug3("git status", changes);
 
     statuses.filter(state => state != exclude)
         .forEach(state => {
             if (Array.isArray(changes[state])) {
                 result[state] = filterChanges(config, changes[state]);
 
-                if (base.isIterable(result[state])) {
-                    for (let ch of result[state]) {
-                        config.debug2(ch);
-    
-                        all.push(ch);
-                    }
-                } else {
-                    config.debug2(`changes ${state} is not iterable`, { r: result[state] });
-                }
+                all.push(...result[state]);
             }
         });
 
     result.all = all;
-
-    config.debug("Uncommited .sql files", result);
 
     return result;
 }
@@ -611,7 +601,7 @@ async function getUserChoice(config) {
     
     const changes = await getUncommittedSqlChanges(config);
     
-    config.debug2("uncommitted sql changes", changes);
+    config.debug("uncommitted sql changes", changes);
 
     if (changes.all.length > 0) {
         do {
@@ -1268,7 +1258,7 @@ async function createOrUpdateChangeset(config) {
 
             try {
                 config.debug2("checking changed files ...");
-                
+
                 const guc = await getUserChoice(config);
 
                 userChoice = guc.userChoice;
@@ -1278,19 +1268,41 @@ async function createOrUpdateChangeset(config) {
                         const sections = validateChangeSetFile(config);
                         const allChanges = getChangedFiles(config);
 
+                        config.debug3("sections = ", sections);
+
+                        config.debug2("updating sections ...");
+
                         updateSections(config, sections, allChanges);
+
+                        if (guc.generateDrops) {
+                            config.debug2("generating drop statements ...");
+                        }
 
                         const drops = guc.generateDrops ? getDropScripts(guc.changes.deleted, config.folders) : "";
 
-                        finalizeChangeset(sections, drops);
+                        config.debug2("finalizing changeset ...");
+
+                        finalizeChangeset(config, sections, drops);
+
+                        config.debug2("saving final SQL script ...");
 
                         await saveFinalScript(config);
+
+                        config.debug2("testing final SQL script and committing changes ...");
 
                         error = await testAndCommitChangeset(config);
                     }
                 }
             } catch (ex) {
                 error = ex;
+            } finally {
+                const { paths } = config;
+                const {
+                    scriptTempFilePath,
+                    changesetTempFilePath
+                } = config;
+
+                FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath, paths.backupFile);
             }
 
             if (error && config.isNewChangeset) {
@@ -1798,10 +1810,10 @@ class DbHelperSqlServer extends DbHelperBase {
         try {
             try {
                 pool = await sql.connect({
-                    user: this.config.database.user,
-                    password: this.config.database.password,
-                    server: this.config.database.server,
-                    database: dbName ?? this.config.database.database,
+                    user: this.config.user,
+                    password: this.config.password,
+                    server: this.config.server,
+                    database: dbName ?? this.config.database,
                     options: { encrypt: false }
                 });
 

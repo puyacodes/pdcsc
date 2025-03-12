@@ -29,7 +29,7 @@ async function createOrUpdateChangeset(config) {
 
             try {
                 config.debug2("checking changed files ...");
-                
+
                 const guc = await getUserChoice(config);
 
                 userChoice = guc.userChoice;
@@ -39,19 +39,41 @@ async function createOrUpdateChangeset(config) {
                         const sections = validateChangeSetFile(config);
                         const allChanges = getChangedFiles(config);
 
+                        config.debug3("sections = ", sections);
+
+                        config.debug2("updating sections ...");
+
                         updateSections(config, sections, allChanges);
+
+                        if (guc.generateDrops) {
+                            config.debug2("generating drop statements ...");
+                        }
 
                         const drops = guc.generateDrops ? getDropScripts(guc.changes.deleted, config.folders) : "";
 
-                        finalizeChangeset(sections, drops);
+                        config.debug2("finalizing changeset ...");
+
+                        finalizeChangeset(config, sections, drops);
+
+                        config.debug2("saving final SQL script ...");
 
                         await saveFinalScript(config);
+
+                        config.debug2("testing final SQL script and committing changes ...");
 
                         error = await testAndCommitChangeset(config);
                     }
                 }
             } catch (ex) {
                 error = ex;
+            } finally {
+                const { paths } = config;
+                const {
+                    scriptTempFilePath,
+                    changesetTempFilePath
+                } = config
+
+                FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath, paths.backupFile);
             }
 
             if (error && config.isNewChangeset) {

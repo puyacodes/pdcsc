@@ -55,10 +55,10 @@ class DbHelperSqlServer extends DbHelperBase {
         try {
             try {
                 pool = await sql.connect({
-                    user: this.config.database.user,
-                    password: this.config.database.password,
-                    server: this.config.database.server,
-                    database: dbName ?? this.config.database.database,
+                    user: this.config.user,
+                    password: this.config.password,
+                    server: this.config.server,
+                    database: dbName ?? this.config.database,
                     options: { encrypt: false }
                 });
 

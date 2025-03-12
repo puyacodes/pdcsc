@@ -18,6 +18,8 @@ async function testAndCommitChangeset(config) {
 
     if (!error) {
         try {
+            config.debug2("commiting changes", [changesetFilePath, scriptFilePath]);
+
             error = await commitChanges([changesetFilePath, scriptFilePath], `pdcsc: changeset ${config.changeset} ${config.isNewChangeset ? "created" : "updated"}.`);
 
             config.changesetCommitted = true;
@@ -31,9 +33,9 @@ async function testAndCommitChangeset(config) {
         } catch (ex) {
             error = new Exception('error happened while renaming changeset files.', ex);
         }
+    } else {
+        config.debug2("testScript didn't succeed")
     }
-
-    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath, paths.backupFile);
 
     return error;
 }

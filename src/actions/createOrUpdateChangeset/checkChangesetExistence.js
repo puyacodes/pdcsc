@@ -11,6 +11,10 @@ async function checkChangesetExistence(config) {
     const fileNames = fs.readdirSync(changesetsPath);
     const regex = new RegExp(`^\\d+_${currentBranch}\\.txt$`);
 
+    // Todo
+    // we should uypdate changeset timestamp always.
+    // There is no need to check whether current changeset is followed by other changesets and ...
+
     for (const fileName of fileNames) {
         if (regex.test(fileName)) {
             changesetExists = true;

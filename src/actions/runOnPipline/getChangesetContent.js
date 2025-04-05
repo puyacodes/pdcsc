@@ -6,6 +6,10 @@ function getChangesetContent(config) {
     const { currentBranch, realBranchName } = config;
     const { changesetsPath } = config.paths;
     const changesetFiles = fs.readdirSync(changesetsPath);
+
+    // Todo
+    // we should find changeset based on branchname AND merge-base
+
     const changeset = changesetFiles.find(file => file.includes(currentBranch) && file.endsWith(".sql"));
 
     if (changeset) {

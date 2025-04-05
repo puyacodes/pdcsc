@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { Exception } from "@locustjs/exception";
+import simpleGit from "simple-git";
 
-function createNewChangeset(config) {
+async function createNewChangeset(config) {
     try {
-        const { now, currentBranch } = config;
+        const { now, currentBranch, masterBranchName, realBranchName } = config;
+        const git = simpleGit();
         const content = `
 ## ===================== Custom-Start (start) ======================
 ## ===================== Custom-Start ( end ) ======================
@@ -39,10 +41,12 @@ function createNewChangeset(config) {
 ## ===================== Custom-End (start) ======================
 ## ===================== Custom-End ( end ) ======================
 `;
-        //TODO: add branch hash to changesets file name
+        //TODO: Done
+        // add branch hash to changesets file name
         const { changesetsPath } = config.paths;
+        const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
 
-        config.changeset = `${now}_${currentBranch}.txt`;
+        config.changeset = `${now}_${base.substr(0, 8)}_${currentBranch}.txt`;
         config.changesetFilePath = path.join(changesetsPath, config.changeset);
 
         fs.writeFileSync(config.changesetFilePath, content);

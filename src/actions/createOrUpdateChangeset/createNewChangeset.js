@@ -39,7 +39,7 @@ function createNewChangeset(config) {
 ## ===================== Custom-End (start) ======================
 ## ===================== Custom-End ( end ) ======================
 `;
-
+        //TODO: add branch hash to changesets file name
         const { changesetsPath } = config.paths;
 
         config.changeset = `${now}_${currentBranch}.txt`;

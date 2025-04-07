@@ -10,7 +10,7 @@ function restoreCommittedChanges(num) {
             { encoding: "utf-8" }
         ).trim();
 
-        console.log("All commited changes are restored.");
+        console.log("   commited changes are restored back.");
     } catch (error) {
         throw new Exception("ERROR!! RESTORING COMMITTED CHANGES FAILED.\nYOU MUST RESTORE CHANGES MANUALLY.\n\n" + command, error)
     }

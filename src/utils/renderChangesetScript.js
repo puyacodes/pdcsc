@@ -4,6 +4,7 @@ import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
 import { isNullOrEmpty } from "@locustjs/base";
+import getAppVersion from "./getAppVersion";
 
 async function getEncoding(filepath) {
     const info = await detectEncoding(filepath);
@@ -51,13 +52,13 @@ function getAllSqlFiles(dir) {
 
     return result;
 }
-function extractObjects(config) {
+function extractObjects(config, changesetPath) {
     const objects = [];
     let currentSection = "";
     let customStart = "";
     let customEnd = "";
 
-    const lines = fs.readFileSync(config.changesetTempFilePath, "utf-8").split("\n");
+    const lines = fs.readFileSync(changesetPath, "utf-8").split("\n");
 
     for (const line of lines) {
         const trimmed = line.trim();
@@ -87,12 +88,12 @@ function extractObjects(config) {
         }
     }
 
-    config.debug(`Total objects: ${objects.length}\n`);
+    config.debug2(`Total objects: ${objects.length}`);
 
     return { objects, customStart, customEnd };
 }
 
-async function processChangeset(config) {
+async function renderChangesetScript(config, changesetPath, changesetName) {
     const sb = {
         schemas: [],
         procedures: [],
@@ -105,7 +106,7 @@ async function processChangeset(config) {
         triggers: []
     }
 
-    const { objects, customStart, customEnd } = extractObjects(config);
+    const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
     const files = getAllSqlFiles(config.paths.scriptsPath);
 
     for (const obj of objects) {
@@ -129,7 +130,7 @@ async function processChangeset(config) {
 
                 found = true;
 
-                config.debug(`${obj.type}: ${obj.name} copied.`);
+                config.debug2(`${obj.type}: ${obj.name} copied.`);
 
                 break;
             }
@@ -142,7 +143,7 @@ async function processChangeset(config) {
         }
     }
 
-    return `-- ***               Changeset ${config.changeset}             ***
+    return `-- ***               Changeset ${changesetName}             ***
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
@@ -174,8 +175,11 @@ ${sb.procedures.join("\n")}
 -- ===================== Custom-End (start) ======================
 ${customEnd}
 -- ===================== Custom-End ( end ) ======================
+go
+${getAppVersion(config)}
+go
 `;
 }
 
 
-export default processChangeset;
+export default renderChangesetScript;

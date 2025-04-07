@@ -1,26 +1,24 @@
-import { Exception } from "@locustjs/exception";
-
 async function dropTempDb(config) {
     const { db, backupDbName } = config;
     let error;
 
     try {
-        await db.executeQuery({
-            query: `IF EXISTS(SELECT name FROM sys.databases WHERE name = '${backupDbName}')
-            DROP DATABASE[${backupDbName}]`
-        });
-    } catch (ex) {
-        const msg = config.debugMode ? `Dropping temporary database ${backupDbName} failed.` : `Dropping temporary database failed.`;
+        config.debug(`Dropping temporary database ...`);
+        
+        const query = `IF EXISTS(SELECT name FROM sys.databases WHERE name = '${backupDbName}')
+            DROP DATABASE[${backupDbName}]`;
 
-        error = new Exception(msg, ex)
+        config.debug2(query);
+
+        await db.executeQuery({ query });
+    } catch (ex) {
+        config.debug(`Dropping temporary database failed.`);
+
+        error = ex;
     }
 
     if (!error) {
-        if (config.debugMode) {
-            console.log(`Temporary database ${backupDbName} dropped successfully.`);
-        } else {
-            console.log(`Temporary database dropped successfully.`);
-        }
+        config.debug(`Temporary database dropped successfully.`);
     }
 
     return error;

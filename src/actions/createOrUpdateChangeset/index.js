@@ -6,82 +6,102 @@ import getUserChoice from "./getUserChoice.js";
 import getOrCreateChangeset from "./getOrCreateChangeset.js";
 import getChangedFiles from "./getChangedFiles.js";
 import restoreCommittedChanges from "../../utils/restoreCommittedChanges.js";
-import compareWithDevBranch from "./compareWithDevBranch.js";
+import compareWithOrigin from "./compareWithOrigin.js";
 import saveFinalScript from "./saveFinalScript.js";
 import FileHelper from "../../services/FileHelper/index.js";
 import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
+import updateChangesetTimestampIfNeeded from "./updateChangesetTimestampIfNeeded.js";
+import chalk from "chalk";
 
 async function createOrUpdateChangeset(config) {
-    let error = await compareWithDevBranch(config);
+    if (!config.debugMode) {
+        console.log((config.oldChangeset ? "Updating": "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
+    }
+
+    let error = await compareWithOrigin(config);
 
     if (!error) {
-
         // TODO: Done
         // if current branch already merged with origin, exit.
         // we should not allow changing previous branches.
         // we show a message that user should create a new branch
         // if he intends to change previous branches.
+
         error = checkIfBranchAlreadyMerged(config);
 
         if (!error) {
-            let userChoice;
+            // Todo: Done
+            // we should update changeset timestamp always.
 
-            try {
-                config.debug2("checking changed files ...");
+            error = await updateChangesetTimestampIfNeeded(config);
 
-                const guc = await getUserChoice(config);
+            if (!error) {
+                let userChoice;
 
-                userChoice = guc.userChoice;
+                try {
+                    const guc = await getUserChoice(config);
 
-                if (userChoice) {
-                    if (await getOrCreateChangeset(config)) {
+                    userChoice = guc.userChoice;
+
+                    if (userChoice) {
+                        getOrCreateChangeset(config);
+
                         const sections = validateChangeSetFile(config);
                         const allChanges = getChangedFiles(config);
 
-                        config.debug3("sections = ", sections);
-
-                        config.debug2("updating sections ...");
+                        config.debug3("Current sections", sections);
 
                         updateSections(config, sections, allChanges);
 
                         if (guc.generateDrops) {
-                            config.debug2("generating drop statements ...");
+                            config.debug("Generating drop statements ...");
                         }
 
-                        const drops = guc.generateDrops ? getDropScripts(guc.changes.deleted, config.folders) : "";
+                        const drops = guc.generateDrops ? getDropScripts(config, guc.changes.deleted, config.folders) : "";
 
-                        config.debug2("finalizing changeset ...");
+                        config.debug3({ drops });
 
                         finalizeChangeset(config, sections, drops);
 
-                        config.debug2("saving final SQL script ...");
-
                         await saveFinalScript(config);
 
-                        config.debug2("testing final SQL script and committing changes ...");
-
                         error = await testAndCommitChangeset(config);
+
+                        if (!error) {
+                            console.log('Operation completed.')
+                        }
+                    }
+                } catch (ex) {
+                    error = ex;
+                } finally {
+                    const {
+                        scriptTempFilePath,
+                        changesetTempFilePath
+                    } = config
+
+                    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+                }
+
+                if (error && config.isNewChangeset) {
+                    // we do not delete changeset script.
+                    // changeset scripts are ignored in .gitignore and are not committed.
+                    FileHelper.deleteFile(config.finalChangesetFilePath);
+                }
+
+                if (error) {
+                    if (userChoice === "2") {
+                        // restoring back committed changes depends on whether we commited changeset or not.
+                        // if the changeset is committed, we should restore 2 level back, otherwise 1 level back
+
+                        restoreCommittedChanges(config.changesetCommitted ? 2 : 1);
+                    } else if (config.changesetCommitted) {
+                        // user didn't ask to commit sql changes.
+                        // only changeset was committed. we should restore only 1 level back.
+
+                        restoreCommittedChanges(1);
                     }
                 }
-            } catch (ex) {
-                error = ex;
-            } finally {
-                const { paths } = config;
-                const {
-                    scriptTempFilePath,
-                    changesetTempFilePath
-                } = config
-
-                FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath, paths.backupFile);
-            }
-
-            if (error && config.isNewChangeset) {
-                FileHelper.deleteFile(config.changesetFilePath);
-            }
-
-            if (error && userChoice === "2") {
-                restoreCommittedChanges(config.changesetCommitted ? 2 : 1);
             }
         }
     }

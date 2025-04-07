@@ -10,15 +10,16 @@ async function getUserChoice(config) {
     let userChoice = ".";
     let generateDrops = false;
 
-    config.debug2("getting uncommitted sql changes ...");
-    
+    config.debug("Checking uncommitted sql changes ...");
+
     const changes = await getUncommittedSqlChanges(config);
-    
-    config.debug("uncommitted sql changes", changes);
+
+    config.debug2({ changes });
 
     if (changes.all.length > 0) {
         do {
-            console.warn("\nWarning: You have uncommitted changes.");
+            console.warn(`
+${chalk.yellow('Warning: You have uncommitted changes.')}`);
 
             userChoice = await promptUser(
                 `\nChoose an option:
@@ -26,7 +27,8 @@ async function getUserChoice(config) {
     2. Commit
     3. Show
     4. Cancel
-    Enter your choice: `);
+    
+Enter your choice: `);
 
             if (userChoice === "1") {
                 break;
@@ -52,13 +54,13 @@ async function getUserChoice(config) {
                 }
 
                 if (files.length) {
-                    console.log("Uncommitted changes:\n");
+                    console.log("\nUncommitted changes:\n");
                     console.log(files.join("\n"));
                 } else {
-                    console.log("No uncommitted changes found!");
+                    console.log("\nNo uncommitted changes found.");
                 }
             } else if (userChoice === "4") {
-                console.log("Operation cancelled by the user.");
+                console.log("\nOperation cancelled by the user.");
                 userChoice = "";
                 break;
             } else {
@@ -66,7 +68,7 @@ async function getUserChoice(config) {
             }
         } while (true);
     } else {
-        config.debug2("no uncommitted sql changes found");
+        config.debug("Nothing found.");
     }
 
     if (isSomeArray(changes.deleted)) {
@@ -78,7 +80,7 @@ async function getUserChoice(config) {
     if (error) {
         throw new Exception("committing changes failed", error);
     }
-    
+
     return { userChoice, changes, generateDrops };
 }
 

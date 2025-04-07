@@ -1,12 +1,15 @@
 import fs from "fs";
 import path from "path";
 import { Exception } from "@locustjs/exception";
-import simpleGit from "simple-git";
+import getNewChangeset from "./getNewChangeset";
 
-async function createNewChangeset(config) {
+function createNewChangeset(config) {
+    let changeset;
+    let changesetFilePath;
+
     try {
-        const { now, currentBranch, masterBranchName, realBranchName } = config;
-        const git = simpleGit();
+        const cs = getNewChangeset(config);
+
         const content = `
 ## ===================== Custom-Start (start) ======================
 ## ===================== Custom-Start ( end ) ======================
@@ -41,20 +44,17 @@ async function createNewChangeset(config) {
 ## ===================== Custom-End (start) ======================
 ## ===================== Custom-End ( end ) ======================
 `;
-        //TODO: Done
-        // add branch hash to changesets file name
-        const { changesetsPath } = config.paths;
-        const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
+        changeset = cs.changeset;
+        changesetFilePath = cs.changesetFilePath;
 
-        config.changeset = `${now}_${base.substr(0, 8)}_${currentBranch}.txt`;
-        config.changesetFilePath = path.join(changesetsPath, config.changeset);
+        fs.writeFileSync(changesetFilePath, content);
 
-        fs.writeFileSync(config.changesetFilePath, content);
-
-        console.log(`New empty changeset ${config.changeset} created.`)
+        console.log(`New changeset ${path.parse(changeset).name} created.`)
     } catch (ex) {
-        throw new Exception(`generating new changeset ${config.changeset} failed`, ex);
+        throw new Exception(`generating new changeset ${changeset} failed`, ex);
     }
+
+    return { changeset, changesetFilePath }
 }
 
 export default createNewChangeset;

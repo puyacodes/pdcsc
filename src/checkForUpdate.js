@@ -1,17 +1,19 @@
 import semver from "semver";
 import { execSync } from "child_process";
 import { name, version } from "../package.json";
+import chalk from "chalk";
 
-function checkForUpdate(config) {
+function checkForUpdate() {
     try {
-        const currentVersion = version;
+        console.log("Checking for pdcsc update ...");
+
         const latest = execSync(`npm view ${name} version`, { encoding: "utf8" }).trim();
 
-        if (semver.gt(latest, currentVersion)) {
-            console.warn(`⚠️  Update available for ${name}: ${currentVersion} → ${latest}`);
-            console.log(`Run "npm update ${name}" to update.`);
+        if (semver.gt(latest, version)) {
+            console.warn(`⚠️  Update available: ${chalk.yellow(latest)}`);
+            console.log(`Run ${chalk.yellow(`npm update ${name}`)} to update.`);
         } else {
-            config.debug(`✅  ${name} is up-to-date! (version: ${currentVersion})`);
+            console.log(`pdcsc is up-to-date.`);
         }
     } catch (err) {
         console.error(`Failed to check for updates: ${err}`);

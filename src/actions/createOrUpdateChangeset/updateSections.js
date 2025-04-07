@@ -1,6 +1,8 @@
 import path from "path";
 
 function updateSections(config, sections, allChanges) {
+    config.debug("Updating sections with new uncommitted changes ...");
+
     const { folders } = config;
 
     allChanges.forEach((file) => {

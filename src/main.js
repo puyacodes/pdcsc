@@ -1,6 +1,7 @@
+import chalk from 'chalk';
+import { name, version } from "../package.json";
 import checkForUpdate from './checkForUpdate.js';
 import { ActionType } from "./enums";
-import { version } from "../package.json";
 import {
     createOrUpdateChangeset,
     initProject,
@@ -11,7 +12,13 @@ import getConfig from "./config";
 import checkDbExistence from './checkDbExistence.js';
 import "./extensions";
 
+function intro() {
+    console.log(chalk.whiteBright(`Puya Data Changeset Creator 2024-2025\n`));
+}
+
 async function main() {
+    intro();
+
     let exitCode = 0;
     let error;
     let config;
@@ -19,14 +26,16 @@ async function main() {
     try {
         const args = process.argv.slice(2);
 
-        config = await getConfig(args);
+        if (!process.argv.includes("-iuc")) {
+            checkForUpdate();
+        }
 
-        checkForUpdate(config);
+        config = await getConfig(args);
 
         if (await checkDbExistence(config)) {
             switch (config.action) {
                 case ActionType.getVersion:
-                    console.log("pdcsc version ", version);
+                    console.log(`${name} version ${version})\n`);
                     break;
                 case ActionType.init:
                 case ActionType.initfull:
@@ -45,24 +54,30 @@ async function main() {
                     // TODO:
                     // new action ==> update timestamp
                     // if user asks us to update changeset timestamp, update existing
-                    // changeset's timestamp with current ts
+                    // changeset's timestamp with current ts.
+                    // pay attention that, this should only be done if current branch
+                    // is not already merged.
                     break;
             }
         }
     } catch (ex) {
         error = ex;
-        exitCode = 1;
+        exitCode = 2;
     } finally {
         if (error) {
-            console.error(error.toString());
+            console.error(chalk.red(error.toString()));
 
             if (config && config.debugMode) {
                 console.error(JSON.stringify(error, null, 4))
             }
+
+            if (exitCode == 0) {
+                exitCode = 1;
+            }
         }
     }
 
-    return exitCode;
+    return { exitCode, config };
 }
 
 export default main;

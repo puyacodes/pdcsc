@@ -29,7 +29,10 @@ csx/
 *.build.csdef
 
 # Logs and backups
-/Changes/error.log`;
+/Changes/error.log
+/Changes/*.sql
+/Changes/*~.txt
+`;
 }
 
 export default gitignoreContent;

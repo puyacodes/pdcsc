@@ -1,6 +1,9 @@
+import chalk from "chalk";
 import fs from "fs";
 
 function finalizeChangeset(config, sections, dropStatements) {
+    config.debug("Finalizing changeset ...");
+
     const content = `
 ## ===================== Custom-Start (start) ======================
 ${sections.customStart}${dropStatements}
@@ -48,7 +51,7 @@ ${sections.customEnd}
 `
     fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
 
-    console.log(`Changeset written to ${config.changesetTempFilePath}`);
+    config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
 };
 
 export default finalizeChangeset;

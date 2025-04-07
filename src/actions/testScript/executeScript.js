@@ -1,11 +1,11 @@
 async function executeScript(config, script) {
     const { db, backupDbName } = config;
 
-    console.log("Executing script on temporary database...");
+    config.debug("Executing script on temporary database ...");
 
     await db.executeBatch({ content: script, dbName: backupDbName });
 
-    console.log(`Script executed successfully on temp database.`);
+    config.debug(`Script executed successfully.`);
 }
 
 export default executeScript;

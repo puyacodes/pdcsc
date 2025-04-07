@@ -2,8 +2,16 @@
 "use strict";
 import main from "./main"
 
-let exitCode;
+main().then(({ exitCode, config }) => {
+    if (config && config.debugMode) {
+        console.log({ exitCode })
+    }
 
-main().then(ec => { exitCode = ec }).catch(console.error);
+    process.exit(exitCode)
+}).catch((...args) => {
+    console.error(...args);
+    
+    process.exit(3);
+});
 
 

@@ -1,40 +1,44 @@
 import fs from "fs";
-import FileHelper from "../../services/FileHelper";
 import testScript from "../testScript";
 import { Exception } from "@locustjs/exception";
 import commitChanges from "../../utils/commitChanges";
+import chalk from 'chalk';
 
 async function testAndCommitChangeset(config) {
-    const { paths } = config;
     const {
         scriptFilePath,
         scriptTempFilePath,
-        changesetFilePath,
+        finalChangesetFilePath,
         changesetTempFilePath
     } = config
     const tempScriptContent = fs.readFileSync(scriptTempFilePath, "utf-8");
 
+    console.log("Testing changeset ...");
+
     let error = await testScript(config, tempScriptContent);
 
-    if (!error) {
+    if (error) {
+        console.log(chalk.red("Failed.\n"));
+        console.log("See error.log for more details");
+    } else {
+        console.log(chalk.green("Passed.\n"));
+
         try {
-            config.debug2("commiting changes", [changesetFilePath, scriptFilePath]);
+            fs.renameSync(scriptTempFilePath, scriptFilePath);
+            fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
 
-            error = await commitChanges([changesetFilePath, scriptFilePath], `pdcsc: changeset ${config.changeset} ${config.isNewChangeset ? "created" : "updated"}.`);
+            const changes = [finalChangesetFilePath]
 
-            config.changesetCommitted = true;
+            config.debug2("Commiting changes", changes);
+
+            error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
 
             if (!error) {
-                fs.renameSync(scriptTempFilePath, scriptFilePath);
-                fs.renameSync(changesetTempFilePath, changesetFilePath);
-
-                console.log(`Script saved at: ${scriptFilePath}`);
+                config.changesetCommitted = true;
             }
         } catch (ex) {
-            error = new Exception('error happened while renaming changeset files.', ex);
+            error = new Exception('error happened while renaming temp files or committing changes.', ex);
         }
-    } else {
-        config.debug2("testScript didn't succeed")
     }
 
     return error;

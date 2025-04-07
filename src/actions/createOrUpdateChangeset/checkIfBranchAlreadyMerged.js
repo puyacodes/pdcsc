@@ -6,7 +6,7 @@ function checkIfBranchAlreadyMerged(config) {
     const { realBranchName, masterBranchName } = config;
 
     try {
-        config.debug2("checking if branch alrady merged ...")
+        config.debug("Checking if branch alrady merged ...")
         
         const result = execSync(
             `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,
@@ -15,11 +15,13 @@ function checkIfBranchAlreadyMerged(config) {
 
         if (result.trim() == "merged") {
             error = new Exception(`branch ${realBranchName} already merged into ${masterBranchName}.
-Changing merged branches is forbidden.
-Create a new branch from ${realBranchName} if you have any new changes.`)
+Changing already merged branches is forbidden.
+Please create a new branch.`)
+        } else {
+            config.debug("Branch is ok (not merged).");
         }
     } catch (ex) {
-        error = new Exception("error happened while checking whether branch is already merged or not", ex);
+        error = new Exception("error happened while checking branch with origin", ex);
     }
 
     return error;

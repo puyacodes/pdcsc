@@ -1,7 +1,10 @@
 import { Exception } from "@locustjs/exception";
+import chalk from "chalk";
 import fs from "fs";
 
 function validateChangeSetFile(config) {
+    config.debug("Validating changeset content ...");
+
     const tempSections = {
         customStart: "",
         procedures: [],
@@ -15,7 +18,7 @@ function validateChangeSetFile(config) {
         schemas: [],
         customEnd: ""
     };
-    const content = fs.readFileSync(config.changesetFilePath, "utf-8");
+    const content = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 
     const sections = [
         { name: "customStart", start: "## ===================== Custom-Start (start) ======================", end: "## ===================== Custom-Start ( end ) ======================" },
@@ -31,11 +34,15 @@ function validateChangeSetFile(config) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
+    config.debug3("Checking sections ...");
+
     sections.forEach(section => {
         // Check if the section exists
         if (!content.includes(section.start) || !content.includes(section.end)) {
             throw new Exception(`Error: Section '${section.name}' was not found in changeset.`);
         }
+
+        config.debug2(`Checking section ${chalk.yellow(section.name)}`);
 
         // Extract current section content
         let innerContent = content
@@ -51,7 +58,11 @@ function validateChangeSetFile(config) {
                     const trimmedLine = line.trim();
 
                     if (!tempSections[section.name].includes(trimmedLine)) {
+                        config.debug3(`New Item Added: ${chalk.gray(trimmedLine)}`);
+
                         tempSections[section.name].push(trimmedLine);
+                    } else {
+                        config.debug3(`Item existed: ${chalk.gray(trimmedLine)}`);
                     }
                 });
             } else {
@@ -59,11 +70,6 @@ function validateChangeSetFile(config) {
             }
         }
     });
-
-    // QUESTION: why we should write back content to changeset?
-    //           content is not changed!
-    // Write the updated content back to the file
-    fs.writeFileSync(config.changesetFilePath, content, "utf-8");
 
     return tempSections;
 }

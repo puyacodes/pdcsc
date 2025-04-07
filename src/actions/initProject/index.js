@@ -15,6 +15,8 @@ async function initProject(config) {
         try {
             const git = simpleGit();
 
+            config.debug(`Checking if we are a git repo ...`);
+
             let hasGitRepo = await git.checkIsRepo();
 
             if (!hasGitRepo) {
@@ -25,6 +27,8 @@ async function initProject(config) {
                 }
 
                 hasGitRepo = true;
+            } else {
+                config.debug("We are in a git repo.");
             }
 
             const folders = [
@@ -41,11 +45,24 @@ async function initProject(config) {
                 "Scripts/Indexes"
             ];
 
+            config.debug("Creating script folders ...");
+            config.debug2(folders);
+
             folders.forEach(folder => FileHelper.createDir(basePath, folder, true));
 
+            config.debug("Creating .gitlab-ci.yml file ...");
+
             const gitlabCI = FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), true);
+
+            config.debug("Creating pdcsc-config.json ...");
+
             const pdcscConfig = FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), true);
+
+            config.debug("Creating .gitignore ...");
+
             const gitIgnore = FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), true);
+
+            config.debug("Committing changes ...");
 
             error = await commitChanges([gitlabCI, pdcscConfig, gitIgnore], "pdcsc: initialized files and folders.")
         } catch (ex) { error = ex }

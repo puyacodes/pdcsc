@@ -1,15 +1,19 @@
+import chalk from "chalk";
+
 async function backupMasterDatabase(config) {
     const { database, db, paths } = config;
     const { backupFile } = paths;
     const dbName = database.database
 
-    console.log("Creating database backup...");
+    config.debug("Creating database backup...");
 
-    await db.executeQuery({
-        query: `BACKUP DATABASE [${dbName}] TO DISK = '${backupFile}' WITH INIT`
-    });
+    const query = `BACKUP DATABASE [${dbName}] TO DISK = '${backupFile}' WITH INIT`;
 
-    config.debug(`Database backup created at: ${backupFile}`);
+    config.debug2(query);
+
+    await db.executeQuery({ query });
+
+    config.debug(`Database backup created: ${chalk.cyan(backupFile)}`);
 }
 
 export default backupMasterDatabase;

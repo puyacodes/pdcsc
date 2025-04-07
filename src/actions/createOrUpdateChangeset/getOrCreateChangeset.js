@@ -1,41 +1,49 @@
 import path from "path";
-import checkChangesetExistence from "./checkChangesetExistence";
 import createNewChangeset from "./createNewChangeset";
+import chalk from "chalk";
 
-async function getOrCreateChangeset(config) {
-    let result = true;
-    let changesetExists = false;
+function getOrCreateChangeset(config) {
     let { changesetsPath } = config.paths;
 
+    // Todo: Done
+    // we should look up changeset not just by branch name, but also by branch hash.
+
+    // Todo: Done
+    // there is no need to check whether current changeset is followed by other changesets and ...
+
+    config.debug("Preparing final changeset ...");
+
     if (!config.changeset) {
-        const cce = await checkChangesetExistence(config);
+        if (!config.oldChangeset) {
+            config.debug("No existing changeset found. Creating a new changeset ...");
 
-        changesetExists = cce.changesetExists;
-
-        if (!cce.exit) {
-            if (changesetExists) {
-                config.changeset = cce.changeset;
-                config.changesetFilePath = path.join(changesetsPath, config.changeset);
-            } else {
-                createNewChangeset(config);
-            }
+            const cs = createNewChangeset(config);
+            
+            config.finalChangeset = cs.changeset;
+            config.finalChangesetFilePath = cs.changesetFilePath;
+            config.isNewChangeset = true;
         } else {
-            result = false;
+            config.debug("Working on existing changeset ...");
+
+            config.finalChangeset = config.newChangeset;
+            config.finalChangesetFilePath = config.newChangesetFilePath;
+            config.isNewChangeset = false;    
         }
     } else {
-        changesetExists = true;
+        config.debug(`${chalk.yellow("Warning:")}: manual changeset specified (${chalk.cyan(config.changeset)}).`);
+
+        config.finalChangeset = config.changeset;
+        config.finalChangesetFilePath = config.changesetFilePath;
+        config.isNewChangeset = false;
     }
 
-    const cleanFilename = path.parse(config.changeset).name;
+    const cleanFilename = path.parse(config.finalChangeset).name;
 
+    config.finalChangesetName = cleanFilename;
     config.changesetTemp = `${cleanFilename}~.txt`;
     config.changesetTempFilePath = path.join(changesetsPath, config.changesetTemp);
     config.scriptFilePath = path.join(changesetsPath, `${cleanFilename}.sql`);
     config.scriptTempFilePath = path.join(changesetsPath, `${cleanFilename}~.sql`);
-
-    config.isNewChangeset = !changesetExists;
-
-    return result;
 }
 
 export default getOrCreateChangeset;

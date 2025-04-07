@@ -7,6 +7,9 @@ import { ConsoleLogger } from "@locustjs/logging";
 import { Exception } from "@locustjs/exception";
 import { DebugLevel } from "../enums.js";
 import { isString } from "@locustjs/base";
+import simpleGit from "simple-git";
+import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
+import chalk from 'chalk';
 
 function getDebugArgs(args) {
     const _args = [];
@@ -24,15 +27,19 @@ function getDebugArgs(args) {
     return _args;
 }
 
-function init(config) {
+async function init(config) {
+    
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
-
+        
         const { currentBranch, realBranchName } = getCurrentBranch(config);
-
+        
+        console.log(`Current branch: ${chalk.yellow(realBranchName)}`);
+        
         config.currentBranch = currentBranch;
         config.realBranchName = realBranchName;
+        
         config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
         config.paths.scriptsPath = path.join(config.basePath, config.paths.scriptsFolderName);
         config.paths.backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
@@ -86,6 +93,22 @@ function init(config) {
         }
         config.danger = (...args) => {
             console.logger.danger(...args);
+        }
+
+        const git = simpleGit();
+        config.mergeBase = await git.raw(['merge-base', realBranchName, config.masterBranchName]);
+
+        if (!config.mergeBase) {
+            console.warn(`warning: merge-base for current branch (${realBranchName}) not found!`)
+        } else {
+            config.debug2('merge-base =', config.mergeBase);
+        }
+        
+        config.oldChangeset = getCurrentBranchChangeset(config);
+
+        if (config.oldChangeset) {
+            config.oldChangesetName = path.parse(config.oldChangeset).name;
+            config.oldChangesetFilePath = path.join(config.paths.changesetsPath, config.oldChangeset);
         }
 
         config.debug3(`config = `, config);

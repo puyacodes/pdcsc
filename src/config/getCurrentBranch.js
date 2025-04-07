@@ -10,11 +10,13 @@ function getCurrentBranch(config) {
             if (process.env.CI_COMMIT_REF_NAME) {
                 currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
             }
+            
             realBranchName = process.env.CI_COMMIT_REF_NAME;
         } else if (config.pipeline === "azuredevops") {
             if (process.env.CI_COMMIT_REF_NAME) {
                 currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
             }
+
             realBranchName = process.env.CI_COMMIT_REF_NAME;
         }
     } else {

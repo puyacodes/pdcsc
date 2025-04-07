@@ -6,7 +6,8 @@ async function getConfig(args) {
     const config = await read(args);
 
     validate(config);
-    init(config);
+    
+    await init(config);
     
     return config;
 }

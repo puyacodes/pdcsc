@@ -1,25 +1,38 @@
 import fs from "fs";
+import extractDateFromString from "../../utils/extractDateFromString";
+import renderChangesetScript from "../../utils/renderChangesetScript";
+import chalk from "chalk";
 import path from "path";
 
-function getChangesetContent(config) {
-    let content;
-    const { currentBranch, realBranchName } = config;
-    const { changesetsPath } = config.paths;
-    const changesetFiles = fs.readdirSync(changesetsPath);
+async function getChangesetContent(config) {
+    config.debug("Getting changeset content ...");
 
-    // Todo
+    let content;
+    const { oldChangeset, oldChangesetFilePath, realBranchName } = config;
+    const { changesetsPath } = config.paths;
+
+    // Todo: Done
     // we should find changeset based on branchname AND merge-base
 
-    const changeset = changesetFiles.find(file => file.includes(currentBranch) && file.endsWith(".sql"));
+    if (oldChangeset) {
+        // Todo: Done
+        // we should exit pipeline if we detect our changeset is followed by other changesets
+        // i.e. other branches are merged before us (our timestamp is behind them).
 
-    if (changeset) {
-        console.log(`Found changeset: ${changeset}`);
+        const existingDate = extractDateFromString(oldChangeset);
+        const fileNames = fs.readdirSync(changesetsPath);
 
-        const changesetPath = path.join(changesetsPath, changeset);
+        if (fileNames.filter(file => file.endsWith(".txt")).some(x => extractDateFromString(x) > existingDate)) {
+            console.error(`The changeset ${chalk.cyan(oldChangeset)} is followed by other changesets.`);
+            console.error(`Cannot merge branch. Please sync your branch and try again.`);
+        } else {
+            // Todo: Done
+            // we should generate changeset script dynamically, not read it from .sql
 
-        content = fs.readFileSync(changesetPath, "utf-8");
+            content = await renderChangesetScript(config, oldChangesetFilePath, path.parse(oldChangeset).name);
+        }
     } else {
-        console.warn(`No changeset file found for branch '${realBranchName}'`);
+        console.warn(`No changeset was found for branch ${chalk.yellow(realBranchName)}`);
     }
 
     return content;

@@ -4,7 +4,7 @@ import executeChangeset from "./executeChangeset";
 
 async function run(config) {
     let error;
-    const content = getChangesetContent(config);
+    const content = await getChangesetContent(config);
 
     if (content) {
         let error = await testScript(config, content);

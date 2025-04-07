@@ -1,6 +1,5 @@
 import simpleGit from "simple-git";
 import filterChanges from "./filterChanges";
-import { isIterable } from "@locustjs/base";
 
 async function getUncommittedSqlChanges(config, exclude) {
     const git = simpleGit();

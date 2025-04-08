@@ -34,7 +34,7 @@ function validateChangeSetFile(config) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
-    config.debug3("Checking sections ...");
+    config.debug("Checking sections ...");
 
     sections.forEach(section => {
         // Check if the section exists

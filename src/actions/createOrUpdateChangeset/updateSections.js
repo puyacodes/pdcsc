@@ -1,6 +1,6 @@
 import path from "path";
 
-function updateSections(config, sections, allChanges) {
+function updateSections(config, sections, allChanges, deleteds) {
     config.debug("Updating sections with new uncommitted changes ...");
 
     const { folders } = config;
@@ -14,9 +14,13 @@ function updateSections(config, sections, allChanges) {
             fileName = fileName.substring(4);
         }
 
+        config.debug2({ deleteds })
+
         for (const [section, folder] of Object.entries(folders)) {
             if (file.includes(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (!sections[section].includes(fileName)) {
+                if (!sections[section].includes(fileName) && !deleteds.includes(fileName)) {
+                    config.debug3("pushing new item in section", { section, fileName })
+
                     sections[section].push(fileName);
                 }
             }

@@ -7,6 +7,11 @@ async function run(config) {
     const content = await getChangesetContent(config);
 
     if (content) {
+        // Todo
+        // if there is a git commit after last pdcsc execution,
+        // we should stop pipeline and generate error.
+        // user must always use pdcsc.
+
         let error = await testScript(config, content);
 
         if (!error) {

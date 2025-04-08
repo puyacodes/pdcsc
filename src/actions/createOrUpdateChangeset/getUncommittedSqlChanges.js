@@ -8,7 +8,7 @@ async function getUncommittedSqlChanges(config, exclude) {
     const result = {}
     const all = [];
 
-    config.debug3("git status", changes)
+    config.debug2("git status", changes)
 
     statuses.filter(state => state != exclude)
         .forEach(state => {

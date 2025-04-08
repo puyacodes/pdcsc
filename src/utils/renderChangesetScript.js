@@ -93,7 +93,7 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-async function renderChangesetScript(config, changesetPath, changesetName) {
+async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
     const sb = {
         schemas: [],
         procedures: [],
@@ -112,27 +112,37 @@ async function renderChangesetScript(config, changesetPath, changesetName) {
     for (const obj of objects) {
         let found = false;
 
-        for (const filePath of files) {
+        if (deleteds.find(filePath => {
             const fileName = path.basename(filePath);
 
-            if (isNullOrEmpty(config.folders[obj.type])) {
-                throw new Exception(`missing script folder for ${obj.type}`)
-            }
+            return filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name);
+        })) {
+            found = true;
+            break;
+        } else {
+            for (const filePath of files) {
+                const fileName = path.basename(filePath);
 
-            // TODO: Done
-            // Filepath must be checked - Relation and Table conflict here (same names)
-            if (filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name)) {
+
+                if (isNullOrEmpty(config.folders[obj.type])) {
+                    throw new Exception(`missing script folder for ${obj.type}`)
+                }
+
                 // TODO: Done
-                // read files based on their encoding
-                const content = await readFile(filePath, config.defaultCodePage);
+                // Filepath must be checked - Relation and Table conflict here (same names)
+                if (filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name)) {
+                    // TODO: Done
+                    // read files based on their encoding
+                    const content = await readFile(filePath, config.defaultCodePage);
 
-                sb[obj.type].push(content);
+                    sb[obj.type].push(content);
 
-                found = true;
+                    found = true;
 
-                config.debug2(`${obj.type}: ${obj.name} copied.`);
+                    config.debug2(`${obj.type}: ${obj.name} copied.`);
 
-                break;
+                    break;
+                }
             }
         }
 

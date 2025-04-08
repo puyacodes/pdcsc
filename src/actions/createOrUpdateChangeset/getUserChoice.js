@@ -1,4 +1,4 @@
-import { isSomeArray } from "@locustjs/base";
+import { isArray, isSomeArray } from "@locustjs/base";
 import promptUser from "../../utils/promptUser.js";
 import commitChanges from "../../utils/commitChanges.js";
 import getUncommittedSqlChanges from "./getUncommittedSqlChanges.js";
@@ -7,7 +7,7 @@ import { Exception } from "@locustjs/exception";
 
 async function getUserChoice(config) {
     let error;
-    let userChoice = ".";
+    let userChoice = "1";
     let generateDrops = false;
 
     config.debug("Checking uncommitted sql changes ...");
@@ -71,8 +71,15 @@ Enter your choice: `);
         config.debug("Nothing found.");
     }
 
-    if (isSomeArray(changes.deleted)) {
-        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s)? `);
+    if (!isArray(changes.deleted)) {
+        changes.deleted = []
+    }
+
+    // Todo
+    // move out this section into index.js
+
+    if (isSomeArray(changes.deleted) && userChoice == "2") {
+        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s) (y/n)? `);
 
         generateDrops = answer == "y";
     }

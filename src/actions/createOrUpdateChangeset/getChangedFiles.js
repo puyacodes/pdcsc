@@ -37,14 +37,14 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        config.debug3("deleted files", deletedFiles);
-        
+        config.debug2("deleted files", deletedFiles);
+
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
         const finalFiles = allFiles.filter((file) => isValidScriptFile(config, file));
 
-        config.debug2("Final uncommitted files", finalFiles);
+        config.debug2("Final changes", finalFiles);
 
-        return finalFiles;
+        return { finalFiles, deleted };
     } catch (ex) {
         throw new Exception(`Error fetching modified and untracked files`, ex);
     }

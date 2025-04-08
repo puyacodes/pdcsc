@@ -326,7 +326,7 @@ function validateChangeSetFile(config) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
-    config.debug3("Checking sections ...");
+    config.debug("Checking sections ...");
 
     sections.forEach(section => {
         // Check if the section exists
@@ -557,7 +557,7 @@ async function getUncommittedSqlChanges(config, exclude) {
     const result = {};
     const all = [];
 
-    config.debug3("git status", changes);
+    config.debug2("git status", changes);
 
     statuses.filter(state => state != exclude)
         .forEach(state => {
@@ -575,7 +575,7 @@ async function getUncommittedSqlChanges(config, exclude) {
 
 async function getUserChoice(config) {
     let error;
-    let userChoice = ".";
+    let userChoice = "1";
     let generateDrops = false;
 
     config.debug("Checking uncommitted sql changes ...");
@@ -639,8 +639,12 @@ Enter your choice: `);
         config.debug("Nothing found.");
     }
 
-    if (base.isSomeArray(changes.deleted)) {
-        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s)? `);
+    if (!base.isArray(changes.deleted)) {
+        changes.deleted = [];
+    }
+
+    if (base.isSomeArray(changes.deleted) && userChoice == "2") {
+        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s) (y/n)? `);
 
         generateDrops = answer == "y";
     }
@@ -838,12 +842,12 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        config.debug3("deleted files", deletedFiles);
-        
+        config.debug2("deleted files", deletedFiles);
+
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
         const finalFiles = allFiles.filter((file) => isValidScriptFile(config, file));
 
-        config.debug2("Final uncommitted files", finalFiles);
+        config.debug2("Final changes", finalFiles);
 
         return finalFiles;
     } catch (ex) {
@@ -1056,7 +1060,7 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-async function renderChangesetScript(config, changesetPath, changesetName) {
+async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
     const sb = {
         schemas: [],
         procedures: [],
@@ -1075,27 +1079,37 @@ async function renderChangesetScript(config, changesetPath, changesetName) {
     for (const obj of objects) {
         let found = false;
 
-        for (const filePath of files) {
+        if (deleteds.find(filePath => {
             const fileName = path$1.basename(filePath);
 
-            if (base.isNullOrEmpty(config.folders[obj.type])) {
-                throw new exception.Exception(`missing script folder for ${obj.type}`)
-            }
+            return filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name);
+        })) {
+            found = true;
+            break;
+        } else {
+            for (const filePath of files) {
+                const fileName = path$1.basename(filePath);
 
-            // TODO: Done
-            // Filepath must be checked - Relation and Table conflict here (same names)
-            if (filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name)) {
+
+                if (base.isNullOrEmpty(config.folders[obj.type])) {
+                    throw new exception.Exception(`missing script folder for ${obj.type}`)
+                }
+
                 // TODO: Done
-                // read files based on their encoding
-                const content = await readFile(filePath, config.defaultCodePage);
+                // Filepath must be checked - Relation and Table conflict here (same names)
+                if (filePath.contains(config.folders[obj.type]) && fileName.contains(obj.name)) {
+                    // TODO: Done
+                    // read files based on their encoding
+                    const content = await readFile(filePath, config.defaultCodePage);
 
-                sb[obj.type].push(content);
+                    sb[obj.type].push(content);
 
-                found = true;
+                    found = true;
 
-                config.debug2(`${obj.type}: ${obj.name} copied.`);
+                    config.debug2(`${obj.type}: ${obj.name} copied.`);
 
-                break;
+                    break;
+                }
             }
         }
 
@@ -1144,11 +1158,11 @@ go
 `;
 }
 
-async function saveFinalScript(config) {
+async function saveFinalScript(config, deleteds) {
     config.debug("Saving final changeset script ...");
 
     const { scriptTempFilePath, changesetTempFilePath, finalChangesetName } = config;
-    const script = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName);
+    const script = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
 
     fs.writeFileSync(scriptTempFilePath, script, "utf-8");
 
@@ -1192,7 +1206,7 @@ class FileHelper {
     }
 }
 
-function updateSections(config, sections, allChanges) {
+function updateSections(config, sections, allChanges, deleteds) {
     config.debug("Updating sections with new uncommitted changes ...");
 
     const { folders } = config;
@@ -1206,9 +1220,13 @@ function updateSections(config, sections, allChanges) {
             fileName = fileName.substring(4);
         }
 
+        config.debug2({ deleteds });
+
         for (const [section, folder] of Object.entries(folders)) {
             if (file.includes(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (!sections[section].includes(fileName)) {
+                if (!sections[section].includes(fileName) && !deleteds.includes(fileName)) {
+                    config.debug3("pushing new item in section", { section, fileName });
+
                     sections[section].push(fileName);
                 }
             }
@@ -1294,7 +1312,7 @@ ${config.oldChangesetName} => ${config.newChangesetName}`);
 
 async function createOrUpdateChangeset(config) {
     if (!config.debugMode) {
-        console.log((config.oldChangeset ? "Updating": "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
+        console.log((config.oldChangeset ? "Updating" : "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
     }
 
     let error = await compareWithOrigin(config);
@@ -1330,7 +1348,7 @@ async function createOrUpdateChangeset(config) {
 
                         config.debug3("Current sections", sections);
 
-                        updateSections(config, sections, allChanges);
+                        updateSections(config, sections, allChanges, guc.changes.deleted);
 
                         if (guc.generateDrops) {
                             config.debug("Generating drop statements ...");
@@ -1342,7 +1360,7 @@ async function createOrUpdateChangeset(config) {
 
                         finalizeChangeset(config, sections, drops);
 
-                        await saveFinalScript(config);
+                        await saveFinalScript(config, guc.changes.deleted);
 
                         error = await testAndCommitChangeset(config);
 

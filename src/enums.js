@@ -7,7 +7,6 @@ const ActionType = Enum.define({
     getVersion: 3,
     init: 4,
     initfull: 5,
-    updateTimestamp: 6
 }, 'ActionType');
 
 const UpdateMode = Enum.define({
@@ -16,11 +15,4 @@ const UpdateMode = Enum.define({
     Update: 2
 }, 'UpdateMode');
 
-const DebugLevel = Enum.define({
-    None: 0,
-    Level1: 1,
-    Level2: 2,
-    Level3: 3
-}, 'DebugLevel');
-
-export { ActionType, UpdateMode, DebugLevel };
+export { ActionType, UpdateMode };

@@ -2,6 +2,7 @@ const chalk = require("chalk");
 
 console.log(chalk.black("black           "));
 console.log(chalk.red("red             "));
+console.log(chalk.red(`red is ${chalk.blue("blue")}?`));
 console.log(chalk.green("green           "));
 console.log(chalk.yellow("yellow          "));
 console.log(chalk.blue("blue            "));

@@ -88,14 +88,12 @@ async function read(args) {
 
         config.updateMode = UpdateMode.isValid(updatesMode) ?
             UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
-    } else if (args.includes("-uts")) {
-        config.action = ActionType.updateTimestamp
     } else {
         config.action = ActionType.createOrUpdateChangeset;
     }
 
     config.debugMode = args.includes("-dbm");
-    config.debugLevel = DebugLevel.getNumber(getArg("-dbl"), DebugLevel.None);
+    config.debugLevel = (getArg("-dbl") || "").split(",");
 
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;

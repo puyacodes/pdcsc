@@ -1,4 +1,4 @@
-import { isNullOrUndefined, isString } from "@locustjs/base";
+import { isNullOrEmpty, isString } from "@locustjs/base";
 
 function equals(str1, str2, ignoreCase = true) {
     let result = false;
@@ -6,7 +6,7 @@ function equals(str1, str2, ignoreCase = true) {
     if (isString(str1) && isString(str2)) {
         result = ignoreCase ? str1.toLowerCase() == str2.toLowerCase(): str1 == str2;
     } else {
-        result = isNullOrUndefined(str1) && isNullOrUndefined(str2);
+        result = isNullOrEmpty(str1) && isNullOrEmpty(str2);
     }
 
     return result;

@@ -46,6 +46,10 @@ function containsAny(str, ...args) {
     return result;
 }
 
+// --------------------------------------------
+//              String extensions
+// --------------------------------------------
+
 if (String.prototype.contains === undefined) {
     String.prototype.contains = function (...args) {
         return containsAll(this, ...args);
@@ -61,6 +65,26 @@ if (String.prototype.containsAll === undefined) {
 if (String.prototype.containsAny === undefined) {
     String.prototype.containsAny = function (...args) {
         return containsAny(this, ...args);
+    }
+}
+
+// --------------------------------------------
+//              Array extensions
+// --------------------------------------------
+
+if (Array.prototype.contains === undefined) {
+    Array.prototype.contains = function (arg) {
+        let result = false;
+
+        for (let item of this) {
+            console.log(item)
+            if ((item || "").toString().contains(arg)) {
+                result = true;
+                break;
+            }
+        }
+
+        return result;
     }
 }
 

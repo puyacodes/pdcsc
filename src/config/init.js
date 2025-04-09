@@ -5,7 +5,6 @@ import getCurrentBranch from "./getCurrentBranch.js"
 import { DbHelperSqlServer } from '../services/DbHelper/index.js';
 import { ConsoleLogger } from "@locustjs/logging";
 import { Exception } from "@locustjs/exception";
-import { DebugLevel } from "../enums.js";
 import { isString } from "@locustjs/base";
 import simpleGit from "simple-git";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
@@ -28,7 +27,6 @@ function getDebugArgs(args) {
 }
 
 async function init(config) {
-    
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
@@ -69,33 +67,23 @@ async function init(config) {
             }
         }
         config.debug1 = (...args) => {
-            if (config.debugMode && (config.debugLevel == DebugLevel.Level1 || config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+            if (config.debugMode && config.debugLevel.includes("1")) {
                 console.log(...getDebugArgs(args));
             }
         }
         config.debug2 = (...args) => {
-            if (config.debugMode && (config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+            if (config.debugMode && config.debugLevel.includes("2")) {
                 console.log(...getDebugArgs(args));
             }
         }
         config.debug3 = (...args) => {
-            if (config.debugMode && config.debugLevel == DebugLevel.Level3) {
+            if (config.debugMode && config.debugLevel.includes("3")) {
                 console.log(...getDebugArgs(args));
             }
         }
-        config.warn = (...args) => {
-            if (config.debugMode) {
-                console.warn(...args);
-            }
-        }
-        config.log = (...args) => {
-            console.logger.log(...args);
-        }
-        config.danger = (...args) => {
-            console.logger.danger(...args);
-        }
 
         const git = simpleGit();
+
         config.mergeBase = await git.raw(['merge-base', realBranchName, config.masterBranchName]);
 
         if (!config.mergeBase) {

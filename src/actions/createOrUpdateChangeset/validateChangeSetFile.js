@@ -57,7 +57,7 @@ function validateChangeSetFile(config) {
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
 
-                    if (!tempSections[section.name].includes(trimmedLine)) {
+                    if (!tempSections[section.name].contains(trimmedLine)) {
                         config.debug3(`New Item Added: ${chalk.gray(trimmedLine)}`);
 
                         tempSections[section.name].push(trimmedLine);

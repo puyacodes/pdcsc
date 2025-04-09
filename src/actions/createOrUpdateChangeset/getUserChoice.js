@@ -41,16 +41,16 @@ Enter your choice: `);
                 const files = [];
 
                 if (changes.modified.length > 0) {
-                    files.push(chalk.blue("Modified files:"));
-                    files.push(...changes.modified);
+                    files.push(chalk.whiteBright("Modified files:"));
+                    files.push(...changes.modified.map(chalk.blue));
                 }
                 if (changes.not_added.length > 0) {
-                    files.push(chalk.green("Untracked files:"));
-                    files.push(...changes.not_added);
+                    files.push(chalk.whiteBright("Untracked files:"));
+                    files.push(...changes.not_added.map(chalk.green));
                 }
                 if (changes.deleted.length > 0) {
-                    files.push(chalk.red("Deleted files:"));
-                    files.push(...changes.deleted);
+                    files.push(chalk.whiteBright("Deleted files:"));
+                    files.push(...changes.deleted.map(chalk.red));
                 }
 
                 if (files.length) {
@@ -71,7 +71,7 @@ Enter your choice: `);
         config.debug("Nothing found.");
     }
 
-    if (!isArray(changes.deleted)) {
+    if (!isArray(changes.deleted) || userChoice == "1") {
         changes.deleted = []
     }
 
@@ -84,11 +84,7 @@ Enter your choice: `);
         generateDrops = answer == "y";
     }
 
-    if (error) {
-        throw new Exception("committing changes failed", error);
-    }
-
-    return { userChoice, changes, generateDrops };
+    return { userChoice, changes, generateDrops, error };
 }
 
 export default getUserChoice;

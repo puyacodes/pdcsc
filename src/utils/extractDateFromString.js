@@ -20,10 +20,10 @@ function extractDateFromString(inputString) {
 
             return formattedDate;
         } else {
-            throw new Error("No date found in the input string.");
+            throw new Exception("No date found in the input string.");
         }
     } catch (ex) {
-        throw new Exception(ex);
+        throw new Exception("Extract date error", ex);
     }
 }
 

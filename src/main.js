@@ -11,6 +11,7 @@ import {
 import getConfig from "./config";
 import checkDbExistence from './checkDbExistence.js';
 import "./extensions";
+import { Exception } from '@locustjs/exception';
 
 function intro() {
     console.log(chalk.whiteBright(`Puya Data Changeset Creator 2024-2025\n`));
@@ -30,34 +31,31 @@ async function main() {
             checkForUpdate();
         }
 
-        config = await getConfig(args);
+        gcr = await getConfig(args);
 
-        if (await checkDbExistence(config)) {
-            switch (config.action) {
-                case ActionType.getVersion:
-                    console.log(`${name} version ${version})\n`);
-                    break;
-                case ActionType.init:
-                case ActionType.initfull:
-                    error = initProject(config);
-                    break;
-                case ActionType.runOnPipline:
-                    error = await runOnPipline(config);
-                    break;
-                case ActionType.runAllChangesets:
-                    error = await runAllChangesets(config);
-                    break;
-                case ActionType.createOrUpdateChangeset:
-                    error = await createOrUpdateChangeset(config);
-                    break;
-                case ActionType.updateTimestamp:
-                    // TODO:
-                    // new action ==> update timestamp
-                    // if user asks us to update changeset timestamp, update existing
-                    // changeset's timestamp with current ts.
-                    // pay attention that, this should only be done if current branch
-                    // is not already merged.
-                    break;
+        config = gcr.config;
+        error = gcr.error;
+
+        if (!error) {
+            if (await checkDbExistence(config)) {
+                switch (config.action) {
+                    case ActionType.getVersion:
+                        console.log(`${name} version ${version})\n`);
+                        break;
+                    case ActionType.init:
+                    case ActionType.initfull:
+                        error = initProject(config);
+                        break;
+                    case ActionType.runOnPipline:
+                        error = await runOnPipline(config);
+                        break;
+                    case ActionType.runAllChangesets:
+                        error = await runAllChangesets(config);
+                        break;
+                    case ActionType.createOrUpdateChangeset:
+                        error = await createOrUpdateChangeset(config);
+                        break;
+                }
             }
         }
     } catch (ex) {
@@ -67,7 +65,7 @@ async function main() {
         if (error) {
             console.error(chalk.red(error.toString()));
 
-            if (config && config.debugMode) {
+            if (config && config.debugMode && error instanceof Exception) {
                 console.error(JSON.stringify(error, null, 4))
             }
 

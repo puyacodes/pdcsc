@@ -3,13 +3,16 @@ import read from "./read";
 import validate from "./validate";
 
 async function getConfig(args) {
+    let error;
     const config = await read(args);
 
-    validate(config);
+    error = validate(config);
     
-    await init(config);
+    if (!error) {
+        await init(config);
+    }
     
-    return config;
+    return { config, error };
 }
 
 export default getConfig;

@@ -14,9 +14,9 @@ function checkIfBranchAlreadyMerged(config) {
         );
 
         if (result.trim() == "merged") {
-            error = new Exception(`branch ${realBranchName} already merged into ${masterBranchName}.
+            error = `branch ${realBranchName} already merged into ${masterBranchName}.
 Changing already merged branches is forbidden.
-Please create a new branch.`)
+Please create a new branch.`;
         } else {
             config.debug("Branch is ok (not merged).");
         }

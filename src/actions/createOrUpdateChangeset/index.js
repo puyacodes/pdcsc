@@ -42,46 +42,54 @@ async function createOrUpdateChangeset(config) {
                 try {
                     const guc = await getUserChoice(config);
 
-                    userChoice = guc.userChoice;
-
-                    if (userChoice) {
-                        getOrCreateChangeset(config);
-
-                        const sections = validateChangeSetFile(config);
-                        const { finalFiles, deleted } = getChangedFiles(config);
-                        const finalDeleteds = [...guc.changes.deleted, ...deleted]
-
-                        // Todo: Done
-                        // merge deletedFiles from getChangedFiles() and guc.changes.deleted
-
-                        config.debug3("Current sections", sections);
-
-                        updateSections(config, sections, finalFiles, finalDeleteds);
-
-                        if (guc.generateDrops) {
-                            config.debug("Generating drop statements ...");
-                        }
-
-                        const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
-
-                        config.debug3({ drops });
-
-                        // Todo
-                        // detect changeset items that cannot be found in file system
-                        // generate drop statements for them and remove them from changeset.
-                        // warn about this to user.
-
-                        finalizeChangeset(config, sections, drops);
-
-                        // Todo
-                        // skip test and comit if changeset has no new changes
-
-                        await saveFinalScript(config, guc.changes.deleted);
-
-                        error = await testAndCommitChangeset(config);
-
-                        if (!error) {
-                            console.log('Operation completed.')
+                    if (guc.error) {
+                        error = guc.error
+                    } else {
+                        userChoice = guc.userChoice;
+    
+                        if (userChoice) {
+                            getOrCreateChangeset(config);
+    
+                            const sections = validateChangeSetFile(config);
+                            const { finalFiles, deleted } = getChangedFiles(config);
+                            const finalDeleteds = [...guc.changes.deleted, ...deleted]
+    
+                            // Todo: Done
+                            // merge deletedFiles from getChangedFiles() and guc.changes.deleted
+    
+                            config.debug3("Current sections", sections);
+    
+                            updateSections(config, sections, finalFiles, finalDeleteds);
+    
+                            if (guc.generateDrops) {
+                                config.debug("Generating drop statements ...");
+                            }
+    
+                            // Todo
+                            // detect changeset items that cannot be found in file system
+                            // generate drop statements for them and remove them from changeset.
+                            // warn about this to user.
+                            
+                            const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
+    
+                            config.debug3({ drops });
+    
+    
+                            // Todo: Done
+                            // skip test and commit if changeset has no new changes
+    
+                            if (finalizeChangeset(config, sections, drops)) {
+        
+                                error = await saveFinalScript(config, finalDeleteds);
+        
+                                if (!error) {
+                                    error = await testAndCommitChangeset(config);
+                                }
+                            }
+    
+                            if (!error) {
+                                console.log('Operation completed.')
+                            }
                         }
                     }
                 } catch (ex) {

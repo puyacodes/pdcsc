@@ -28,7 +28,7 @@ async function compareWithOrigin(config) {
                 }
 
                 if (!isRepo) {
-                    error = new Exception('We are not a git repository.');
+                    error = 'We are not a git repository.';
                     break;
                 } else {
                     config.debug("We are a git repo.");
@@ -50,7 +50,7 @@ async function compareWithOrigin(config) {
                 config.debug3('remote branches', branches)
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = new Exception(`Remote branch ${masterBranchName} does not exist.`);
+                    error = `Remote branch ${masterBranchName} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -80,7 +80,7 @@ async function compareWithOrigin(config) {
             error = new Exception(`Error checking ${masterBranchName} branch:`, ex);
         }
     } else {
-        error = new Exception("no master branch is specified");
+        error = "no master branch is specified";
     }
 
     return error;

@@ -23,7 +23,7 @@ async function findLastCommitForFile(filePath) {
     try {
         const log = await git.log({ file: filePath });
         if (!log.all.length) {
-            throw new Error(`No changes found for ${filePath}`);
+            throw new Exception(`No changes found for ${filePath}`);
         }
         return log.all[0].hash;
     } catch (ex) {

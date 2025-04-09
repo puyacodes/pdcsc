@@ -5,6 +5,7 @@ import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
 import { isNullOrEmpty } from "@locustjs/base";
 import getAppVersion from "./getAppVersion";
+import chalk from "chalk";
 
 async function getEncoding(filepath) {
     const info = await detectEncoding(filepath);
@@ -94,6 +95,7 @@ function extractObjects(config, changesetPath) {
 }
 
 async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
+    let error;
     const sb = {
         schemas: [],
         procedures: [],
@@ -148,12 +150,13 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
         // TODO: Done
         // check object's file existence and throw error if not found
+
         if (!found) {
-            throw new Exception(`${config.folders[obj.type]}: ${obj.name} file not found!`);
+            error = `Render changeset failed. ${chalk.yellow(config.folders[obj.type])}: ${chalk.yellow(obj.name)} file not found.`;
         }
     }
 
-    return `-- ***               Changeset ${changesetName}             ***
+    const script = `-- ***               Changeset ${changesetName}             ***
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
@@ -189,6 +192,8 @@ go
 ${getAppVersion(config)}
 go
 `;
+
+    return { script, error }
 }
 
 

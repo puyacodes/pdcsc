@@ -1,3 +1,5 @@
+import chalk from "chalk";
+
 function isValidScriptFile(config, file) {
     if (!file.startsWith(config.paths.scriptsFolderName)) {
         return false
@@ -22,7 +24,7 @@ function isValidScriptFile(config, file) {
     const validFolders = Object.values(config.folders).map(folder => folder.toLowerCase());
 
     if (!validFolders.some(folder => subdir.startsWith(folder))) {
-        console.warn(`Warning: sql changed file ${file} ignored (unknown type).`);
+        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown type).`));
 
         return false;
     }

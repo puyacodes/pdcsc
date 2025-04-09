@@ -58,7 +58,7 @@ ${sections.customEnd}
 
         return true;
     } else {
-        config.debug("Skipped changeset testing. No new changes detected.")
+        console.log("Skipped changeset testing. No new changes detected.")
         
         return false;
     }

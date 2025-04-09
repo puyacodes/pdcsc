@@ -46,8 +46,10 @@ Cannot merge branch. Please sync your branch and try again.`;
 
                 if (cr.error) {
                     error = cr.error
+                } else if (cr.hasAnything) {
+                    content = cr.script;
                 } else {
-                    content = cr.content;
+                    error = 'Changeset is empty and has no changes.';
                 }
             }
         }

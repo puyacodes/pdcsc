@@ -5,7 +5,7 @@ import isValidScriptFile from "./isValidScriptFile";
 function getChangedFiles(config) {
     const { masterBranchName } = config;
 
-    config.debug("Getting uncommitted .sql files ...");
+    config.debug("Getting all changed .sql files ...");
 
     try {
         const mergeBase = execSync(
@@ -37,14 +37,14 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        config.debug2("deleted files", deletedFiles);
+        config.debug2("\ndeleted files", deletedFiles);
 
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
-        const finalFiles = allFiles.filter((file) => isValidScriptFile(config, file));
+        const finalChanges = allFiles.filter((file) => isValidScriptFile(config, file));
 
-        config.debug2("Final changes", finalFiles);
+        config.debug2("\nFinal changes", finalChanges);
 
-        return { finalFiles, deleted: deletedFiles };
+        return { finalChanges, deleted: deletedFiles };
     } catch (ex) {
         throw new Exception(`Error extracting changes from git logs`, ex);
     }

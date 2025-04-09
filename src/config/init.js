@@ -10,34 +10,18 @@ import simpleGit from "simple-git";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
 import chalk from 'chalk';
 
-function getDebugArgs(args) {
-    const _args = [];
-
-    for (let i = 0; i < args.length; i++) {
-        let arg = args[i]
-
-        if (isString(arg) && i == 0) {
-            arg = '\t' + arg;
-        }
-
-        _args.push(arg)
-    }
-
-    return _args;
-}
-
 async function init(config) {
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
-        
+
         const { currentBranch, realBranchName } = getCurrentBranch(config);
-        
+
         console.log(`Current branch: ${chalk.yellow(realBranchName)}`);
-        
+
         config.currentBranch = currentBranch;
         config.realBranchName = realBranchName;
-        
+
         config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
         config.paths.scriptsPath = path.join(config.basePath, config.paths.scriptsFolderName);
         config.paths.backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
@@ -67,18 +51,23 @@ async function init(config) {
             }
         }
         config.debug1 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("1")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("1")) {
+                console.log(...args);
             }
         }
         config.debug2 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("2")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("2")) {
+                console.log(...args);
             }
         }
         config.debug3 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("3")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("3")) {
+                console.log(...args);
+            }
+        }
+        config.debug4 = (...args) => {
+            if (config.debugMode && config.debugLevel.contains("4")) {
+                console.log(...args);
             }
         }
 
@@ -91,7 +80,7 @@ async function init(config) {
         } else {
             config.debug2('merge-base =', config.mergeBase);
         }
-        
+
         config.oldChangeset = getCurrentBranchChangeset(config);
 
         if (config.oldChangeset) {
@@ -99,7 +88,7 @@ async function init(config) {
             config.oldChangesetFilePath = path.join(config.paths.changesetsPath, config.oldChangeset);
         }
 
-        config.debug3(`config = `, config);
+        config.debug4(`config = `, config);
     }
 }
 

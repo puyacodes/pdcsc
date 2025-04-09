@@ -4,7 +4,8 @@ import { Exception } from "@locustjs/exception";
 import commitChanges from "../../utils/commitChanges";
 import chalk from 'chalk';
 
-async function testAndCommitChangeset(config) {
+async function testAndCommitChangeset(config, hasAnything) {
+    let error;
     const {
         scriptFilePath,
         scriptTempFilePath,
@@ -15,14 +16,20 @@ async function testAndCommitChangeset(config) {
 
     console.log("Testing changeset ...");
 
-    let error = await testScript(config, tempScriptContent);
+    if (hasAnything) {
+        error = await testScript(config, tempScriptContent);
+    } else {
+        console.log(`No changes detected. Testing changeset skipped.`)
+    }
 
     if (error) {
         console.log(chalk.red("Failed.\n"));
         console.log("See error.log for more details");
     } else {
-        console.log(chalk.green("Passed.\n"));
-
+        if (hasAnything) {
+            console.log(chalk.green("Passed.\n"));
+        }
+        
         try {
             fs.renameSync(scriptTempFilePath, scriptFilePath);
             fs.renameSync(changesetTempFilePath, finalChangesetFilePath);

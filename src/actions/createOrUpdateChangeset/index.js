@@ -1,5 +1,5 @@
 import testAndCommitChangeset from "./testAndCommitChangeset.js";
-import extractChangesetSections from "./extractChangesetSections.js";
+import extractSections from "./extractSections.js";
 import finalizeChangeset from "./finalizeChangeset.js";
 import getDropScripts from "./getDropScripts.js";
 import getUserChoice from "./getUserChoice.js";
@@ -50,16 +50,16 @@ async function createOrUpdateChangeset(config) {
                         if (userChoice) {
                             getOrCreateChangeset(config);
     
-                            const sections = extractChangesetSections(config);
-                            const { finalFiles, deleted } = getChangedFiles(config);
+                            const sections = extractSections(config);
+                            const { finalChanges, deleted } = getChangedFiles(config);
                             const finalDeleteds = [...guc.changes.deleted, ...deleted]
     
                             // Todo: Done
                             // merge deletedFiles from getChangedFiles() and guc.changes.deleted
     
-                            config.debug3("Current sections", sections);
+                            config.debug3("\nCurrent sections", sections);
     
-                            updateSections(config, sections, finalFiles, finalDeleteds);
+                            updateSections(config, sections, finalChanges, finalDeleteds);
     
                             if (guc.generateDrops) {
                                 config.debug("Generating drop statements ...");
@@ -79,10 +79,12 @@ async function createOrUpdateChangeset(config) {
     
                             if (finalizeChangeset(config, sections, drops)) {
         
-                                error = await saveFinalScript(config, finalDeleteds);
+                                const ssr = await saveFinalScript(config, finalDeleteds);
         
-                                if (!error) {
-                                    error = await testAndCommitChangeset(config);
+                                if (!ssr.error) {
+                                    error = await testAndCommitChangeset(config, ssr.hasAnything);
+                                } else {
+                                    error = ssr.error;
                                 }
                             }
     

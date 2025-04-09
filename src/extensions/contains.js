@@ -77,7 +77,6 @@ if (Array.prototype.contains === undefined) {
         let result = false;
 
         for (let item of this) {
-            console.log(item)
             if ((item || "").toString().contains(arg)) {
                 result = true;
                 break;

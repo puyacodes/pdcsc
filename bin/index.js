@@ -171,7 +171,7 @@ async function getFileGroups(config) {
 
         return result;
     } catch (ex) {
-        throw new exception.Exception(`Error fetching database file Groups`, ex);
+        throw new exception.Exception(`Error fetching database FileGroups`, ex);
     }
 }
 
@@ -246,7 +246,8 @@ async function commitChanges(files, message) {
     return error;
 }
 
-async function testAndCommitChangeset(config) {
+async function testAndCommitChangeset(config, hasAnything) {
+    let error;
     const {
         scriptFilePath,
         scriptTempFilePath,
@@ -257,14 +258,20 @@ async function testAndCommitChangeset(config) {
 
     console.log("Testing changeset ...");
 
-    let error = await testScript(config, tempScriptContent);
+    if (hasAnything) {
+        error = await testScript(config, tempScriptContent);
+    } else {
+        console.log(`No changes detected. Testing changeset skipped.`);
+    }
 
     if (error) {
         console.log(chalk.red("Failed.\n"));
         console.log("See error.log for more details");
     } else {
-        console.log(chalk.green("Passed.\n"));
-
+        if (hasAnything) {
+            console.log(chalk.green("Passed.\n"));
+        }
+        
         try {
             fs.renameSync(scriptTempFilePath, scriptFilePath);
             fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
@@ -286,8 +293,8 @@ async function testAndCommitChangeset(config) {
     return error;
 }
 
-function validateChangeSetFile(config) {
-    config.debug("Validating changeset content ...");
+function extractSections(config) {
+    config.debug("Extracting sections ...");
 
     const tempSections = {
         customStart: "",
@@ -318,15 +325,19 @@ function validateChangeSetFile(config) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
-    config.debug("Checking sections ...");
+    config.debug("Creating new sections ...");
 
+    // Todo:
+    // we should detect sections just by ## and section name. equal sign characters are not important.
+    // also, section end should not be mandatory.
+    
     sections.forEach(section => {
         // Check if the section exists
-        if (!content.includes(section.start) || !content.includes(section.end)) {
-            throw new exception.Exception(`Error: Section '${section.name}' was not found in changeset.`);
-        }
+        config.debug4(`Checking section ${chalk.yellow(section.name)} existence ...`);
 
-        config.debug2(`Checking section ${chalk.yellow(section.name)}`);
+        if (!content.includes(section.start) || !content.includes(section.end)) {
+            throw new exception.Exception(`Section '${chalk.yellow(section.name)}' was not found in changeset.`);
+        }
 
         // Extract current section content
         let innerContent = content
@@ -342,11 +353,11 @@ function validateChangeSetFile(config) {
                     const trimmedLine = line.trim();
 
                     if (!tempSections[section.name].contains(trimmedLine)) {
-                        config.debug3(`New Item Added: ${chalk.gray(trimmedLine)}`);
+                        config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
 
                         tempSections[section.name].push(trimmedLine);
                     } else {
-                        config.debug3(`Item existed: ${chalk.gray(trimmedLine)}`);
+                        config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
                     }
                 });
             } else {
@@ -415,7 +426,7 @@ ${sections.customEnd}
 
         return true;
     } else {
-        config.debug("Skipped changeset testing. No new changes detected.");
+        console.log("Skipped changeset testing. No new changes detected.");
         
         return false;
     }
@@ -649,7 +660,7 @@ Enter your choice: `);
     // move out this section into index.js
 
     if (base.isSomeArray(changes.deleted) && userChoice == "2") {
-        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s) (y/n)? `);
+        const answer = await promptUser(`\nGenerate DROP statements (y/n)? `);
 
         generateDrops = answer == "y";
     }
@@ -661,19 +672,15 @@ function getNewChangeset(config) {
     let changeset;
     let changesetFilePath;
 
-    try {
-        const { now, currentBranch, mergeBase } = config;
-        const { changesetsPath } = config.paths;
+    const { now, currentBranch, mergeBase } = config;
+    const { changesetsPath } = config.paths;
 
-        //TODO: Done
-        // add branch hash to changesets file name
-        const hash = mergeBase ? '_' + mergeBase.substr(0, 8): '';
-        
-        changeset = `${now}${hash}_${currentBranch}.txt`;
-        changesetFilePath = path$1.join(changesetsPath, changeset);
-    } catch (ex) {
-        throw new exception.Exception(`generating new changeset ${changeset} failed`, ex);
-    }
+    //TODO: Done
+    // add branch hash to changesets file name
+    const hash = mergeBase ? '_' + mergeBase.substr(0, 8): '';
+    
+    changeset = `${now}${hash}_${currentBranch}.txt`;
+    changesetFilePath = path$1.join(changesetsPath, changeset);
 
     return { changeset, changesetFilePath }
 }
@@ -724,9 +731,13 @@ function createNewChangeset(config) {
 
         fs.writeFileSync(changesetFilePath, content);
 
-        console.log(`New changeset ${path$1.parse(changeset).name} created.`);
+        console.log(`New changeset ${chalk.cyan(path$1.parse(changeset).name)} created.`);
     } catch (ex) {
-        throw new exception.Exception(`generating new changeset ${changeset} failed`, ex);
+        if (changeset) {
+            throw new exception.Exception(`Generating new changeset ${chalk.cyan(path$1.parse(changeset).name)} failed`, ex);
+        } else {
+            throw new exception.Exception(`Generating new changeset failed`, ex);
+        }
     }
 
     return { changeset, changesetFilePath }
@@ -811,7 +822,7 @@ function isValidScriptFile(config, file) {
 function getChangedFiles(config) {
     const { masterBranchName } = config;
 
-    config.debug("Getting uncommitted .sql files ...");
+    config.debug("Getting all changed .sql files ...");
 
     try {
         const mergeBase = child_process.execSync(
@@ -843,16 +854,16 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
-        config.debug2("deleted files", deletedFiles);
+        config.debug2("\ndeleted files", deletedFiles);
 
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
-        const finalFiles = allFiles.filter((file) => isValidScriptFile(config, file));
+        const finalChanges = allFiles.filter((file) => isValidScriptFile(config, file));
 
-        config.debug2("Final changes", finalFiles);
+        config.debug2("\nFinal changes", finalChanges);
 
-        return { finalFiles, deleted: deletedFiles };
+        return { finalChanges, deleted: deletedFiles };
     } catch (ex) {
-        throw new exception.Exception(`Error fetching modified and untracked files`, ex);
+        throw new exception.Exception(`Error extracting changes from git logs`, ex);
     }
 }
 
@@ -916,10 +927,10 @@ async function compareWithOrigin(config) {
 
                 const branches = await git.branch(['-r']);
 
-                config.debug3('remote branches', branches);
+                config.debug4('remote branches', branches);
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = `Remote branch ${masterBranchName} does not exist.`;
+                    error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -928,13 +939,13 @@ async function compareWithOrigin(config) {
                 const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
 
                 config.debug2('merge-base =', base);
-                config.debug3(`getting git logs from base ${base} to ${masterBranchName}...`);
+                config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`);
 
                 config.debug("Checking if we are behind master branch ...");
 
                 const logs = await git.log({ from: base.trim(), to: masterBranchName });
 
-                config.debug3('logs', logs);
+                config.debug3('\nlogs', logs);
 
                 if (logs.total > 0) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
@@ -968,7 +979,7 @@ function getAppVersion(config) {
     });
 
     if (!res.success) {
-        throw new exception.Exception(`ts not generated successfully.`, res.err);
+        throw new exception.Exception(`Timestamp using ${chalk.yellow("@puya/ts")} not generated successfully.`, res.err);
     }
     
     return res.data;
@@ -985,7 +996,7 @@ async function getEncoding(filepath) {
         result = "latin1";
     }
     if (["utf-8", "utf16le", "ascii", "latin1"].indexOf(result) < 0) {
-        throw new exception.Exception(`unsupported encoding ${result} (${info.encoding}) in ${filepath}`);
+        throw new exception.Exception(`Unsupported encoding ${chalk.yellow(result)} (${info.encoding}) in ${filepath}`);
     }
 
     return result;
@@ -1094,7 +1105,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
 
                 if (base.isNullOrEmpty(config.folders[obj.type])) {
-                    throw new exception.Exception(`missing script folder for ${obj.type}`)
+                    throw new exception.Exception(`Missing script folder for ${chalk.yellow(obj.type)}`)
                 }
 
                 // TODO: Done
@@ -1123,7 +1134,19 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         }
     }
 
-    const script = `-- ***               Changeset ${changesetName}             ***
+    const hasAnything = !base.isEmpty(customStart) ||
+                         !base.isEmpty(customEnd) ||
+                         base.isSomeArray(sb.schemas) ||
+                         base.isSomeArray(sb.types) ||
+                         base.isSomeArray(sb.tables) ||
+                         base.isSomeArray(sb.relations) ||
+                         base.isSomeArray(sb.functions) ||
+                         base.isSomeArray(sb.procedures) ||
+                         base.isSomeArray(sb.views) ||
+                         base.isSomeArray(sb.indexes) ||
+                         base.isSomeArray(sb.triggers);
+
+    const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
@@ -1152,6 +1175,18 @@ ${sb.functions.join("\n")}
 ${sb.procedures.join("\n")}
 -- ===================== Procedures (end) ======================
 
+-- ===================== Views (start) ======================
+${sb.views.join("\n")}
+-- ===================== Views (end) ======================
+
+-- ===================== Indexes (start) ======================
+${sb.indexes.join("\n")}
+-- ===================== Indexes (end) ======================
+
+-- ===================== Triggers (start) ======================
+${sb.triggers.join("\n")}
+-- ===================== Triggers (end) ======================
+
 -- ===================== Custom-End (start) ======================
 ${customEnd}
 -- ===================== Custom-End ( end ) ======================
@@ -1160,14 +1195,14 @@ ${getAppVersion(config)}
 go
 `;
 
-    return { script, error }
+    return { script, error, hasAnything }
 }
 
 async function saveFinalScript(config, deleteds) {
     config.debug("Saving final changeset script ...");
 
     const { scriptTempFilePath, changesetTempFilePath, finalChangesetName } = config;
-    const { script, error } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
+    const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
 
     if (!error) {
         fs.writeFileSync(scriptTempFilePath, script, "utf-8");
@@ -1175,7 +1210,7 @@ async function saveFinalScript(config, deleteds) {
         config.debug("Temp changeset saved.");
     }
     
-    return error;
+    return { error, hasAnything };
 }
 
 class FileHelper {
@@ -1233,32 +1268,76 @@ if (String.prototype.equals === undefined) {
     };
 }
 
-function updateSections(config, sections, allChanges, deleteds) {
+function updateSections(config, sections, finalChanges, finalDeleteds) {
     config.debug("Updating sections with new uncommitted changes ...");
-    config.debug2({ deleteds });
+    config.debug2({ deleteds: finalDeleteds });
 
     const { folders } = config;
 
-    allChanges.forEach((file) => {
+    config.debug2("\tAdding new changes to sections ...");
+
+    finalChanges.forEach((file) => {
         let fileName = path$1.basename(file);
         let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1): "";
+        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+
+        config.debug3(`change = ${chalk.yellow(file)}`);
 
         for (const [section, folder] of Object.entries(folders)) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
                 if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
-                    if (deleteds.contains(file)) {
+                    if (finalDeleteds.contains(file)) {
                         console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
-                        sections[section].splice(index, 1);
+                        if (index >= 0) {
+                            config.debug3(`section: ${chalk.yellow(section)}: removed`);
+    
+                            sections[section].splice(index, 1);
+                        } else {
+                            config.debug3(`section: ${chalk.yellow(section)}: item not found!`);
+                        }
+                    } else {
+                        config.debug3(`section: ${chalk.yellow(section)}: already exists`);
                     }
                 } else {
-                    if (!deleteds.contains(file)) {
-                        config.debug3("pushing new item in section", { section, fileName });
+                    if (!finalDeleteds.contains(file)) {
+                        config.debug3(`section: ${chalk.yellow(section)}: added`);
 
                         sections[section].push(fileName);
+                    } else {
+                        config.debug3(`section: ${chalk.yellow(section)}: skipped (deleted)`);
+                    }
+                }
+            }
+        }
+    });
+
+    config.debug2("\tRemoving changeset items that are deleted ...");
+
+    finalDeleteds.forEach(file => {
+        let fileName = path$1.basename(file);
+        let dotIndex = fileName.indexOf(".");
+        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+
+        config.debug3(`deleted file = ${chalk.yellow(file)}`);
+
+        for (const [section, folder] of Object.entries(folders)) {
+            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
+                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                    if (finalDeleteds.contains(file)) {
+                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
+
+                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
+
+                        if (index >= 0) {
+                            config.debug3(`section: ${chalk.yellow(section)}: removed`);
+    
+                            sections[section].splice(index, 1);
+                        } else {
+                            config.debug3(`section: ${chalk.yellow(section)}: item not found!`);
+                        }
                     }
                 }
             }
@@ -1378,16 +1457,16 @@ async function createOrUpdateChangeset(config) {
                         if (userChoice) {
                             getOrCreateChangeset(config);
     
-                            const sections = validateChangeSetFile(config);
-                            const { finalFiles, deleted } = getChangedFiles(config);
+                            const sections = extractSections(config);
+                            const { finalChanges, deleted } = getChangedFiles(config);
                             const finalDeleteds = [...guc.changes.deleted, ...deleted];
     
                             // Todo: Done
                             // merge deletedFiles from getChangedFiles() and guc.changes.deleted
     
-                            config.debug3("Current sections", sections);
+                            config.debug3("\nCurrent sections", sections);
     
-                            updateSections(config, sections, finalFiles, finalDeleteds);
+                            updateSections(config, sections, finalChanges, finalDeleteds);
     
                             if (guc.generateDrops) {
                                 config.debug("Generating drop statements ...");
@@ -1402,16 +1481,17 @@ async function createOrUpdateChangeset(config) {
     
                             config.debug3({ drops });
     
-    
                             // Todo: Done
                             // skip test and commit if changeset has no new changes
     
                             if (finalizeChangeset(config, sections, drops)) {
         
-                                error = await saveFinalScript(config, finalDeleteds);
+                                const ssr = await saveFinalScript(config, finalDeleteds);
         
-                                if (!error) {
-                                    error = await testAndCommitChangeset(config);
+                                if (!ssr.error) {
+                                    error = await testAndCommitChangeset(config, ssr.hasAnything);
+                                } else {
+                                    error = ssr.error;
                                 }
                             }
     
@@ -1681,7 +1761,7 @@ async function addChangesetToDatabase(config, changeset) {
 
         console.log(`Changeset added.`);
     } catch (ex) {
-        throw new exception.Exception(`Error adding changeset ${changeset.name} to database`, ex);
+        throw new exception.Exception(`Error adding changeset ${chalk.cyan(changeset.name)} to database`, ex);
     }
 }
 
@@ -1786,7 +1866,7 @@ function extractDateFromString(inputString) {
             throw new exception.Exception("No date found in the input string.");
         }
     } catch (ex) {
-        throw new exception.Exception("Extract date error", ex);
+        throw new exception.Exception("Extracting date error", ex);
     }
 }
 
@@ -1914,8 +1994,10 @@ Cannot merge branch. Please sync your branch and try again.`;
 
                 if (cr.error) {
                     error = cr.error;
+                } else if (cr.hasAnything) {
+                    content = cr.script;
                 } else {
-                    content = cr.content;
+                    error = 'Changeset is empty and has no changes.';
                 }
             }
         }
@@ -2101,13 +2183,13 @@ class DbHelperSqlServer extends DbHelperBase {
         try {
             await this.executeNonQuery({ query: 'declare @a int', dbName: "master" });
         } catch (ex) {
-            throw new exception.Exception(`error connecting to database server`, ex);
+            throw new exception.Exception(`Error connecting to database server`, ex);
         }
 
         try {
             await this.executeNonQuery({ query: 'use ' + dbName, dbName: "master" });
         } catch (ex) {
-            throw new exception.Exception(`database ${dbName} does not exist`, ex);
+            throw new exception.Exception(`Database ${chalk.magenta(dbName)} does not exist`, ex);
         }
     }
 }
@@ -2133,34 +2215,18 @@ function getCurrentBranchChangeset(config) {
     return changeset;
 }
 
-function getDebugArgs(args) {
-    const _args = [];
-
-    for (let i = 0; i < args.length; i++) {
-        let arg = args[i];
-
-        if (base.isString(arg) && i == 0) {
-            arg = '\t' + arg;
-        }
-
-        _args.push(arg);
-    }
-
-    return _args;
-}
-
 async function init(config) {
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
-        
+
         const { currentBranch, realBranchName } = getCurrentBranch(config);
-        
+
         console.log(`Current branch: ${chalk.yellow(realBranchName)}`);
-        
+
         config.currentBranch = currentBranch;
         config.realBranchName = realBranchName;
-        
+
         config.paths.changesetsPath = path$1.join(config.basePath, config.paths.changesetFolderName);
         config.paths.scriptsPath = path$1.join(config.basePath, config.paths.scriptsFolderName);
         config.paths.backupFile = path$1.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
@@ -2190,18 +2256,23 @@ async function init(config) {
             }
         };
         config.debug1 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("1")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("1")) {
+                console.log(...args);
             }
         };
         config.debug2 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("2")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("2")) {
+                console.log(...args);
             }
         };
         config.debug3 = (...args) => {
-            if (config.debugMode && config.debugLevel.includes("3")) {
-                console.log(...getDebugArgs(args));
+            if (config.debugMode && config.debugLevel.contains("3")) {
+                console.log(...args);
+            }
+        };
+        config.debug4 = (...args) => {
+            if (config.debugMode && config.debugLevel.contains("4")) {
+                console.log(...args);
             }
         };
 
@@ -2214,7 +2285,7 @@ async function init(config) {
         } else {
             config.debug2('merge-base =', config.mergeBase);
         }
-        
+
         config.oldChangeset = getCurrentBranchChangeset(config);
 
         if (config.oldChangeset) {
@@ -2222,7 +2293,7 @@ async function init(config) {
             config.oldChangesetFilePath = path$1.join(config.paths.changesetsPath, config.oldChangeset);
         }
 
-        config.debug3(`config = `, config);
+        config.debug4(`config = `, config);
     }
 }
 
@@ -2249,7 +2320,7 @@ async function read(args) {
         configPath = path$1.join(basePath, configPath);
 
         if (!fs.existsSync(configPath)) {
-            throw new exception.Exception(`config file ${configPath} not found.`);
+            throw new exception.Exception(`config file ${chalk.yellow(configPath)} not found.`);
         }
     } else {
         const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
@@ -2314,7 +2385,7 @@ async function read(args) {
     }
 
     config.debugMode = args.includes("-dbm");
-    config.debugLevel = (getArg("-dbl") || "").split(",");
+    config.debugLevel = (getArg("-dbl") || "").split("");
 
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
@@ -2516,7 +2587,6 @@ if (Array.prototype.contains === undefined) {
         let result = false;
 
         for (let item of this) {
-            console.log(item);
             if ((item || "").toString().contains(arg)) {
                 result = true;
                 break;

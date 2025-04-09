@@ -2,8 +2,8 @@ import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 import fs from "fs";
 
-function extractChangesetSections(config) {
-    config.debug("Validating changeset content ...");
+function extractSections(config) {
+    config.debug("Extracting sections ...");
 
     const tempSections = {
         customStart: "",
@@ -34,15 +34,19 @@ function extractChangesetSections(config) {
         { name: "triggers", start: "## ===================== Triggers (start) ======================", end: "## ===================== Triggers ( end ) ======================" }
     ];
 
-    config.debug("Checking sections ...");
+    config.debug("Creating new sections ...");
 
+    // Todo:
+    // we should detect sections just by ## and section name. equal sign characters are not important.
+    // also, section end should not be mandatory.
+    
     sections.forEach(section => {
         // Check if the section exists
-        if (!content.includes(section.start) || !content.includes(section.end)) {
-            throw new Exception(`Error: Section '${chalk.yellow(section.name)}' was not found in changeset.`);
-        }
+        config.debug4(`Checking section ${chalk.yellow(section.name)} existence ...`);
 
-        config.debug2(`Checking section ${chalk.yellow(section.name)}`);
+        if (!content.includes(section.start) || !content.includes(section.end)) {
+            throw new Exception(`Section '${chalk.yellow(section.name)}' was not found in changeset.`);
+        }
 
         // Extract current section content
         let innerContent = content
@@ -58,11 +62,11 @@ function extractChangesetSections(config) {
                     const trimmedLine = line.trim();
 
                     if (!tempSections[section.name].contains(trimmedLine)) {
-                        config.debug3(`New Item Added: ${chalk.gray(trimmedLine)}`);
+                        config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
 
                         tempSections[section.name].push(trimmedLine);
                     } else {
-                        config.debug3(`Item existed: ${chalk.gray(trimmedLine)}`);
+                        config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
                     }
                 });
             } else {
@@ -74,4 +78,4 @@ function extractChangesetSections(config) {
     return tempSections;
 }
 
-export default extractChangesetSections;
+export default extractSections;

@@ -50,9 +50,13 @@ function createNewChangeset(config) {
 
         fs.writeFileSync(changesetFilePath, content);
 
-        console.log(`New changeset ${path.parse(changeset).name} created.`)
+        console.log(`New changeset ${chalk.cyan(path.parse(changeset).name)} created.`)
     } catch (ex) {
-        throw new Exception(`Generating new changeset ${chalk.cyan(changeset)} failed`, ex);
+        if (changeset) {
+            throw new Exception(`Generating new changeset ${chalk.cyan(path.parse(changeset).name)} failed`, ex);
+        } else {
+            throw new Exception(`Generating new changeset failed`, ex);
+        }
     }
 
     return { changeset, changesetFilePath }

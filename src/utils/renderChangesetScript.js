@@ -156,16 +156,17 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         }
     }
 
-    const hasStatement = !isEmpty(customStart) ||
-                        !isEmpty(customEnd) ||
-                        isSomeArray(sb.schemas) ||
-                        isSomeArray(sb.types) ||
-                        isSomeArray(sb.tables) ||
-                        isSomeArray(sb.relations) ||
-                        isSomeArray(sb.functions) ||
-                        isSomeArray(sb.procedures) ||
-                        isSomeArray(sb.views) ||
-                        isSomeArray(sb.triggers);
+    const hasAnything = !isEmpty(customStart) ||
+                         !isEmpty(customEnd) ||
+                         isSomeArray(sb.schemas) ||
+                         isSomeArray(sb.types) ||
+                         isSomeArray(sb.tables) ||
+                         isSomeArray(sb.relations) ||
+                         isSomeArray(sb.functions) ||
+                         isSomeArray(sb.procedures) ||
+                         isSomeArray(sb.views) ||
+                         isSomeArray(sb.indexes) ||
+                         isSomeArray(sb.triggers);
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
@@ -216,7 +217,7 @@ ${getAppVersion(config)}
 go
 `;
 
-    return { script, error, hasStatement }
+    return { script, error, hasAnything }
 }
 
 

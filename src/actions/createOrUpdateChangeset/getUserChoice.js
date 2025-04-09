@@ -79,7 +79,7 @@ Enter your choice: `);
     // move out this section into index.js
 
     if (isSomeArray(changes.deleted) && userChoice == "2") {
-        const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s) (y/n)? `);
+        const answer = await promptUser(`\nGenerate DROP statements (y/n)? `);
 
         generateDrops = answer == "y";
     }

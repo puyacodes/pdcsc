@@ -47,10 +47,10 @@ async function compareWithOrigin(config) {
 
                 const branches = await git.branch(['-r']);
 
-                config.debug3('remote branches', branches)
+                config.debug4('remote branches', branches)
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = `Remote branch ${masterBranchName} does not exist.`;
+                    error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -59,13 +59,13 @@ async function compareWithOrigin(config) {
                 const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
 
                 config.debug2('merge-base =', base)
-                config.debug3(`getting git logs from base ${base} to ${masterBranchName}...`)
+                config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
 
                 config.debug("Checking if we are behind master branch ...");
 
                 const logs = await git.log({ from: base.trim(), to: masterBranchName });
 
-                config.debug3('logs', logs)
+                config.debug3('\nlogs', logs)
 
                 if (logs.total > 0) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);

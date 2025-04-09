@@ -46,7 +46,6 @@ const ActionType = _enum.Enum.define({
     getVersion: 3,
     init: 4,
     initfull: 5,
-    updateTimestamp: 6
 }, 'ActionType');
 
 const UpdateMode = _enum.Enum.define({
@@ -54,13 +53,6 @@ const UpdateMode = _enum.Enum.define({
     Test: 1,
     Update: 2
 }, 'UpdateMode');
-
-const DebugLevel = _enum.Enum.define({
-    None: 0,
-    Level1: 1,
-    Level2: 2,
-    Level3: 3
-}, 'DebugLevel');
 
 class ExecuteQueryException extends exception.Exception {
     constructor(query, ...args) {
@@ -349,7 +341,7 @@ function validateChangeSetFile(config) {
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
 
-                    if (!tempSections[section.name].includes(trimmedLine)) {
+                    if (!tempSections[section.name].contains(trimmedLine)) {
                         config.debug3(`New Item Added: ${chalk.gray(trimmedLine)}`);
 
                         tempSections[section.name].push(trimmedLine);
@@ -414,9 +406,19 @@ ${sections.triggers.join("\n")}
 ${sections.customEnd}
 ## ===================== Custom-End ( end ) ======================
 `;
-    fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
+    const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 
-    config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
+    if (old != content) {
+        fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
+
+        config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
+
+        return true;
+    } else {
+        config.debug("Skipped changeset testing. No new changes detected.");
+        
+        return false;
+    }
 }
 
 const generateDropQuery = (objectType, objectName) => {
@@ -609,16 +611,16 @@ Enter your choice: `);
                 const files = [];
 
                 if (changes.modified.length > 0) {
-                    files.push(chalk.blue("Modified files:"));
-                    files.push(...changes.modified);
+                    files.push(chalk.whiteBright("Modified files:"));
+                    files.push(...changes.modified.map(chalk.blue));
                 }
                 if (changes.not_added.length > 0) {
-                    files.push(chalk.green("Untracked files:"));
-                    files.push(...changes.not_added);
+                    files.push(chalk.whiteBright("Untracked files:"));
+                    files.push(...changes.not_added.map(chalk.green));
                 }
                 if (changes.deleted.length > 0) {
-                    files.push(chalk.red("Deleted files:"));
-                    files.push(...changes.deleted);
+                    files.push(chalk.whiteBright("Deleted files:"));
+                    files.push(...changes.deleted.map(chalk.red));
                 }
 
                 if (files.length) {
@@ -639,9 +641,12 @@ Enter your choice: `);
         config.debug("Nothing found.");
     }
 
-    if (!base.isArray(changes.deleted)) {
+    if (!base.isArray(changes.deleted) || userChoice == "1") {
         changes.deleted = [];
     }
+
+    // Todo
+    // move out this section into index.js
 
     if (base.isSomeArray(changes.deleted) && userChoice == "2") {
         const answer = await promptUser(`\nGenerate DROP statement(s) for deleted object(s) (y/n)? `);
@@ -649,11 +654,7 @@ Enter your choice: `);
         generateDrops = answer == "y";
     }
 
-    if (error) {
-        throw new exception.Exception("committing changes failed", error);
-    }
-
-    return { userChoice, changes, generateDrops };
+    return { userChoice, changes, generateDrops, error };
 }
 
 function getNewChangeset(config) {
@@ -799,7 +800,7 @@ function isValidScriptFile(config, file) {
     const validFolders = Object.values(config.folders).map(folder => folder.toLowerCase());
 
     if (!validFolders.some(folder => subdir.startsWith(folder))) {
-        console.warn(`Warning: sql changed file ${file} ignored (unknown type).`);
+        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown type).`));
 
         return false;
     }
@@ -849,7 +850,7 @@ function getChangedFiles(config) {
 
         config.debug2("Final changes", finalFiles);
 
-        return finalFiles;
+        return { finalFiles, deleted: deletedFiles };
     } catch (ex) {
         throw new exception.Exception(`Error fetching modified and untracked files`, ex);
     }
@@ -896,7 +897,7 @@ async function compareWithOrigin(config) {
                 }
 
                 if (!isRepo) {
-                    error = new exception.Exception('We are not a git repository.');
+                    error = 'We are not a git repository.';
                     break;
                 } else {
                     config.debug("We are a git repo.");
@@ -918,7 +919,7 @@ async function compareWithOrigin(config) {
                 config.debug3('remote branches', branches);
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = new exception.Exception(`Remote branch ${masterBranchName} does not exist.`);
+                    error = `Remote branch ${masterBranchName} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -939,7 +940,7 @@ async function compareWithOrigin(config) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run ${chalk.yellow(`git pull ${masterBranchName}`)} to sync with the latest changes from master branch.`);
 
-                    error = ".";
+                    error = " ";
                 } else {
                     config.debug("We are not behind master branch.");
                 }
@@ -948,7 +949,7 @@ async function compareWithOrigin(config) {
             error = new exception.Exception(`Error checking ${masterBranchName} branch:`, ex);
         }
     } else {
-        error = new exception.Exception("no master branch is specified");
+        error = "no master branch is specified";
     }
 
     return error;
@@ -1061,6 +1062,7 @@ function extractObjects(config, changesetPath) {
 }
 
 async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
+    let error;
     const sb = {
         schemas: [],
         procedures: [],
@@ -1115,12 +1117,13 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
         // TODO: Done
         // check object's file existence and throw error if not found
+
         if (!found) {
-            throw new exception.Exception(`${config.folders[obj.type]}: ${obj.name} file not found!`);
+            error = `Render changeset failed. ${chalk.yellow(config.folders[obj.type])}: ${chalk.yellow(obj.name)} file not found.`;
         }
     }
 
-    return `-- ***               Changeset ${changesetName}             ***
+    const script = `-- ***               Changeset ${changesetName}             ***
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
@@ -1156,17 +1159,23 @@ go
 ${getAppVersion(config)}
 go
 `;
+
+    return { script, error }
 }
 
 async function saveFinalScript(config, deleteds) {
     config.debug("Saving final changeset script ...");
 
     const { scriptTempFilePath, changesetTempFilePath, finalChangesetName } = config;
-    const script = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
+    const { script, error } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
 
-    fs.writeFileSync(scriptTempFilePath, script, "utf-8");
-
-    config.debug("Temp changeset saved.");
+    if (!error) {
+        fs.writeFileSync(scriptTempFilePath, script, "utf-8");
+    
+        config.debug("Temp changeset saved.");
+    }
+    
+    return error;
 }
 
 class FileHelper {
@@ -1206,28 +1215,51 @@ class FileHelper {
     }
 }
 
+function equals(str1, str2, ignoreCase = true) {
+    let result = false;
+
+    if (base.isString(str1) && base.isString(str2)) {
+        result = ignoreCase ? str1.toLowerCase() == str2.toLowerCase(): str1 == str2;
+    } else {
+        result = base.isNullOrEmpty(str1) && base.isNullOrEmpty(str2);
+    }
+
+    return result;
+}
+
+if (String.prototype.equals === undefined) {
+    String.prototype.equals = function (...args) {
+        return equals(this, ...args);
+    };
+}
+
 function updateSections(config, sections, allChanges, deleteds) {
     config.debug("Updating sections with new uncommitted changes ...");
+    config.debug2({ deleteds });
 
     const { folders } = config;
 
     allChanges.forEach((file) => {
         let fileName = path$1.basename(file);
-
-        // QUESTION: why we should omit dbo. prefix.
-        //           this can lead to bugs.
-        if (fileName.toLowerCase().startsWith("dbo.")) {
-            fileName = fileName.substring(4);
-        }
-
-        config.debug2({ deleteds });
+        let dotIndex = fileName.indexOf(".");
+        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1): "";
 
         for (const [section, folder] of Object.entries(folders)) {
-            if (file.includes(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (!sections[section].includes(fileName) && !deleteds.includes(fileName)) {
-                    config.debug3("pushing new item in section", { section, fileName });
+            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
+                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                    if (deleteds.contains(file)) {
+                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
 
-                    sections[section].push(fileName);
+                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
+
+                        sections[section].splice(index, 1);
+                    }
+                } else {
+                    if (!deleteds.contains(file)) {
+                        config.debug3("pushing new item in section", { section, fileName });
+
+                        sections[section].push(fileName);
+                    }
                 }
             }
         }
@@ -1249,9 +1281,9 @@ function checkIfBranchAlreadyMerged(config) {
         );
 
         if (result.trim() == "merged") {
-            error = new exception.Exception(`branch ${realBranchName} already merged into ${masterBranchName}.
+            error = `branch ${realBranchName} already merged into ${masterBranchName}.
 Changing already merged branches is forbidden.
-Please create a new branch.`);
+Please create a new branch.`;
         } else {
             config.debug("Branch is ok (not merged).");
         }
@@ -1338,34 +1370,54 @@ async function createOrUpdateChangeset(config) {
                 try {
                     const guc = await getUserChoice(config);
 
-                    userChoice = guc.userChoice;
-
-                    if (userChoice) {
-                        getOrCreateChangeset(config);
-
-                        const sections = validateChangeSetFile(config);
-                        const allChanges = getChangedFiles(config);
-
-                        config.debug3("Current sections", sections);
-
-                        updateSections(config, sections, allChanges, guc.changes.deleted);
-
-                        if (guc.generateDrops) {
-                            config.debug("Generating drop statements ...");
-                        }
-
-                        const drops = guc.generateDrops ? getDropScripts(config, guc.changes.deleted, config.folders) : "";
-
-                        config.debug3({ drops });
-
-                        finalizeChangeset(config, sections, drops);
-
-                        await saveFinalScript(config, guc.changes.deleted);
-
-                        error = await testAndCommitChangeset(config);
-
-                        if (!error) {
-                            console.log('Operation completed.');
+                    if (guc.error) {
+                        error = guc.error;
+                    } else {
+                        userChoice = guc.userChoice;
+    
+                        if (userChoice) {
+                            getOrCreateChangeset(config);
+    
+                            const sections = validateChangeSetFile(config);
+                            const { finalFiles, deleted } = getChangedFiles(config);
+                            const finalDeleteds = [...guc.changes.deleted, ...deleted];
+    
+                            // Todo: Done
+                            // merge deletedFiles from getChangedFiles() and guc.changes.deleted
+    
+                            config.debug3("Current sections", sections);
+    
+                            updateSections(config, sections, finalFiles, finalDeleteds);
+    
+                            if (guc.generateDrops) {
+                                config.debug("Generating drop statements ...");
+                            }
+    
+                            // Todo
+                            // detect changeset items that cannot be found in file system
+                            // generate drop statements for them and remove them from changeset.
+                            // warn about this to user.
+                            
+                            const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
+    
+                            config.debug3({ drops });
+    
+    
+                            // Todo: Done
+                            // skip test and commit if changeset has no new changes
+    
+                            if (finalizeChangeset(config, sections, drops)) {
+        
+                                error = await saveFinalScript(config, finalDeleteds);
+        
+                                if (!error) {
+                                    error = await testAndCommitChangeset(config);
+                                }
+                            }
+    
+                            if (!error) {
+                                console.log('Operation completed.');
+                            }
                         }
                     }
                 } catch (ex) {
@@ -1731,10 +1783,10 @@ function extractDateFromString(inputString) {
 
             return formattedDate;
         } else {
-            throw new Error("No date found in the input string.");
+            throw new exception.Exception("No date found in the input string.");
         }
     } catch (ex) {
-        throw new exception.Exception(ex);
+        throw new exception.Exception("Extract date error", ex);
     }
 }
 
@@ -1825,6 +1877,7 @@ async function getChangesetContent(config) {
     config.debug("Getting changeset content ...");
 
     let content;
+    let error;
     const { oldChangeset, oldChangesetFilePath, realBranchName } = config;
     const { changesetsPath } = config.paths;
 
@@ -1832,27 +1885,45 @@ async function getChangesetContent(config) {
     // we should find changeset based on branchname AND merge-base
 
     if (oldChangeset) {
-        // Todo: Done
-        // we should exit pipeline if we detect our changeset is followed by other changesets
-        // i.e. other branches are merged before us (our timestamp is behind them).
-
         const existingDate = extractDateFromString(oldChangeset);
-        const fileNames = fs.readdirSync(changesetsPath);
 
-        if (fileNames.filter(file => file.endsWith(".txt")).some(x => extractDateFromString(x) > existingDate)) {
-            console.error(`The changeset ${chalk.cyan(oldChangeset)} is followed by other changesets.`);
-            console.error(`Cannot merge branch. Please sync your branch and try again.`);
+        // Todo: Done
+        // if there is a git commit after last pdcsc execution,
+        // we should stop pipeline and generate error.
+        // user must always use pdcsc.
+        const lastCommit = child_process.execSync('git log --pretty=format:"%s" HEAD^..HEAD ', { encoding: "utf-8" }).trim();
+
+        if (lastCommit && !lastCommit.startsWith('pdcsc: changeset timestamp updated')) {
+            error = `Changeset is not up-to-date (other commits found after last changeset push).
+Please update your changeset and try again.`;
         } else {
             // Todo: Done
-            // we should generate changeset script dynamically, not read it from .sql
+            // we should exit pipeline if we detect our changeset is followed by other changesets
+            // i.e. other branches are merged before us (our timestamp is behind them).
 
-            content = await renderChangesetScript(config, oldChangesetFilePath, path$1.parse(oldChangeset).name);
+            const fileNames = fs.readdirSync(changesetsPath);
+
+            if (fileNames.filter(file => file.endsWith(".txt")).some(x => extractDateFromString(x) > existingDate)) {
+                error = `The changeset ${chalk.cyan(oldChangeset)} is followed by other changesets.
+Cannot merge branch. Please sync your branch and try again.`;
+            } else {
+                // Todo: Done
+                // we should generate changeset script dynamically, not read it from .sql
+
+                const cr = await renderChangesetScript(config, oldChangesetFilePath, path$1.parse(oldChangeset).name);
+
+                if (cr.error) {
+                    error = cr.error;
+                } else {
+                    content = cr.content;
+                }
+            }
         }
     } else {
-        console.warn(`No changeset was found for branch ${chalk.yellow(realBranchName)}`);
+        error = `No changeset found for branch ${chalk.yellow(realBranchName)}`;
     }
 
-    return content;
+    return { content, error };
 }
 
 async function executeChangeset(config, changeset) {
@@ -1874,11 +1945,10 @@ async function executeChangeset(config, changeset) {
 }
 
 async function run(config) {
-    let error;
-    const content = await getChangesetContent(config);
-
+    let { content, error } = await getChangesetContent(config);
+    
     if (content) {
-        let error = await testScript(config, content);
+        error = await testScript(config, content);
 
         if (!error) {
             error = await executeChangeset(config, content);
@@ -2022,7 +2092,8 @@ class DbHelperSqlServer extends DbHelperBase {
         const parts = content.split(/\s+GO\s+/i);
 
         for (let part of parts) {
-            // TODO: add line number to potential errors
+            // TODO:
+            // add line number to potential errors
             await this.executeQuery({ query: part, dbName });
         }
     }
@@ -2079,7 +2150,6 @@ function getDebugArgs(args) {
 }
 
 async function init(config) {
-    
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
@@ -2120,33 +2190,23 @@ async function init(config) {
             }
         };
         config.debug1 = (...args) => {
-            if (config.debugMode && (config.debugLevel == DebugLevel.Level1 || config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+            if (config.debugMode && config.debugLevel.includes("1")) {
                 console.log(...getDebugArgs(args));
             }
         };
         config.debug2 = (...args) => {
-            if (config.debugMode && (config.debugLevel == DebugLevel.Level2 || config.debugLevel == DebugLevel.Level3)) {
+            if (config.debugMode && config.debugLevel.includes("2")) {
                 console.log(...getDebugArgs(args));
             }
         };
         config.debug3 = (...args) => {
-            if (config.debugMode && config.debugLevel == DebugLevel.Level3) {
+            if (config.debugMode && config.debugLevel.includes("3")) {
                 console.log(...getDebugArgs(args));
             }
         };
-        config.warn = (...args) => {
-            if (config.debugMode) {
-                console.warn(...args);
-            }
-        };
-        config.log = (...args) => {
-            console.logger.log(...args);
-        };
-        config.danger = (...args) => {
-            console.logger.danger(...args);
-        };
 
         const git = simpleGit();
+
         config.mergeBase = await git.raw(['merge-base', realBranchName, config.masterBranchName]);
 
         if (!config.mergeBase) {
@@ -2249,14 +2309,12 @@ async function read(args) {
 
         config.updateMode = UpdateMode.isValid(updatesMode) ?
             UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
-    } else if (args.includes("-uts")) {
-        config.action = ActionType.updateTimestamp;
     } else {
         config.action = ActionType.createOrUpdateChangeset;
     }
 
     config.debugMode = args.includes("-dbm");
-    config.debugLevel = DebugLevel.getNumber(getArg("-dbl"), DebugLevel.None);
+    config.debugLevel = (getArg("-dbl") || "").split(",");
 
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
@@ -2265,95 +2323,96 @@ async function read(args) {
 }
 
 function validate(config) {
+    let error;
+
     if (base.isEmpty(config.database.server)) {
-        throw new exception.Exception(`server not specified`);
-    }
+        error = `database server not specified`;
+    } else if (base.isEmpty(config.database.user)) {
+        error = `database user not specified`;
+    } else if (base.isEmpty(config.database.password)) {
+        error = `database password not specified`;
+    } else if (base.isEmpty(config.database.database)) {
+        error = `database not specified`;
+    } else {
+        if (!base.isObject(config.paths)) {
+            config.paths = {};
+        }
 
-    if (base.isEmpty(config.database.user)) {
-        throw new exception.Exception(`user not specified`);
-    }
+        if (base.isEmpty(config.paths.backupDir)) {
+            config.paths.backupDir = "C:\\temp\\";
+        }
 
-    if (base.isEmpty(config.database.password)) {
-        throw new exception.Exception(`password not specified`);
-    }
+        if (base.isEmpty(config.pipeline)) {
+            config.pipeline = "gitlabs";
+        }
 
-    if (base.isEmpty(config.database.database)) {
-        throw new exception.Exception(`database not specified`);
-    }
+        if (base.isEmpty(config.backupDbName)) {
+            config.backupDbName = "TempBackupDB";
+        }
 
-    if (!base.isObject(config.paths)) {
-        config.paths = {};
-    }
+        if (base.isEmpty(config.paths.changesetFolderName)) {
+            config.paths.changesetFolderName = "Changes";
+        }
 
-    if (base.isEmpty(config.paths.backupDir)) {
-        config.paths.backupDir = "C:\\temp\\";
-    }
+        if (base.isEmpty(config.paths.scriptsFolderName)) {
+            config.paths.scriptsFolderName = "Scripts";
+        }
 
-    if (base.isEmpty(config.pipeline)) {
-        config.pipeline = "gitlabs";
-    }
+        if (base.isEmpty(config.masterBranchName)) {
+            config.masterBranchName = "origin/main";
+        }
 
-    if (base.isEmpty(config.backupDbName)) {
-        config.backupDbName = "TempBackupDB";
-    }
+        if (base.isEmpty(config.appVersionFormat)) {
+            config.appVersionFormat = "YYYY-MM-DD HH:mm:ss";
+        }
 
-    if (base.isEmpty(config.paths.changesetFolderName)) {
-        config.paths.changesetFolderName = "Changes";
-    }
+        if (base.isEmpty(config.timestampLocale)) {
+            config.timestampLocale = "en";
+        }
 
-    if (base.isEmpty(config.paths.scriptsFolderName)) {
-        config.paths.scriptsFolderName = "Scripts";
-    }
+        if (base.isEmpty(config.changesetsTableName)) {
+            config.changesetsTableName = "Changesets";
+        }
 
-    if (base.isEmpty(config.masterBranchName)) {
-        config.masterBranchName = "origin/main";
-    }
+        if (base.isEmpty(config.appVersionSprocName)) {
+            config.appVersionSprocName = "dbo.getAppVersion";
+        }
 
-    if (base.isEmpty(config.appVersionFormat)) {
-        config.appVersionFormat = "YYYY-MM-DD HH:mm:ss";
-    }
+        if (config.changeset) {
+            config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
 
-    if (base.isEmpty(config.timestampLocale)) {
-        config.timestampLocale = "en";
-    }
+            if (!fs.existsSync(config.changesetFilePath)) {
+                if (!config.changeset.endsWith(".txt") && config.changeset.lastIndexOf(".") < 0) {
+                    const _changeset = `${config.changeset}.txt`;
+                    const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
 
-    if (base.isEmpty(config.changesetsTableName)) {
-        config.changesetsTableName = "Changesets";
-    }
-
-    if (base.isEmpty(config.appVersionSprocName)) {
-        config.appVersionSprocName = "dbo.getAppVersion";
-    }
-
-    if (config.changeset) {
-        config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
-
-        if (!fs.existsSync(config.changesetFilePath)) {
-            if (!config.changeset.endsWith(".txt") && config.changeset.lastIndexOf(".") < 0) {
-                const _changeset = `${config.changeset}.txt`;
-                const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
-
-                if (!fs.existsSync(_changesetFilePath)) {
-                    throw new exception.Exception(`Changeset file ${config.changeset} or ${_changeset} not found.`)
+                    if (!fs.existsSync(_changesetFilePath)) {
+                        error = `Changeset file ${chalk.cyan(config.changeset)} or ${chalk.cyan(_changeset)} not found.`;
+                    } else {
+                        config.changeset = _changeset;
+                        config.changesetFilePath = _changesetFilePath;
+                    }
                 } else {
-                    config.changeset = _changeset;
-                    config.changesetFilePath = _changesetFilePath;
+                    error = `Changeset file ${chalk.cyan(config.changeset)} not found.`;
                 }
-            } else {
-                throw new exception.Exception(`Changeset file ${config.changeset} not found.`)
             }
         }
     }
+
+    return error;
 }
 
 async function getConfig(args) {
+    let error;
     const config = await read(args);
 
-    validate(config);
+    error = validate(config);
     
-    await init(config);
+    if (!error) {
+        await init(config);
+    }
     
-    return config;
+    return { config, error };
 }
 
 async function checkDbExistence(config) {
@@ -2426,6 +2485,10 @@ function containsAny(str, ...args) {
     return result;
 }
 
+// --------------------------------------------
+//              String extensions
+// --------------------------------------------
+
 if (String.prototype.contains === undefined) {
     String.prototype.contains = function (...args) {
         return containsAll(this, ...args);
@@ -2444,21 +2507,23 @@ if (String.prototype.containsAny === undefined) {
     };
 }
 
-function equals(str1, str2, ignoreCase = true) {
-    let result = false;
+// --------------------------------------------
+//              Array extensions
+// --------------------------------------------
 
-    if (base.isString(str1) && base.isString(str2)) {
-        result = ignoreCase ? str1.toLowerCase() == str2.toLowerCase(): str1 == str2;
-    } else {
-        result = base.isNullOrUndefined(str1) && base.isNullOrUndefined(str2);
-    }
+if (Array.prototype.contains === undefined) {
+    Array.prototype.contains = function (arg) {
+        let result = false;
 
-    return result;
-}
+        for (let item of this) {
+            console.log(item);
+            if ((item || "").toString().contains(arg)) {
+                result = true;
+                break;
+            }
+        }
 
-if (String.prototype.equals === undefined) {
-    String.prototype.equals = function (...args) {
-        return equals(this, ...args);
+        return result;
     };
 }
 
@@ -2480,34 +2545,31 @@ async function main() {
             checkForUpdate();
         }
 
-        config = await getConfig(args);
+        const gcr = await getConfig(args);
 
-        if (await checkDbExistence(config)) {
-            switch (config.action) {
-                case ActionType.getVersion:
-                    console.log(`${name} version ${version})\n`);
-                    break;
-                case ActionType.init:
-                case ActionType.initfull:
-                    error = initProject(config);
-                    break;
-                case ActionType.runOnPipline:
-                    error = await run(config);
-                    break;
-                case ActionType.runAllChangesets:
-                    error = await run$1(config);
-                    break;
-                case ActionType.createOrUpdateChangeset:
-                    error = await createOrUpdateChangeset(config);
-                    break;
-                case ActionType.updateTimestamp:
-                    // TODO:
-                    // new action ==> update timestamp
-                    // if user asks us to update changeset timestamp, update existing
-                    // changeset's timestamp with current ts.
-                    // pay attention that, this should only be done if current branch
-                    // is not already merged.
-                    break;
+        config = gcr.config;
+        error = gcr.error;
+
+        if (!error) {
+            if (await checkDbExistence(config)) {
+                switch (config.action) {
+                    case ActionType.getVersion:
+                        console.log(`${name} version ${version})\n`);
+                        break;
+                    case ActionType.init:
+                    case ActionType.initfull:
+                        error = initProject(config);
+                        break;
+                    case ActionType.runOnPipline:
+                        error = await run(config);
+                        break;
+                    case ActionType.runAllChangesets:
+                        error = await run$1(config);
+                        break;
+                    case ActionType.createOrUpdateChangeset:
+                        error = await createOrUpdateChangeset(config);
+                        break;
+                }
             }
         }
     } catch (ex) {
@@ -2517,7 +2579,7 @@ async function main() {
         if (error) {
             console.error(chalk.red(error.toString()));
 
-            if (config && config.debugMode) {
+            if (config && config.debugMode && error instanceof exception.Exception) {
                 console.error(JSON.stringify(error, null, 4));
             }
 

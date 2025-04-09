@@ -44,9 +44,9 @@ function getChangedFiles(config) {
 
         config.debug2("Final changes", finalFiles);
 
-        return { finalFiles, deleted };
+        return { finalFiles, deleted: deletedFiles };
     } catch (ex) {
-        throw new Exception(`Error fetching modified and untracked files`, ex);
+        throw new Exception(`Error extracting changes from git logs`, ex);
     }
 }
 

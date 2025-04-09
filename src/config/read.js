@@ -4,6 +4,7 @@ import { isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
 import { ActionType, DebugLevel, UpdateMode } from "../enums";
 import { Exception } from "@locustjs/exception";
+import chalk from "chalk";
 
 async function read(args) {
     function getArg(arg) {
@@ -28,7 +29,7 @@ async function read(args) {
         configPath = path.join(basePath, configPath);
 
         if (!fs.existsSync(configPath)) {
-            throw new Exception(`config file ${configPath} not found.`);
+            throw new Exception(`config file ${chalk.yellow(configPath)} not found.`);
         }
     } else {
         const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";

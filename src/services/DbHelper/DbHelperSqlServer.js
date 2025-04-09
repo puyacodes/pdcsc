@@ -2,6 +2,7 @@ import sql from "mssql";
 import DbHelperBase from './DbHelperBase'
 import { ExecuteQueryException } from "./exceptions";
 import { Exception } from "@locustjs/exception";
+import chalk from "chalk";
 
 class DbHelperSqlServer extends DbHelperBase {
     constructor(config) {
@@ -103,13 +104,13 @@ class DbHelperSqlServer extends DbHelperBase {
         try {
             await this.executeNonQuery({ query: 'declare @a int', dbName: "master" });
         } catch (ex) {
-            throw new Exception(`error connecting to database server`, ex);
+            throw new Exception(`Error connecting to database server`, ex);
         }
 
         try {
             await this.executeNonQuery({ query: 'use ' + dbName, dbName: "master" });
         } catch (ex) {
-            throw new Exception(`database ${dbName} does not exist`, ex);
+            throw new Exception(`Database ${chalk.magenta(dbName)} does not exist`, ex);
         }
     }
 }

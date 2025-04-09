@@ -3,6 +3,7 @@ import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import { Exception } from "@locustjs/exception";
 import iconv from 'iconv-lite';
+import chalk from "chalk";
 
 async function getEncoding(filepath) {
     // const fileName = path.basename(filePath);
@@ -16,7 +17,7 @@ async function getEncoding(filepath) {
         result = "latin1";
     }
     if (["utf-8", "utf16le", "ascii", "latin1"].indexOf(result) < 0) {
-        throw new Exception(`unsupported encoding ${result} (${info.encoding})`);
+        throw new Exception(`Unsupported encoding ${chalk.yellow(result)} (${info.encoding})`);
     }
 
     return result;

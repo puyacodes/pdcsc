@@ -1,6 +1,7 @@
 import { isSomeString } from '@locustjs/base';
 import { Exception } from '@locustjs/exception';
 import { Timestamper } from '@puya/ts';
+import chalk from 'chalk';
 
 function getAppVersion(config) {
     const appVersionSporcTemplate = isSomeString(config.appVersionSprocTemplate) ?
@@ -14,7 +15,7 @@ function getAppVersion(config) {
     });
 
     if (!res.success) {
-        throw new Exception(`ts not generated successfully.`, res.err);
+        throw new Exception(`Timestamp using ${chalk.yellow("@puya/ts")} not generated successfully.`, res.err);
     }
     
     return res.data;

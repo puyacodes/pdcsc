@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
-import { isNullOrEmpty } from "@locustjs/base";
+import { isEmpty, isNullOrEmpty, isSomeArray } from "@locustjs/base";
 import getAppVersion from "./getAppVersion";
 import chalk from "chalk";
 
@@ -18,7 +18,7 @@ async function getEncoding(filepath) {
         result = "latin1";
     }
     if (["utf-8", "utf16le", "ascii", "latin1"].indexOf(result) < 0) {
-        throw new Exception(`unsupported encoding ${result} (${info.encoding}) in ${filepath}`);
+        throw new Exception(`Unsupported encoding ${chalk.yellow(result)} (${info.encoding}) in ${filepath}`);
     }
 
     return result;
@@ -127,7 +127,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
 
                 if (isNullOrEmpty(config.folders[obj.type])) {
-                    throw new Exception(`missing script folder for ${obj.type}`)
+                    throw new Exception(`Missing script folder for ${chalk.yellow(obj.type)}`)
                 }
 
                 // TODO: Done
@@ -156,7 +156,18 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         }
     }
 
-    const script = `-- ***               Changeset ${changesetName}             ***
+    const hasStatement = !isEmpty(customStart) ||
+                        !isEmpty(customEnd) ||
+                        isSomeArray(sb.schemas) ||
+                        isSomeArray(sb.types) ||
+                        isSomeArray(sb.tables) ||
+                        isSomeArray(sb.relations) ||
+                        isSomeArray(sb.functions) ||
+                        isSomeArray(sb.procedures) ||
+                        isSomeArray(sb.views) ||
+                        isSomeArray(sb.triggers);
+
+    const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
 ${customStart}
 -- ===================== Custom-Start ( end ) ======================
@@ -185,6 +196,18 @@ ${sb.functions.join("\n")}
 ${sb.procedures.join("\n")}
 -- ===================== Procedures (end) ======================
 
+-- ===================== Views (start) ======================
+${sb.views.join("\n")}
+-- ===================== Views (end) ======================
+
+-- ===================== Indexes (start) ======================
+${sb.indexes.join("\n")}
+-- ===================== Indexes (end) ======================
+
+-- ===================== Triggers (start) ======================
+${sb.triggers.join("\n")}
+-- ===================== Triggers (end) ======================
+
 -- ===================== Custom-End (start) ======================
 ${customEnd}
 -- ===================== Custom-End ( end ) ======================
@@ -193,7 +216,7 @@ ${getAppVersion(config)}
 go
 `;
 
-    return { script, error }
+    return { script, error, hasStatement }
 }
 
 

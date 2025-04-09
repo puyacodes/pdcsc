@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { Exception } from "@locustjs/exception";
 import getNewChangeset from "./getNewChangeset";
+import chalk from "chalk";
 
 function createNewChangeset(config) {
     let changeset;
@@ -51,7 +52,7 @@ function createNewChangeset(config) {
 
         console.log(`New changeset ${path.parse(changeset).name} created.`)
     } catch (ex) {
-        throw new Exception(`generating new changeset ${changeset} failed`, ex);
+        throw new Exception(`Generating new changeset ${chalk.cyan(changeset)} failed`, ex);
     }
 
     return { changeset, changesetFilePath }

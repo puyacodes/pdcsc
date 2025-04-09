@@ -2,7 +2,7 @@ import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 import fs from "fs";
 
-function validateChangeSetFile(config) {
+function extractChangesetSections(config) {
     config.debug("Validating changeset content ...");
 
     const tempSections = {
@@ -39,7 +39,7 @@ function validateChangeSetFile(config) {
     sections.forEach(section => {
         // Check if the section exists
         if (!content.includes(section.start) || !content.includes(section.end)) {
-            throw new Exception(`Error: Section '${section.name}' was not found in changeset.`);
+            throw new Exception(`Error: Section '${chalk.yellow(section.name)}' was not found in changeset.`);
         }
 
         config.debug2(`Checking section ${chalk.yellow(section.name)}`);
@@ -74,4 +74,4 @@ function validateChangeSetFile(config) {
     return tempSections;
 }
 
-export default validateChangeSetFile;
+export default extractChangesetSections;

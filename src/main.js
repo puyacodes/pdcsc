@@ -31,7 +31,7 @@ async function main() {
             checkForUpdate();
         }
 
-        gcr = await getConfig(args);
+        const gcr = await getConfig(args);
 
         config = gcr.config;
         error = gcr.error;

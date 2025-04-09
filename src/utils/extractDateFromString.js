@@ -23,7 +23,7 @@ function extractDateFromString(inputString) {
             throw new Exception("No date found in the input string.");
         }
     } catch (ex) {
-        throw new Exception("Extract date error", ex);
+        throw new Exception("Extracting date error", ex);
     }
 }
 

@@ -1,4 +1,5 @@
 import { Exception } from "@locustjs/exception";
+import chalk from "chalk";
 import simpleGit from "simple-git";
 
 const git = simpleGit();
@@ -23,7 +24,7 @@ async function findLastCommitForFile(filePath) {
     try {
         const log = await git.log({ file: filePath });
         if (!log.all.length) {
-            throw new Exception(`No changes found for ${filePath}`);
+            throw new Exception(`No changes found for ${chalk.yellow(filePath)}`);
         }
         return log.all[0].hash;
     } catch (ex) {

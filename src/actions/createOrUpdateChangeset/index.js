@@ -1,5 +1,5 @@
 import testAndCommitChangeset from "./testAndCommitChangeset.js";
-import validateChangeSetFile from "./validateChangeSetFile.js";
+import extractChangesetSections from "./extractChangesetSections.js";
 import finalizeChangeset from "./finalizeChangeset.js";
 import getDropScripts from "./getDropScripts.js";
 import getUserChoice from "./getUserChoice.js";
@@ -50,7 +50,7 @@ async function createOrUpdateChangeset(config) {
                         if (userChoice) {
                             getOrCreateChangeset(config);
     
-                            const sections = validateChangeSetFile(config);
+                            const sections = extractChangesetSections(config);
                             const { finalFiles, deleted } = getChangedFiles(config);
                             const finalDeleteds = [...guc.changes.deleted, ...deleted]
     
@@ -73,7 +73,6 @@ async function createOrUpdateChangeset(config) {
                             const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
     
                             config.debug3({ drops });
-    
     
                             // Todo: Done
                             // skip test and commit if changeset has no new changes

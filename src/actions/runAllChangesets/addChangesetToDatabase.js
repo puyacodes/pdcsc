@@ -1,4 +1,5 @@
 import { Exception } from "@locustjs/exception";
+import chalk from "chalk";
 
 async function addChangesetToDatabase(config, changeset) {
     const { db, changesetsTableName } = config;
@@ -14,7 +15,7 @@ async function addChangesetToDatabase(config, changeset) {
 
         console.log(`Changeset added.`);
     } catch (ex) {
-        throw new Exception(`Error adding changeset ${changeset.name} to database`, ex);
+        throw new Exception(`Error adding changeset ${chalk.cyan(changeset.name)} to database`, ex);
     }
 }
 

@@ -18,7 +18,7 @@ async function getFileGroups(config) {
 
         return result;
     } catch (ex) {
-        throw new Exception(`Error fetching database file Groups`, ex);
+        throw new Exception(`Error fetching database FileGroups`, ex);
     }
 }
 

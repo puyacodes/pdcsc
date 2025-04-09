@@ -71,7 +71,7 @@ async function compareWithOrigin(config) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run ${chalk.yellow(`git pull ${masterBranchName}`)} to sync with the latest changes from master branch.`);
 
-                    error = ".";
+                    error = " ";
                 } else {
                     config.debug("We are not behind master branch.");
                 }

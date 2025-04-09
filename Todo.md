@@ -20,3 +20,25 @@ if (result.success) {
     console.error('Failed to generate changeset:', result.err);
 }
 ```
+
+
+## new bugs 1404/01/20
+1.
+create a new file
+commit
+pdcsc
+	it should ask 'create drops' for committed deletions as well
+
+2.
+	add a new file
+	pdcsc
+	delete file
+	pdcsc	=> it says 'Skipped changeset testing. No new changes detected.'
+		whereas it had to detect this missing file during test and commit.
+		but it skips test and commit.
+
+3.
+delete a file
+commit
+pdcsc
+	it should ask 'create drops' for committed deletions as well

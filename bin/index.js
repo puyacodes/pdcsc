@@ -110,7 +110,7 @@ async function backupMasterDatabase(config) {
 
     const query = `BACKUP DATABASE [${dbName}] TO DISK = '${backupFile}' WITH INIT`;
 
-    config.debug2(query);
+    config.debug4(query);
 
     await db.executeQuery({ query });
 
@@ -127,7 +127,7 @@ async function dropTempDb(config) {
         const query = `IF EXISTS(SELECT name FROM sys.databases WHERE name = '${backupDbName}')
             DROP DATABASE[${backupDbName}]`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         await db.executeQuery({ query });
     } catch (ex) {
@@ -249,11 +249,10 @@ async function commitChanges(files, message) {
 async function testAndCommitChangeset(config) {
     const {
         scriptFilePath,
-        scriptTempFilePath,
         finalChangesetFilePath,
         changesetTempFilePath
     } = config;
-    const tempScriptContent = fs.readFileSync(scriptTempFilePath, "utf-8");
+    const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
 
     console.log("Testing changeset ...");
 
@@ -272,7 +271,6 @@ async function testAndCommitChangeset(config) {
         }
         
         try {
-            fs.renameSync(scriptTempFilePath, scriptFilePath);
             fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
 
             const changes = [finalChangesetFilePath];
@@ -351,12 +349,14 @@ function extractSections(config) {
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
 
-                    if (!tempSections[section.name].contains(trimmedLine)) {
-                        config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
-
-                        tempSections[section.name].push(trimmedLine);
-                    } else {
-                        config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
+                    if (trimmedLine) {
+                        if (!tempSections[section.name].contains(trimmedLine)) {
+                            config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
+    
+                            tempSections[section.name].push(trimmedLine);
+                        } else {
+                            config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
+                        }
                     }
                 });
             } else {
@@ -423,17 +423,11 @@ ${sections.customEnd}
 `;
     const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 
-    if (old != content) {
-        fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
+    fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
 
-        config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
+    config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
 
-        return true;
-    } else {
-        console.log("Skipped changeset testing. No new changes detected.");
-
-        return false;
-    }
+    return old != content;
 }
 
 function promptUser(question, toLower = true) {
@@ -871,6 +865,7 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
+        config.debug2("\nrenamed files", renamedFiles);
         config.debug2("\ndeleted files", deletedFiles);
 
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
@@ -880,6 +875,7 @@ function getChangedFiles(config) {
 
         config.finalDeleteds = [...config.uncommittedChanges.deleted, ...deletedFiles];
         config.finalChanges = finalChanges;
+        config.renamedFiles = renamedFiles;
     } catch (ex) {
         throw new exception.Exception(`Error extracting changes from git logs`, ex);
     }
@@ -1212,13 +1208,20 @@ go
 async function saveFinalScript(config, allFiles) {
     config.debug("Saving final changeset script ...");
 
-    const { scriptTempFilePath, changesetTempFilePath, finalChangesetName, finalDeleteds } = config;
+    const {
+        scriptFilePath,
+        scriptTempFilePath,
+        changesetTempFilePath,
+        finalChangesetName,
+        finalDeleteds
+    } = config;
     const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, finalDeleteds, allFiles);
 
     if (!error) {
         fs.writeFileSync(scriptTempFilePath, script, "utf-8");
+        fs.renameSync(scriptTempFilePath, scriptFilePath);
 
-        config.debug("Temp changeset saved.");
+        config.debug(`Temp changeset saved.`);
     }
 
     config.error = error;
@@ -1251,69 +1254,78 @@ function updateSections(config, allFiles) {
     config.debug("Updating sections with new changes ...");
     config.debug2({ finalDeleteds });
 
-    config.debug2("\nadding new changes to sections ...");
+    config.debug("\nadding new changes to sections ...");
 
     finalChanges.forEach((file) => {
         let fileName = path$1.basename(file);
         let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+        let nonSchemaFileName = fileName.split(".").length > 2 && dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
 
-        config.debug3(`\tchange = ${chalk.yellow(file)}`);
+        config.debug3(`\tchange = ${chalk.yellow(file)}`, { fileName, nonSchemaFileName });
 
         for (const [section, folder] of Object.entries(folders)) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                if (sections[section].contains(fileName) || (nonSchemaFileName && sections[section].contains(nonSchemaFileName))) {
                     if (finalDeleteds.contains(file)) {
                         console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
                         if (index >= 0) {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
+                            config.debug3(`\t\tremoved`);
 
                             sections[section].splice(index, 1);
                         } else {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                            config.debug3(`\t\titem not found!`);
                         }
                     } else {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: already exists`);
+                        config.debug3(`\t\talready exists`);
                     }
                 } else {
                     if (!finalDeleteds.contains(file)) {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: added`);
+                        config.debug3(`\t\tadded`);
 
                         sections[section].push(fileName);
+
+                        if (config.renamedFiles.find(filePath => {
+                            const _fileName = path$1.basename(filePath);
+
+                            return filePath.contains(folder) && _fileName.contains(fileName);
+                        })) {
+                            console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
+    Don't forget to add ${chalk.yellow("DROP statement")} into ${chalk.yellow("Custom-Start")} section of Changeset to drop old object.`);
+                        }
                     } else {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: skipped (deleted)`);
+                        config.debug3(`\t\tskipped (deleted)`);
                     }
                 }
             }
         }
     });
 
-    config.debug2("\nremoving changeset items that are deleted ...");
+    config.debug("\nremoving changeset items that are deleted ...");
 
     finalDeleteds.forEach(file => {
         let fileName = path$1.basename(file);
         let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+        let nonSchemaFileName = fileName.split(".").length > 2 && dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
 
         config.debug3(`\tdeleted file = ${chalk.yellow(file)}`);
 
         for (const [section, folder] of Object.entries(folders)) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                if (sections[section].contains(fileName) || (nonSchemaFileName && sections[section].contains(nonSchemaFileName))) {
                     if (finalDeleteds.contains(file)) {
                         console.warn(`${chalk.yellow("Warning: ")}${chalk.red(fileName)} ${chalk.yellow(" removed from changeset (its file is deleted).")}\n`);
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
                         if (index >= 0) {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
+                            config.debug3(`\t\tremoved`);
 
                             sections[section].splice(index, 1);
                         } else {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                            config.debug3(`\t\titem not found!`);
                         }
                     }
                 }
@@ -1321,7 +1333,7 @@ function updateSections(config, allFiles) {
         }
     });
 
-    config.debug2("\nchecking if items exist ...");
+    config.debug("\nchecking if items exist ...");
 
     for (const [section, folder] of Object.entries(folders)) {
         for (let item of sections[section]) {
@@ -1337,8 +1349,13 @@ function updateSections(config, allFiles) {
                 }
             }
 
-            if (!found) {
-                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.`;
+            if (!found && !config.renamedFiles.find(filePath => {
+                const fileName = path$1.basename(filePath);
+
+                return filePath.contains(folder) && fileName.contains(item);
+            })) {
+                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.
+\tEither remove ${chalk.yellow(item)} from your changeset or create such a file in your repo.`;
 
                 break
             }
@@ -1348,6 +1365,8 @@ function updateSections(config, allFiles) {
             break;
         }
     }
+
+    config.debug2("\nupdated sections", sections);
 
     return base.isNullOrEmpty(config.error);
 }
@@ -1489,10 +1508,8 @@ function restoreChangesIfNeeded(config) {
         error
     } = config;
 
-    if (!config.debugMode) {
-        FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
-    }
-
+    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+    
     if (error && isNewChangeset) {
         // we do not delete changeset script.
         // changeset scripts are ignored in .gitignore and are not committed.
@@ -1568,15 +1585,18 @@ async function createOrUpdateChangeset(config) {
 
             // Todo: Done
             // skip test and commit if changeset has no new changes
+            const canTestAnDcommit = finalizeChangeset(config);
 
-            if (finalizeChangeset(config)) {
-                if (!await saveFinalScript(config, allFiles)) {
-                    break;
-                }
+            if (!await saveFinalScript(config, allFiles)) {
+                break;
+            }
 
+            if (canTestAnDcommit) {
                 if (!await testAndCommitChangeset(config)) {
                     break;
                 }
+            } else {
+                console.log("Skipped changeset testing. No new changes detected.");
             }
 
             console.log('Operation completed.');
@@ -1796,7 +1816,7 @@ async function ensureChangesTableCreated(config) {
                         [Name] NVARCHAR(255) NOT NULL,
                         [Date] DATETIME NOT NULL DEFAULT(GETDATE())
                     );`;
-    config.debug2(query);
+    config.debug4(query);
 
     await db.executeQuery({ query });
 }
@@ -1809,7 +1829,7 @@ async function addChangesetToDatabase(config, changeset) {
     try {
         const query = `INSERT INTO ${changesetsTableName} ([name]) VALUES ('${changeset.name}')`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         await db.executeQuery({ query });
 
@@ -1879,7 +1899,7 @@ async function getLastExecutedChangeset(config) {
     try {
         const query = `SELECT TOP 1 [date], [name] FROM ${changesetsTableName} ORDER BY [date] DESC`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         const rs = await db.executeQuery({ query });
 

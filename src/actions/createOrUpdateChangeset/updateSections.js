@@ -9,69 +9,78 @@ function updateSections(config, allFiles) {
     config.debug("Updating sections with new changes ...");
     config.debug2({ finalDeleteds })
 
-    config.debug2("\nadding new changes to sections ...");
+    config.debug("\nadding new changes to sections ...");
 
     finalChanges.forEach((file) => {
         let fileName = path.basename(file);
         let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+        let nonSchemaFileName = fileName.split(".").length > 2 && dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
 
-        config.debug3(`\tchange = ${chalk.yellow(file)}`);
+        config.debug3(`\tchange = ${chalk.yellow(file)}`, { fileName, nonSchemaFileName });
 
         for (const [section, folder] of Object.entries(folders)) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                if (sections[section].contains(fileName) || (nonSchemaFileName && sections[section].contains(nonSchemaFileName))) {
                     if (finalDeleteds.contains(file)) {
                         console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`)
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
                         if (index >= 0) {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`)
+                            config.debug3(`\t\tremoved`)
 
                             sections[section].splice(index, 1);
                         } else {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                            config.debug3(`\t\titem not found!`);
                         }
                     } else {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: already exists`);
+                        config.debug3(`\t\talready exists`);
                     }
                 } else {
                     if (!finalDeleteds.contains(file)) {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: added`);
+                        config.debug3(`\t\tadded`);
 
                         sections[section].push(fileName);
+
+                        if (config.renamedFiles.find(filePath => {
+                            const _fileName = path.basename(filePath);
+
+                            return filePath.contains(folder) && _fileName.contains(fileName);
+                        })) {
+                            console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
+    Don't forget to add ${chalk.yellow("DROP statement")} into ${chalk.yellow("Custom-Start")} section of Changeset to drop old object.`);
+                        }
                     } else {
-                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: skipped (deleted)`);
+                        config.debug3(`\t\tskipped (deleted)`);
                     }
                 }
             }
         }
     });
 
-    config.debug2("\nremoving changeset items that are deleted ...");
+    config.debug("\nremoving changeset items that are deleted ...");
 
     finalDeleteds.forEach(file => {
         let fileName = path.basename(file);
         let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+        let nonSchemaFileName = fileName.split(".").length > 2 && dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
 
         config.debug3(`\tdeleted file = ${chalk.yellow(file)}`);
 
         for (const [section, folder] of Object.entries(folders)) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                if (sections[section].contains(fileName) || (nonSchemaFileName && sections[section].contains(nonSchemaFileName))) {
                     if (finalDeleteds.contains(file)) {
                         console.warn(`${chalk.yellow("Warning: ")}${chalk.red(fileName)} ${chalk.yellow(" removed from changeset (its file is deleted).")}\n`);
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
                         if (index >= 0) {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
+                            config.debug3(`\t\tremoved`);
 
                             sections[section].splice(index, 1);
                         } else {
-                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                            config.debug3(`\t\titem not found!`);
                         }
                     }
                 }
@@ -79,7 +88,7 @@ function updateSections(config, allFiles) {
         }
     })
 
-    config.debug2("\nchecking if items exist ...");
+    config.debug("\nchecking if items exist ...");
 
     for (const [section, folder] of Object.entries(folders)) {
         for (let item of sections[section]) {
@@ -95,8 +104,13 @@ function updateSections(config, allFiles) {
                 }
             }
 
-            if (!found) {
-                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.`;
+            if (!found && !config.renamedFiles.find(filePath => {
+                const fileName = path.basename(filePath);
+
+                return filePath.contains(folder) && fileName.contains(item);
+            })) {
+                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.
+\tEither remove ${chalk.yellow(item)} from your changeset or create such a file in your repo.`;
 
                 break
             }
@@ -106,6 +120,8 @@ function updateSections(config, allFiles) {
             break;
         }
     }
+
+    config.debug2("\nupdated sections", sections);
 
     return isNullOrEmpty(config.error);
 }

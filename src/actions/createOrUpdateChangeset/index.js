@@ -67,15 +67,18 @@ async function createOrUpdateChangeset(config) {
 
             // Todo: Done
             // skip test and commit if changeset has no new changes
+            const canTestAnDcommit = finalizeChangeset(config)
 
-            if (finalizeChangeset(config)) {
-                if (!await saveFinalScript(config, allFiles)) {
-                    break;
-                }
+            if (!await saveFinalScript(config, allFiles)) {
+                break;
+            }
 
+            if (canTestAnDcommit) {
                 if (!await testAndCommitChangeset(config)) {
                     break;
                 }
+            } else {
+                console.log("Skipped changeset testing. No new changes detected.")
             }
 
             console.log('Operation completed.')

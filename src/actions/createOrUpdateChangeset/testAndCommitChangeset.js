@@ -8,11 +8,10 @@ import { isNullOrEmpty } from "@locustjs/base";
 async function testAndCommitChangeset(config) {
     const {
         scriptFilePath,
-        scriptTempFilePath,
         finalChangesetFilePath,
         changesetTempFilePath
     } = config
-    const tempScriptContent = fs.readFileSync(scriptTempFilePath, "utf-8");
+    const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
 
     console.log("Testing changeset ...");
 
@@ -31,7 +30,6 @@ async function testAndCommitChangeset(config) {
         }
         
         try {
-            fs.renameSync(scriptTempFilePath, scriptFilePath);
             fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
 
             const changes = [finalChangesetFilePath]

@@ -54,17 +54,11 @@ ${sections.customEnd}
 `
     const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 
-    if (old != content) {
-        fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
+    fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
 
-        config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
+    config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
 
-        return true;
-    } else {
-        console.log("Skipped changeset testing. No new changes detected.")
-
-        return false;
-    }
+    return old != content;
 };
 
 export default finalizeChangeset;

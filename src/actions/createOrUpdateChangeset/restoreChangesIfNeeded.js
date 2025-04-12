@@ -12,10 +12,8 @@ function restoreChangesIfNeeded(config) {
         error
     } = config
 
-    if (!config.debugMode) {
-        FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
-    }
-
+    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+    
     if (error && isNewChangeset) {
         // we do not delete changeset script.
         // changeset scripts are ignored in .gitignore and are not committed.

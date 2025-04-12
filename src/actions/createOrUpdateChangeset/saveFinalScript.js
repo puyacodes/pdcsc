@@ -5,13 +5,20 @@ import fs from "fs";
 async function saveFinalScript(config, allFiles) {
     config.debug("Saving final changeset script ...");
 
-    const { scriptTempFilePath, changesetTempFilePath, finalChangesetName, finalDeleteds } = config;
+    const {
+        scriptFilePath,
+        scriptTempFilePath,
+        changesetTempFilePath,
+        finalChangesetName,
+        finalDeleteds
+    } = config;
     const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, finalDeleteds, allFiles);
 
     if (!error) {
         fs.writeFileSync(scriptTempFilePath, script, "utf-8");
+        fs.renameSync(scriptTempFilePath, scriptFilePath);
 
-        config.debug("Temp changeset saved.")
+        config.debug(`Temp changeset saved.`)
     }
 
     config.error = error;

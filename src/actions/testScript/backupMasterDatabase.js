@@ -9,7 +9,7 @@ async function backupMasterDatabase(config) {
 
     const query = `BACKUP DATABASE [${dbName}] TO DISK = '${backupFile}' WITH INIT`;
 
-    config.debug2(query);
+    config.debug4(query);
 
     await db.executeQuery({ query });
 

@@ -9,7 +9,7 @@ async function addChangesetToDatabase(config, changeset) {
     try {
         const query = `INSERT INTO ${changesetsTableName} ([name]) VALUES ('${changeset.name}')`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         await db.executeQuery({ query });
 

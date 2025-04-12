@@ -61,12 +61,14 @@ function extractSections(config) {
                 lines.forEach(line => {
                     const trimmedLine = line.trim();
 
-                    if (!tempSections[section.name].contains(trimmedLine)) {
-                        config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
-
-                        tempSections[section.name].push(trimmedLine);
-                    } else {
-                        config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
+                    if (trimmedLine) {
+                        if (!tempSections[section.name].contains(trimmedLine)) {
+                            config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
+    
+                            tempSections[section.name].push(trimmedLine);
+                        } else {
+                            config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
+                        }
                     }
                 });
             } else {

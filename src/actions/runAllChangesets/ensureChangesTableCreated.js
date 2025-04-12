@@ -10,7 +10,7 @@ async function ensureChangesTableCreated(config) {
                         [Name] NVARCHAR(255) NOT NULL,
                         [Date] DATETIME NOT NULL DEFAULT(GETDATE())
                     );`
-    config.debug2(query);
+    config.debug4(query);
 
     await db.executeQuery({ query });
 }

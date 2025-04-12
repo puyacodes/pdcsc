@@ -37,6 +37,7 @@ function getChangedFiles(config) {
             .map((file) => file.trim())
             .filter((file) => file);
 
+        config.debug2("\nrenamed files", renamedFiles);
         config.debug2("\ndeleted files", deletedFiles);
 
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
@@ -46,6 +47,7 @@ function getChangedFiles(config) {
 
         config.finalDeleteds = [...config.uncommittedChanges.deleted, ...deletedFiles]
         config.finalChanges = finalChanges;
+        config.renamedFiles = renamedFiles;
     } catch (ex) {
         throw new Exception(`Error extracting changes from git logs`, ex);
     }

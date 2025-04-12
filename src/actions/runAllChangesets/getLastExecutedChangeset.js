@@ -11,7 +11,7 @@ async function getLastExecutedChangeset(config) {
     try {
         const query = `SELECT TOP 1 [date], [name] FROM ${changesetsTableName} ORDER BY [date] DESC`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         const rs = await db.executeQuery({ query });
 

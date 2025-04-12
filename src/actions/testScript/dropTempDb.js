@@ -8,7 +8,7 @@ async function dropTempDb(config) {
         const query = `IF EXISTS(SELECT name FROM sys.databases WHERE name = '${backupDbName}')
             DROP DATABASE[${backupDbName}]`;
 
-        config.debug2(query);
+        config.debug4(query);
 
         await db.executeQuery({ query });
     } catch (ex) {

@@ -22,7 +22,7 @@ function getChangedFiles(config) {
             .filter((file) => file);
 
         const renamedFiles = execSync(
-            `git diff --name-only --diff-filter=R ${mergeBase} HEAD`,
+            `git diff --name-status --diff-filter=R ${mergeBase} HEAD`,
             { encoding: "utf-8" }
         )
             .split("\n")

@@ -6,7 +6,7 @@ import { ActionType, UpdateMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
-async function read(args) {
+function read(args) {
     function getArg(arg) {
         const index = args.indexOf(arg);
         const result = index >= 0 ? args[index + 1] : undefined;

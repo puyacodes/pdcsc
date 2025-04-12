@@ -48,7 +48,7 @@ function updateSections(config, allFiles) {
                             return filePath.contains(folder) && _fileName.contains(fileName);
                         })) {
                             console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
-    Don't forget to add ${chalk.yellow("DROP statement")} into ${chalk.yellow("Custom-Start")} section of Changeset to drop old object.`);
+    Don't forget to add ${chalk.yellow("DROP statement")} for old script into ${chalk.yellow("Custom-Start")} section of the Changeset to drop the old object.`);
                         }
                     } else {
                         config.debug3(`\t\tskipped (deleted)`);

@@ -24,7 +24,7 @@ async function testAndCommitChangeset(config) {
 
     if (config.error) {
         console.log(chalk.red("Failed.\n"));
-        console.log("See config.error.log for more details");
+        console.log("See error.log for more details");
     } else {
         if (config.hasAnything) {
             console.log(chalk.green("Passed.\n"));
@@ -44,7 +44,7 @@ async function testAndCommitChangeset(config) {
                 config.changesetCommitted = true;
             }
         } catch (ex) {
-            config.error = new Exception('config.error happened while renaming temp files or committing changes.', ex);
+            config.error = new Exception('error happened while renaming temp files or committing changes.', ex);
         }
     }
 

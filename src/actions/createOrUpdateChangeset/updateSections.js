@@ -5,10 +5,11 @@ import { isNullOrEmpty } from "@locustjs/base";
 
 function updateSections(config, allFiles) {
     const { folders, sections, finalDeleteds, finalChanges } = config;
-    
-    config.debug("Updating sections with new uncommitted config.error ...");
-    config.debug2({ deleteds: finalDeleteds })
-    config.debug2("Adding new config.error to sections ...");
+
+    config.debug("Updating sections with new changes ...");
+    config.debug2({ finalDeleteds })
+
+    config.debug2("\nadding new changes to sections ...");
 
     finalChanges.forEach((file) => {
         let fileName = path.basename(file);
@@ -48,7 +49,7 @@ function updateSections(config, allFiles) {
         }
     });
 
-    config.debug2("Removing changeset items that are deleted ...");
+    config.debug2("\nremoving changeset items that are deleted ...");
 
     finalDeleteds.forEach(file => {
         let fileName = path.basename(file);
@@ -61,7 +62,7 @@ function updateSections(config, allFiles) {
             if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
                 if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
                     if (finalDeleteds.contains(file)) {
-                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`)
+                        console.warn(`${chalk.yellow("Warning: ")}${chalk.red(fileName)} ${chalk.yellow(" removed from changeset (its file is deleted).")}\n`);
 
                         const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
 
@@ -78,6 +79,8 @@ function updateSections(config, allFiles) {
         }
     })
 
+    config.debug2("\nchecking if items exist ...");
+
     for (const [section, folder] of Object.entries(folders)) {
         for (let item of sections[section]) {
             let found = false;
@@ -93,13 +96,13 @@ function updateSections(config, allFiles) {
             }
 
             if (!found) {
-                error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(sections[section])} folder was not found.`;
+                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(sections[section])} folder was not found.`;
 
                 break
             }
         }
 
-        if (error) {
+        if (config.error) {
             break;
         }
     }

@@ -5,7 +5,7 @@ import isValidScriptFile from "./isValidScriptFile";
 function getChangedFiles(config) {
     const { masterBranchName } = config;
 
-    config.debug("Getting all changed .sql files ...");
+    config.debug("Getting all changes in .sql files ...");
 
     try {
         const mergeBase = execSync(

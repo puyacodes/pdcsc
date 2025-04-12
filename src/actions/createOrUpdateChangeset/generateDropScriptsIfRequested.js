@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import askIfGenerateDrops from "./askIfGenerateDrops";
 
 const generateDropQuery = (objectType, objectName) => {
@@ -92,7 +93,7 @@ function generateDropScriptsIfRequested(config) {
                 config.debug3({ parts, folderName, objectName, objectType });
 
                 if (!objectType) {
-                    console.warn(`Warning: sql deleted file ignored ${file} (unknown type).`);
+                    console.warn(`${chalk.yellow("Warning:")} sql deleted file ignored ${file} (unknown type: ${objectType}).`);
 
                     return null;
                 }

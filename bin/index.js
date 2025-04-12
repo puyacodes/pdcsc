@@ -246,8 +246,7 @@ async function commitChanges(files, message) {
     return error;
 }
 
-async function testAndCommitChangeset(config, hasAnything) {
-    let error;
+async function testAndCommitChangeset(config) {
     const {
         scriptFilePath,
         scriptTempFilePath,
@@ -258,17 +257,17 @@ async function testAndCommitChangeset(config, hasAnything) {
 
     console.log("Testing changeset ...");
 
-    if (hasAnything) {
-        error = await testScript(config, tempScriptContent);
+    if (config.hasAnything) {
+        config.error = await testScript(config, tempScriptContent);
     } else {
         console.log(`No changes detected. Testing changeset skipped.`);
     }
 
-    if (error) {
+    if (config.error) {
         console.log(chalk.red("Failed.\n"));
         console.log("See error.log for more details");
     } else {
-        if (hasAnything) {
+        if (config.hasAnything) {
             console.log(chalk.green("Passed.\n"));
         }
         
@@ -280,17 +279,17 @@ async function testAndCommitChangeset(config, hasAnything) {
 
             config.debug2("Commiting changes", changes);
 
-            error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
+            config.error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
 
-            if (!error) {
+            if (!config.error) {
                 config.changesetCommitted = true;
             }
         } catch (ex) {
-            error = new exception.Exception('error happened while renaming temp files or committing changes.', ex);
+            config.error = new exception.Exception('error happened while renaming temp files or committing changes.', ex);
         }
     }
 
-    return error;
+    return base.isNullOrEmpty(config.error);
 }
 
 function extractSections(config) {
@@ -366,56 +365,49 @@ function extractSections(config) {
         }
     });
 
-    return tempSections;
+    config.sections = tempSections;
+    
+    config.debug3("\nCurrent sections", tempSections);
 }
 
-function finalizeChangeset(config, sections, dropStatements) {
+function finalizeChangeset(config) {
+    const { sections, dropStatements } = config;
+
     config.debug("Finalizing changeset ...");
 
     const content = `
 ## ===================== Custom-Start (start) ======================
-${sections.customStart}${dropStatements}
-## ===================== Custom-Start ( end ) ======================
+${sections.customStart}${(dropStatements || "")}## ===================== Custom-Start ( end ) ======================
 
 ## ===================== Schemas (start) ======================
-${sections.schemas.join("\n")}
-## ===================== Schemas ( end ) ======================
+${sections.schemas.join("\n")}## ===================== Schemas ( end ) ======================
 
 ## ===================== Types (start) ======================
-${sections.types.join("\n")}
-## ===================== Types ( end ) ======================
+${sections.types.join("\n")}## ===================== Types ( end ) ======================
 
 ## ===================== Tables (start) ======================
-${sections.tables.join("\n")}
-## ===================== Tables ( end ) ======================
+${sections.tables.join("\n")}## ===================== Tables ( end ) ======================
 
 ## ===================== Relations (start) ======================
-${sections.relations.join("\n")}
-## ===================== Relations ( end ) ======================
+${sections.relations.join("\n")}## ===================== Relations ( end ) ======================
 
 ## ===================== Functions (start) ======================
-${sections.functions.join("\n")}
-## ===================== Functions ( end ) ======================
+${sections.functions.join("\n")}## ===================== Functions ( end ) ======================
 
 ## ===================== SPROCs (start) ======================
-${sections.procedures.join("\n")}
-## ===================== SPROCs ( end ) ======================
+${sections.procedures.join("\n")}## ===================== SPROCs ( end ) ======================
 
 ## ===================== Views (start) ======================
-${sections.views.join("\n")}
-## ===================== Views ( end ) ======================
+${sections.views.join("\n")}## ===================== Views ( end ) ======================
 
 ## ===================== Indexes (start) ======================
-${sections.indexes.join("\n")}
-## ===================== Indexes ( end ) ======================
+${sections.indexes.join("\n")}## ===================== Indexes ( end ) ======================
 
 ## ===================== Triggers (start) ======================
-${sections.triggers.join("\n")}
-## ===================== Triggers ( end ) ======================
+${sections.triggers.join("\n")}## ===================== Triggers ( end ) ======================
 
 ## ===================== Custom-End (start) ======================
-${sections.customEnd}
-## ===================== Custom-End ( end ) ======================
+${sections.customEnd}## ===================== Custom-End ( end ) ======================
 `;
     const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 
@@ -427,9 +419,24 @@ ${sections.customEnd}
         return true;
     } else {
         console.log("Skipped changeset testing. No new changes detected.");
-        
+
         return false;
     }
+}
+
+async function askIfGenerateDrops(config) {
+    let result = false;
+
+    // Todo: Done
+    // move out this section and also cover committed deletions
+
+    if (isSomeArray(config.finalDeleteds)) {
+        const answer = await promptUser(`\nGenerate DROP statements (y/n)? `);
+
+        result = answer == "y";
+    }
+
+    return result;
 }
 
 const generateDropQuery = (objectType, objectName) => {
@@ -497,44 +504,51 @@ GO
     }
 };
 
-function getDropScripts(config, deletedFiles, folders) {
-    const folderToObjectMap = {
-        [folders.procedures]: "PROCEDURE",
-        [folders.functions]: "FUNCTION",
-        [folders.tables]: "TABLE",
-        [folders.relations]: "FOREIGN KEY",
-        [folders.types]: "TYPE",
-        [folders.views]: "VIEW",
-        [folders.indexes]: "INDEX",
-        [folders.triggers]: "TRIGGER",
-        [folders.schemas]: "SCHEMA"
-    };
+function generateDropScriptsIfRequested(config) {
+    if (askIfGenerateDrops(config)) {
+        config.debug("Generating drop statements ...");
+        
+        const { finalDeleteds, folders } = config;
+        const folderToObjectMap = {
+            [folders.procedures]: "PROCEDURE",
+            [folders.functions]: "FUNCTION",
+            [folders.tables]: "TABLE",
+            [folders.relations]: "FOREIGN KEY",
+            [folders.types]: "TYPE",
+            [folders.views]: "VIEW",
+            [folders.indexes]: "INDEX",
+            [folders.triggers]: "TRIGGER",
+            [folders.schemas]: "SCHEMA"
+        };
 
-    const dropQuery = deletedFiles
-        .map(file => {
-            const parts = file.split('/');
-            const folderName = parts[1]; // exp: Procedures
-            const objectName = parts.slice(parts.length - 1).join('.').replace('.sql', ''); // exp: dbo.sp01
-            const objectType = folderToObjectMap[folderName];
+        const dropQuery = finalDeleteds
+            .map(file => {
+                const parts = file.split('/');
+                const folderName = parts[1]; // exp: Procedures
+                const objectName = parts.slice(parts.length - 1).join('.').replace('.sql', ''); // exp: dbo.sp01
+                const objectType = folderToObjectMap[folderName];
 
-            config.debug3({ parts, folderName, objectName, objectType });
+                config.debug3({ parts, folderName, objectName, objectType });
 
-            if (!objectType) {
-                console.warn(`Warning: sql deleted file ignored ${file} (unknown type).`);
+                if (!objectType) {
+                    console.warn(`${chalk.yellow("Warning:")} sql deleted file ignored ${file} (unknown type: ${objectType}).`);
 
-                return null;
-            }
+                    return null;
+                }
 
-            // Generate the appropriate DROP query
-            return generateDropQuery(objectType, objectName);
-        })
-        .filter(query => query) // Remove null values
-        .join('\n'); // Combine queries
+                // Generate the appropriate DROP query
+                return generateDropQuery(objectType, objectName);
+            })
+            .filter(query => query) // Remove null values
+            .join('\n'); // Combine queries
 
-    return dropQuery;
+        config.debug3({ drops: dropQuery });
+
+        config.dropStatements = dropQuery;
+    }
 }
 
-function promptUser(question, toLower = true) {
+function promptUser$1(question, toLower = true) {
     const rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -586,10 +600,8 @@ async function getUncommittedSqlChanges(config, exclude) {
     return result;
 }
 
-async function getUserChoice(config) {
-    let error;
+async function checkUncommittedChanges(config) {
     let userChoice = "1";
-    let generateDrops = false;
 
     config.debug("Checking uncommitted sql changes ...");
 
@@ -602,7 +614,7 @@ async function getUserChoice(config) {
             console.warn(`
 ${chalk.yellow('Warning: You have uncommitted changes.')}`);
 
-            userChoice = await promptUser(
+            userChoice = await promptUser$1(
                 `\nChoose an option:
     1. Ignore
     2. Commit
@@ -616,7 +628,7 @@ Enter your choice: `);
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
 
-                error = await commitChanges(changes.all, "pdcsc: commited current changes");
+                config.error = await commitChanges(changes.all, "pdcsc: commited current changes");
                 break;
             } else if (userChoice === "3") {
                 const files = [];
@@ -656,16 +668,10 @@ Enter your choice: `);
         changes.deleted = [];
     }
 
-    // Todo
-    // move out this section into index.js
-
-    if (base.isSomeArray(changes.deleted) && userChoice == "2") {
-        const answer = await promptUser(`\nGenerate DROP statements (y/n)? `);
-
-        generateDrops = answer == "y";
-    }
-
-    return { userChoice, changes, generateDrops, error };
+    config.userChoice = userChoice;
+    config.uncommittedChanges = changes;
+    
+    return base.isNullOrEmpty(config.error) && base.isSomeString(userChoice);
 }
 
 function getNewChangeset(config) {
@@ -811,7 +817,7 @@ function isValidScriptFile(config, file) {
     const validFolders = Object.values(config.folders).map(folder => folder.toLowerCase());
 
     if (!validFolders.some(folder => subdir.startsWith(folder))) {
-        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown type).`));
+        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown folder type).`));
 
         return false;
     }
@@ -822,7 +828,7 @@ function isValidScriptFile(config, file) {
 function getChangedFiles(config) {
     const { masterBranchName } = config;
 
-    config.debug("Getting all changed .sql files ...");
+    config.debug("Getting all changes in .sql files ...");
 
     try {
         const mergeBase = child_process.execSync(
@@ -861,29 +867,14 @@ function getChangedFiles(config) {
 
         config.debug2("\nFinal changes", finalChanges);
 
-        return { finalChanges, deleted: deletedFiles };
+        config.finalDeleteds = [...config.uncommittedChanges.deleted, ...deletedFiles];
+        config.finalChanges = finalChanges;
     } catch (ex) {
         throw new exception.Exception(`Error extracting changes from git logs`, ex);
     }
 }
 
-function restoreCommittedChanges(num) {
-    const command = `git reset --mixed HEAD~${num ?? 1}`;
-
-    try {
-        child_process.execSync(
-            command,
-            { encoding: "utf-8" }
-        ).trim();
-
-        console.log("   commited changes are restored back.");
-    } catch (error) {
-        throw new exception.Exception("ERROR!! RESTORING COMMITTED CHANGES FAILED.\nYOU MUST RESTORE CHANGES MANUALLY.\n\n" + command, error)
-    }
-}
-
 async function compareWithOrigin(config) {
-    let error;
     const { masterBranchName, realBranchName } = config;
 
     config.debug(`Initializing simpleGit ...`);
@@ -900,15 +891,13 @@ async function compareWithOrigin(config) {
                 try {
                     isRepo = await git.checkIsRepo();
                 } catch (ex) {
-                    error = ex;
-                }
+                    config.error = ex;
 
-                if (error) {
                     break;
                 }
 
                 if (!isRepo) {
-                    error = 'We are not a git repository.';
+                    config.error = 'We are not a git repository.';
                     break;
                 } else {
                     config.debug("We are a git repo.");
@@ -930,7 +919,7 @@ async function compareWithOrigin(config) {
                 config.debug4('remote branches', branches);
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
+                    config.error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -951,19 +940,19 @@ async function compareWithOrigin(config) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run ${chalk.yellow(`git pull ${masterBranchName}`)} to sync with the latest changes from master branch.`);
 
-                    error = " ";
+                    config.error = " ";
                 } else {
                     config.debug("We are not behind master branch.");
                 }
             } while (false);
         } catch (ex) {
-            error = new exception.Exception(`Error checking ${masterBranchName} branch:`, ex);
+            config.error = new exception.Exception(`Error checking ${masterBranchName} branch:`, ex);
         }
     } else {
-        error = "no master branch is specified";
+        config.error = "no master branch is specified";
     }
 
-    return error;
+    return base.isNullOrEmpty(config.error);
 }
 // export default c1;
 
@@ -983,6 +972,24 @@ function getAppVersion(config) {
     }
     
     return res.data;
+}
+
+function getAllSqlFiles(dir) {
+    let result = [];
+    const list = fs.readdirSync(dir);
+
+    list.forEach((file) => {
+        const fullPath = path$1.join(dir, file);
+        const stat = fs.statSync(fullPath);
+
+        if (stat && stat.isDirectory()) {
+            result = result.concat(getAllSqlFiles(fullPath));
+        } else if (fullPath.toLowerCase().endsWith(".sql")) {
+            result.push(fullPath);
+        }
+    });
+
+    return result;
 }
 
 async function getEncoding(filepath) {
@@ -1014,23 +1021,7 @@ async function readFile(filepath, codepage) {
 
     return content;
 }
-function getAllSqlFiles(dir) {
-    let result = [];
-    const list = fs.readdirSync(dir);
 
-    list.forEach((file) => {
-        const fullPath = path$1.join(dir, file);
-        const stat = fs.statSync(fullPath);
-
-        if (stat && stat.isDirectory()) {
-            result = result.concat(getAllSqlFiles(fullPath));
-        } else if (fullPath.toLowerCase().endsWith(".sql")) {
-            result.push(fullPath);
-        }
-    });
-
-    return result;
-}
 function extractObjects(config, changesetPath) {
     const objects = [];
     let currentSection = "";
@@ -1072,7 +1063,7 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
+async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles) {
     let error;
     const sb = {
         schemas: [],
@@ -1087,7 +1078,14 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     };
 
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
-    const files = getAllSqlFiles(config.paths.scriptsPath);
+
+    if (!base.isArray(deleteds)) {
+        deleteds = [];
+    }
+    
+    if (!base.isArray(allFiles)) {
+        allFiles = getAllSqlFiles(config.paths.scriptsPath);
+    }
 
     for (const obj of objects) {
         let found = false;
@@ -1100,7 +1098,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
             found = true;
             break;
         } else {
-            for (const filePath of files) {
+            for (const filePath of allFiles) {
                 const fileName = path$1.basename(filePath);
 
 
@@ -1135,82 +1133,273 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     }
 
     const hasAnything = !base.isEmpty(customStart) ||
-                         !base.isEmpty(customEnd) ||
-                         base.isSomeArray(sb.schemas) ||
-                         base.isSomeArray(sb.types) ||
-                         base.isSomeArray(sb.tables) ||
-                         base.isSomeArray(sb.relations) ||
-                         base.isSomeArray(sb.functions) ||
-                         base.isSomeArray(sb.procedures) ||
-                         base.isSomeArray(sb.views) ||
-                         base.isSomeArray(sb.indexes) ||
-                         base.isSomeArray(sb.triggers);
+        !base.isEmpty(customEnd) ||
+        base.isSomeArray(sb.schemas) ||
+        base.isSomeArray(sb.types) ||
+        base.isSomeArray(sb.tables) ||
+        base.isSomeArray(sb.relations) ||
+        base.isSomeArray(sb.functions) ||
+        base.isSomeArray(sb.procedures) ||
+        base.isSomeArray(sb.views) ||
+        base.isSomeArray(sb.indexes) ||
+        base.isSomeArray(sb.triggers);
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${customStart}
--- ===================== Custom-Start ( end ) ======================
+${customStart}-- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${sb.schemas.join("\n")}
--- ===================== Schemas (end) ======================
+${sb.schemas.join("\n")}-- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${sb.types.join("\n")}
--- ===================== Types (end) ======================
+${sb.types.join("\n")}-- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${sb.tables.join("\n")}
--- ===================== Tables (end) ======================
+${sb.tables.join("\n")}-- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${sb.relations.join("\n")}
--- ===================== Relations (end) ======================
+${sb.relations.join("\n")}-- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${sb.functions.join("\n")}
--- ===================== Functions (end) ======================
+${sb.functions.join("\n")}-- ===================== Functions (end) ======================
 
 -- ===================== Procedures (start) ======================
-${sb.procedures.join("\n")}
--- ===================== Procedures (end) ======================
+${sb.procedures.join("\n")}-- ===================== Procedures (end) ======================
 
 -- ===================== Views (start) ======================
-${sb.views.join("\n")}
--- ===================== Views (end) ======================
+${sb.views.join("\n")}-- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${sb.indexes.join("\n")}
--- ===================== Indexes (end) ======================
+${sb.indexes.join("\n")}-- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================
-${sb.triggers.join("\n")}
--- ===================== Triggers (end) ======================
+${sb.triggers.join("\n")}-- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${customEnd}
--- ===================== Custom-End ( end ) ======================
+${customEnd}-- ===================== Custom-End ( end ) ======================
+
 go
 ${getAppVersion(config)}
+
 go
 `;
 
     return { script, error, hasAnything }
 }
 
-async function saveFinalScript(config, deleteds) {
+async function saveFinalScript(config, allFiles) {
     config.debug("Saving final changeset script ...");
 
-    const { scriptTempFilePath, changesetTempFilePath, finalChangesetName } = config;
-    const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, deleteds);
+    const { scriptTempFilePath, changesetTempFilePath, finalChangesetName, finalDeleteds } = config;
+    const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, finalDeleteds, allFiles);
 
     if (!error) {
         fs.writeFileSync(scriptTempFilePath, script, "utf-8");
-    
+
         config.debug("Temp changeset saved.");
     }
+
+    config.error = error;
+    config.hasAnything = hasAnything;
+
+    return base.isNullOrEmpty(config.error);
+}
+
+function equals(str1, str2, ignoreCase = true) {
+    let result = false;
+
+    if (base.isString(str1) && base.isString(str2)) {
+        result = ignoreCase ? str1.toLowerCase() == str2.toLowerCase(): str1 == str2;
+    } else {
+        result = base.isNullOrEmpty(str1) && base.isNullOrEmpty(str2);
+    }
+
+    return result;
+}
+
+if (String.prototype.equals === undefined) {
+    String.prototype.equals = function (...args) {
+        return equals(this, ...args);
+    };
+}
+
+function updateSections(config, allFiles) {
+    const { folders, sections, finalDeleteds, finalChanges } = config;
     
-    return { error, hasAnything };
+    config.debug("Updating sections with new changes ...");
+    config.debug2({ finalDeleteds });
+    
+    config.debug2("\nadding new changes to sections ...");
+
+    finalChanges.forEach((file) => {
+        let fileName = path$1.basename(file);
+        let dotIndex = fileName.indexOf(".");
+        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+
+        config.debug3(`\tchange = ${chalk.yellow(file)}`);
+
+        for (const [section, folder] of Object.entries(folders)) {
+            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
+                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                    if (finalDeleteds.contains(file)) {
+                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
+
+                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
+
+                        if (index >= 0) {
+                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
+
+                            sections[section].splice(index, 1);
+                        } else {
+                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                        }
+                    } else {
+                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: already exists`);
+                    }
+                } else {
+                    if (!finalDeleteds.contains(file)) {
+                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: added`);
+
+                        sections[section].push(fileName);
+                    } else {
+                        config.debug3(`\t\tsection: ${chalk.yellow(section)}: skipped (deleted)`);
+                    }
+                }
+            }
+        }
+    });
+
+    config.debug2("\nremoving changeset items that are deleted ...");
+
+    finalDeleteds.forEach(file => {
+        let fileName = path$1.basename(file);
+        let dotIndex = fileName.indexOf(".");
+        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
+
+        config.debug3(`\tdeleted file = ${chalk.yellow(file)}`);
+
+        for (const [section, folder] of Object.entries(folders)) {
+            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
+                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
+                    if (finalDeleteds.contains(file)) {
+                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
+
+                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
+
+                        if (index >= 0) {
+                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
+
+                            sections[section].splice(index, 1);
+                        } else {
+                            config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    config.debug2("\nchecking if items exist ...");
+
+    for (const [section, folder] of Object.entries(folders)) {
+        for (let item of sections[section]) {
+            let found = false;
+
+            for (const filePath of allFiles) {
+                const fileName = path$1.basename(filePath);
+
+                if (filePath.contains(sections[section]) && (fileName.contains(item) || fileName.contains())) {
+                    found = true;
+
+                    break;
+                }
+            }
+
+            if (!found) {
+                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(sections[section])} folder was not found.`;
+
+                break
+            }
+        }
+
+        if (config.error) {
+            break;
+        }
+    }
+
+    return base.isNullOrEmpty(config.error);
+}
+
+function checkIfBranchAlreadyMerged(config) {
+    const { realBranchName, masterBranchName } = config;
+
+    try {
+        config.debug("Checking if branch alrady merged ...");
+        
+        const result = child_process.execSync(
+            `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,
+            { encoding: "utf-8" }
+        );
+
+        if (result.trim() == "merged") {
+            config.error = `branch ${realBranchName} already merged into ${masterBranchName}.
+Changing already merged branches is forbidden.
+Please create a new branch.`;
+        } else {
+            config.debug("Branch is ok (not merged).");
+        }
+    } catch (ex) {
+        config.error = new exception.Exception("Error happened while checking branch with origin", ex);
+    }
+
+    return base.isNullOrEmpty(config.error);
+}
+
+async function updateChangesetTimestampIfNeeded(config) {
+    let { changesetsPath } = config.paths;
+
+    if (!config.changeset && config.oldChangeset) {
+        try {
+            const changes = [];
+            const cs = getNewChangeset(config);
+
+            config.newChangeset = cs.changeset;
+            config.newChangesetName = path$1.parse(config.newChangeset).name;
+            config.newChangesetFilePath = cs.changesetFilePath;
+
+            changes.push(config.oldChangesetFilePath);
+            changes.push(cs.changesetFilePath);
+
+            fs.renameSync(config.oldChangesetFilePath, cs.changesetFilePath);
+
+            const oldSqlFileName = config.oldChangesetName + '.sql';
+            config.oldSqlFilePath = path$1.join(changesetsPath, oldSqlFileName);
+
+            if (fs.existsSync(config.oldSqlFilePath)) {
+                const newSqlFileName = config.newChangesetName + '.sql';
+                const newSqlFilePath = path$1.join(changesetsPath, newSqlFileName);
+
+                fs.renameSync(config.oldSqlFilePath, newSqlFilePath);
+            }
+
+            // we directly commit changeset timestamp update.
+            // this is necessary. we do not ask user consent on this.
+
+            config.error = await commitChanges(changes, `pdcsc: changeset timestamp updated.
+${config.oldChangesetName} => ${config.newChangesetName}`);
+
+            if (!config.error) {
+                config.debug(`Changeset timestamp updated.`);
+                config.debug2(`  old: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
+            } else {
+                config.error = new exception.Exception(`Updating changeset timestamp failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, config.error);
+            }
+        } catch (ex) {
+            config.error = new exception.Exception(`updating changeset timestamp failed.`, ex);
+        }
+    }
+
+    return base.isNullOrEmpty(config.error);
 }
 
 class FileHelper {
@@ -1250,175 +1439,53 @@ class FileHelper {
     }
 }
 
-function equals(str1, str2, ignoreCase = true) {
-    let result = false;
-
-    if (base.isString(str1) && base.isString(str2)) {
-        result = ignoreCase ? str1.toLowerCase() == str2.toLowerCase(): str1 == str2;
-    } else {
-        result = base.isNullOrEmpty(str1) && base.isNullOrEmpty(str2);
-    }
-
-    return result;
-}
-
-if (String.prototype.equals === undefined) {
-    String.prototype.equals = function (...args) {
-        return equals(this, ...args);
-    };
-}
-
-function updateSections(config, sections, finalChanges, finalDeleteds) {
-    config.debug("Updating sections with new uncommitted changes ...");
-    config.debug2({ deleteds: finalDeleteds });
-
-    const { folders } = config;
-
-    config.debug2("\tAdding new changes to sections ...");
-
-    finalChanges.forEach((file) => {
-        let fileName = path$1.basename(file);
-        let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
-
-        config.debug3(`change = ${chalk.yellow(file)}`);
-
-        for (const [section, folder] of Object.entries(folders)) {
-            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
-                    if (finalDeleteds.contains(file)) {
-                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
-
-                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
-
-                        if (index >= 0) {
-                            config.debug3(`section: ${chalk.yellow(section)}: removed`);
-    
-                            sections[section].splice(index, 1);
-                        } else {
-                            config.debug3(`section: ${chalk.yellow(section)}: item not found!`);
-                        }
-                    } else {
-                        config.debug3(`section: ${chalk.yellow(section)}: already exists`);
-                    }
-                } else {
-                    if (!finalDeleteds.contains(file)) {
-                        config.debug3(`section: ${chalk.yellow(section)}: added`);
-
-                        sections[section].push(fileName);
-                    } else {
-                        config.debug3(`section: ${chalk.yellow(section)}: skipped (deleted)`);
-                    }
-                }
-            }
-        }
-    });
-
-    config.debug2("\tRemoving changeset items that are deleted ...");
-
-    finalDeleteds.forEach(file => {
-        let fileName = path$1.basename(file);
-        let dotIndex = fileName.indexOf(".");
-        let nonSchemaFileName = dotIndex >= 0 ? fileName.substr(dotIndex + 1) : "";
-
-        config.debug3(`deleted file = ${chalk.yellow(file)}`);
-
-        for (const [section, folder] of Object.entries(folders)) {
-            if (file.contains(`${config.paths.scriptsFolderName}/${folder}/`)) {
-                if (sections[section].contains(fileName) || sections[section].contains(nonSchemaFileName)) {
-                    if (finalDeleteds.contains(file)) {
-                        console.warn(`${chalk.yellow("Warning: ")}${fileName} removed from changeset (its file is deleted).\n`);
-
-                        const index = sections[section].findIndex(x => equals(x, fileName) || equals(x, nonSchemaFileName));
-
-                        if (index >= 0) {
-                            config.debug3(`section: ${chalk.yellow(section)}: removed`);
-    
-                            sections[section].splice(index, 1);
-                        } else {
-                            config.debug3(`section: ${chalk.yellow(section)}: item not found!`);
-                        }
-                    }
-                }
-            }
-        }
-    });
-
-    return sections;
-}
-
-function checkIfBranchAlreadyMerged(config) {
-    let error;
-    const { realBranchName, masterBranchName } = config;
+function restoreCommittedChanges(num) {
+    const command = `git reset --mixed HEAD~${num ?? 1}`;
 
     try {
-        config.debug("Checking if branch alrady merged ...");
-        
-        const result = child_process.execSync(
-            `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,
+        child_process.execSync(
+            command,
             { encoding: "utf-8" }
-        );
+        ).trim();
 
-        if (result.trim() == "merged") {
-            error = `branch ${realBranchName} already merged into ${masterBranchName}.
-Changing already merged branches is forbidden.
-Please create a new branch.`;
-        } else {
-            config.debug("Branch is ok (not merged).");
-        }
-    } catch (ex) {
-        error = new exception.Exception("error happened while checking branch with origin", ex);
+        console.log("   commited changes are restored back.");
+    } catch (error) {
+        throw new exception.Exception("ERROR!! RESTORING COMMITTED CHANGES FAILED.\nYOU MUST RESTORE CHANGES MANUALLY.\n\n" + command, error)
     }
-
-    return error;
 }
 
-async function updateChangesetTimestampIfNeeded(config) {
-    let error;
-    let { changesetsPath } = config.paths;
+function restoreChangesIfNeeded(config) {
+    const {
+        scriptTempFilePath,
+        changesetTempFilePath,
+        finalChangesetFilePath,
+        isNewChangeset,
+        changesetCommitted,
+        userChoice,
+        error
+    } = config;
 
-    if (!config.changeset && config.oldChangeset) {
-        try {
-            const changes = [];
-            const cs = getNewChangeset(config);
+    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
 
-            config.newChangeset = cs.changeset;
-            config.newChangesetName = path$1.parse(config.newChangeset).name;
-            config.newChangesetFilePath = cs.changesetFilePath;
-
-            changes.push(config.oldChangesetFilePath);
-            changes.push(cs.changesetFilePath);
-
-            fs.renameSync(config.oldChangesetFilePath, cs.changesetFilePath);
-
-            const oldSqlFileName = config.oldChangesetName + '.sql';
-            config.oldSqlFilePath = path$1.join(changesetsPath, oldSqlFileName);
-
-            if (fs.existsSync(config.oldSqlFilePath)) {
-                const newSqlFileName = config.newChangesetName + '.sql';
-                const newSqlFilePath = path$1.join(changesetsPath, newSqlFileName);
-
-                fs.renameSync(config.oldSqlFilePath, newSqlFilePath);
-            }
-
-            // we directly commit changeset timestamp update.
-            // this is necessary. we do not ask user consent on this.
-
-            error = await commitChanges(changes, `pdcsc: changeset timestamp updated.
-${config.oldChangesetName} => ${config.newChangesetName}`);
-
-            if (!error) {
-                config.debug(`Changeset timestamp updated.`);
-                config.debug2(`  old: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
-            } else {
-                error = new exception.Exception(`Updating changeset timestamp failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, error);
-            }
-        } catch (ex) {
-            error = new exception.Exception(`updating changeset timestamp failed.`, ex);
-        }
+    if (error && isNewChangeset) {
+        // we do not delete changeset script.
+        // changeset scripts are ignored in .gitignore and are not committed.
+        FileHelper.deleteFile(finalChangesetFilePath);
     }
 
-    return error;
+    if (error) {
+        if (userChoice === "2") {
+            // restoring back committed changes depends on whether we commited changeset or not.
+            // if the changeset is committed, we should restore 2 level back, otherwise 1 level back
+
+            restoreCommittedChanges(changesetCommitted ? 2 : 1);
+        } else if (changesetCommitted) {
+            // user didn't ask to commit sql changes.
+            // only changeset was committed. we should restore only 1 level back.
+
+            restoreCommittedChanges(1);
+        }
+    }
 }
 
 async function createOrUpdateChangeset(config) {
@@ -1426,122 +1493,83 @@ async function createOrUpdateChangeset(config) {
         console.log((config.oldChangeset ? "Updating" : "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
     }
 
-    let error = await compareWithOrigin(config);
+    try {
+        do {
+            if (!await compareWithOrigin(config)) {
+                break
+            }
 
-    if (!error) {
-        // TODO: Done
-        // if current branch already merged with origin, exit.
-        // we should not allow changing previous branches.
-        // we show a message that user should create a new branch
-        // if he intends to change previous branches.
+            // TODO: Done
+            // if current branch already merged with origin, exit.
+            // we should not allow changing previous branches.
+            // we show a message that user should create a new branch
+            // if he intends to change previous branches.
 
-        error = checkIfBranchAlreadyMerged(config);
+            if (!checkIfBranchAlreadyMerged(config)) {
+                break
+            }
 
-        if (!error) {
             // Todo: Done
             // we should update changeset timestamp always.
 
-            error = await updateChangesetTimestampIfNeeded(config);
+            if (!await updateChangesetTimestampIfNeeded(config)) {
+                break
+            }
 
-            if (!error) {
-                let userChoice;
+            if (!await checkUncommittedChanges(config)) {
+                break;
+            }
 
-                try {
-                    const guc = await getUserChoice(config);
+            getOrCreateChangeset(config);
 
-                    if (guc.error) {
-                        error = guc.error;
-                    } else {
-                        userChoice = guc.userChoice;
-    
-                        if (userChoice) {
-                            getOrCreateChangeset(config);
-    
-                            const sections = extractSections(config);
-                            const { finalChanges, deleted } = getChangedFiles(config);
-                            const finalDeleteds = [...guc.changes.deleted, ...deleted];
-    
-                            // Todo: Done
-                            // merge deletedFiles from getChangedFiles() and guc.changes.deleted
-    
-                            config.debug3("\nCurrent sections", sections);
-    
-                            updateSections(config, sections, finalChanges, finalDeleteds);
-    
-                            if (guc.generateDrops) {
-                                config.debug("Generating drop statements ...");
-                            }
-    
-                            // Todo
-                            // detect changeset items that cannot be found in file system
-                            // generate drop statements for them and remove them from changeset.
-                            // warn about this to user.
-                            
-                            const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
-    
-                            config.debug3({ drops });
-    
-                            // Todo: Done
-                            // skip test and commit if changeset has no new changes
-    
-                            if (finalizeChangeset(config, sections, drops)) {
-        
-                                const ssr = await saveFinalScript(config, finalDeleteds);
-        
-                                if (!ssr.error) {
-                                    error = await testAndCommitChangeset(config, ssr.hasAnything);
-                                } else {
-                                    error = ssr.error;
-                                }
-                            }
-    
-                            if (!error) {
-                                console.log('Operation completed.');
-                            }
-                        }
-                    }
-                } catch (ex) {
-                    error = ex;
-                } finally {
-                    const {
-                        scriptTempFilePath,
-                        changesetTempFilePath
-                    } = config;
+            extractSections(config);
 
-                    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+            getChangedFiles(config);
+
+            // Todo: Done
+            // merge deletedFiles from getChangedFiles() and config.uncommittedChanges.deleted
+
+            const allFiles = getAllSqlFiles(config.paths.scriptsPath);
+
+            if (!updateSections(config, allFiles)) {
+                break;
+            }
+
+            // Todo
+            // detect and warn about changeset items that cannot be found in file system
+
+            generateDropScriptsIfRequested(config);
+
+            // Todo: Done
+            // skip test and commit if changeset has no new changes
+
+            if (finalizeChangeset(config)) {
+                if (!await saveFinalScript(config, allFiles)) {
+                    break;
                 }
 
-                if (error && config.isNewChangeset) {
-                    // we do not delete changeset script.
-                    // changeset scripts are ignored in .gitignore and are not committed.
-                    FileHelper.deleteFile(config.finalChangesetFilePath);
-                }
-
-                if (error) {
-                    if (userChoice === "2") {
-                        // restoring back committed changes depends on whether we commited changeset or not.
-                        // if the changeset is committed, we should restore 2 level back, otherwise 1 level back
-
-                        restoreCommittedChanges(config.changesetCommitted ? 2 : 1);
-                    } else if (config.changesetCommitted) {
-                        // user didn't ask to commit sql changes.
-                        // only changeset was committed. we should restore only 1 level back.
-
-                        restoreCommittedChanges(1);
-                    }
+                if (!await testAndCommitChangeset(config)) {
+                    break;
                 }
             }
-        }
+
+            console.log('Operation completed.');
+        } while (false);
+    } catch (ex) {
+        config.error = ex;
+    } finally {
+        restoreChangesIfNeeded(config);
     }
 
-    return error;
+
+    return config.error;
 }
 
 async function initGitRepo(git) {
     let error;
 
     do {
-        const choice = await promptUser("Would you like to initialize a git repository(Y/N)? ");
+        const choice = await promptUser$1("Would you like to initialize a git repository(Y/N)? ");
 
         if (choice === "y") {
             try {

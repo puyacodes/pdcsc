@@ -24,7 +24,7 @@ function isValidScriptFile(config, file) {
     const validFolders = Object.values(config.folders).map(folder => folder.toLowerCase());
 
     if (!validFolders.some(folder => subdir.startsWith(folder))) {
-        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown type).`));
+        console.warn(chalk.yellow(`Warning: sql changed file ${file} ignored (unknown folder type).`));
 
         return false;
     }

@@ -38,20 +38,20 @@ Enter your choice: `);
                 const files = [];
 
                 if (changes.modified.length > 0) {
-                    files.push(chalk.whiteBright("Modified files:"));
+                    files.push(chalk.whiteBright("\nModified files:"));
                     files.push(...changes.modified.map(chalk.blue));
                 }
                 if (changes.not_added.length > 0) {
-                    files.push(chalk.whiteBright("Untracked files:"));
+                    files.push(chalk.whiteBright("\nUntracked files:"));
                     files.push(...changes.not_added.map(chalk.green));
                 }
                 if (changes.deleted.length > 0) {
-                    files.push(chalk.whiteBright("Deleted files:"));
+                    files.push(chalk.whiteBright("\nDeleted files:"));
                     files.push(...changes.deleted.map(chalk.red));
                 }
 
                 if (files.length) {
-                    console.log("\nUncommitted changes:\n");
+                    console.log("\nUncommitted changes:");
                     console.log(files.join("\n"));
                 } else {
                     console.log("\nNo uncommitted changes found.");

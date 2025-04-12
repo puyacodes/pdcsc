@@ -21,7 +21,7 @@ Please create a new branch.`;
             config.debug("Branch is ok (not merged).");
         }
     } catch (ex) {
-        config.error = new Exception("config.error happened while checking branch with origin", ex);
+        config.error = new Exception("Error happened while checking branch with origin", ex);
     }
 
     return isNullOrEmpty(config.error);

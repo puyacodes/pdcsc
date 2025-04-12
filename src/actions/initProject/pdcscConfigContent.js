@@ -12,9 +12,9 @@ function pdcscConfigContent(config) {
 
     if (config.action == ActionType.initfull) {
         configContent.pipeline = "gitlabs";
-        configContent.masterBranchName = "origin/main",
-        configContent.appVersionSprocName = "dbo.getAppVersion"
-        configContent.appVersionFormat = "YYYY-MM-DD HH:mm:ss",
+        configContent.masterBranchName = "origin/main";
+        configContent.appVersionSprocName = "dbo.getAppVersion";
+        configContent.appVersionFormat = "YYYY-MM-DD HH:mm:ss";
         configContent.timestampLocale = "en";
         configContent.changesetsTableName = "Changesets";
         configContent.backupDbName = "TempBackupDB";
@@ -23,20 +23,20 @@ function pdcscConfigContent(config) {
             backupDir: "C:\\temp\\",
             changesetFolderName: "Changes",
             scriptsFolderName: "Scripts",
-        }
+        };
         configContent.folders = {
-            Procedures: "Procedures",
-            Functions: "Functions",
-            Tables: "Tables",
-            Relations: "Relations",
-            Types: "Types",
-            Views: "Views",
-            Indexes: "Indexes",
-            Triggers: "Triggers",
-            Schemas: "Schemas"
+            procedures: "Procedures",
+            functions: "Functions",
+            tables: "Tables",
+            relations: "Relations",
+            types: "Types",
+            views: "Views",
+            indexes: "Indexes",
+            triggers: "Triggers",
+            schemas: "Schemas"
         }
     }
-    
+
     return JSON.stringify(configContent, null, 4);
 }
 

@@ -1,14 +1,11 @@
-import { isArray, isSomeArray } from "@locustjs/base";
+import { isArray, isNullOrEmpty, isSomeString } from "@locustjs/base";
 import promptUser from "../../utils/promptUser.js";
 import commitChanges from "../../utils/commitChanges.js";
 import getUncommittedSqlChanges from "./getUncommittedSqlChanges.js";
 import chalk from 'chalk';
-import { Exception } from "@locustjs/exception";
 
-async function getUserChoice(config) {
-    let error;
+async function checkUncommittedChanges(config) {
     let userChoice = "1";
-    let generateDrops = false;
 
     config.debug("Checking uncommitted sql changes ...");
 
@@ -35,7 +32,7 @@ Enter your choice: `);
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
 
-                error = await commitChanges(changes.all, "pdcsc: commited current changes");
+                config.error = await commitChanges(changes.all, "pdcsc: commited current changes");
                 break;
             } else if (userChoice === "3") {
                 const files = [];
@@ -75,16 +72,10 @@ Enter your choice: `);
         changes.deleted = []
     }
 
-    // Todo
-    // move out this section into index.js
-
-    if (isSomeArray(changes.deleted) && userChoice == "2") {
-        const answer = await promptUser(`\nGenerate DROP statements (y/n)? `);
-
-        generateDrops = answer == "y";
-    }
-
-    return { userChoice, changes, generateDrops, error };
+    config.userChoice = userChoice;
+    config.uncommittedChanges = changes;
+    
+    return isNullOrEmpty(config.error) && isSomeString(userChoice);
 }
 
-export default getUserChoice;
+export default checkUncommittedChanges;

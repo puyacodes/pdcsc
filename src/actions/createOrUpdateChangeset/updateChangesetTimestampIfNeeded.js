@@ -4,9 +4,9 @@ import getNewChangeset from "./getNewChangeset";
 import commitChanges from "../../utils/commitChanges";
 import { Exception } from "@locustjs/exception";
 import chalk from 'chalk';
+import { isNullOrEmpty } from "@locustjs/base";
 
 async function updateChangesetTimestampIfNeeded(config) {
-    let error;
     let { changesetsPath } = config.paths;
 
     if (!config.changeset && config.oldChangeset) {
@@ -36,21 +36,21 @@ async function updateChangesetTimestampIfNeeded(config) {
             // we directly commit changeset timestamp update.
             // this is necessary. we do not ask user consent on this.
 
-            error = await commitChanges(changes, `pdcsc: changeset timestamp updated.
+            config.error = await commitChanges(changes, `pdcsc: changeset timestamp updated.
 ${config.oldChangesetName} => ${config.newChangesetName}`);
 
-            if (!error) {
+            if (!config.error) {
                 config.debug(`Changeset timestamp updated.`);
                 config.debug2(`  old: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
             } else {
-                error = new Exception(`Updating changeset timestamp failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, error);
+                config.error = new Exception(`Updating changeset timestamp failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, config.error);
             }
         } catch (ex) {
-            error = new Exception(`updating changeset timestamp failed.`, ex);
+            config.error = new Exception(`updating changeset timestamp failed.`, ex);
         }
     }
 
-    return error;
+    return isNullOrEmpty(config.error);
 }
 
 export default updateChangesetTimestampIfNeeded;

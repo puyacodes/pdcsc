@@ -1,8 +1,8 @@
+import { isNullOrEmpty } from "@locustjs/base";
 import { Exception } from "@locustjs/exception";
 import { execSync } from "child_process";
 
 function checkIfBranchAlreadyMerged(config) {
-    let error;
     const { realBranchName, masterBranchName } = config;
 
     try {
@@ -14,17 +14,17 @@ function checkIfBranchAlreadyMerged(config) {
         );
 
         if (result.trim() == "merged") {
-            error = `branch ${realBranchName} already merged into ${masterBranchName}.
+            config.error = `branch ${realBranchName} already merged into ${masterBranchName}.
 Changing already merged branches is forbidden.
 Please create a new branch.`;
         } else {
             config.debug("Branch is ok (not merged).");
         }
     } catch (ex) {
-        error = new Exception("error happened while checking branch with origin", ex);
+        config.error = new Exception("config.error happened while checking branch with origin", ex);
     }
 
-    return error;
+    return isNullOrEmpty(config.error);
 }
 
 export default checkIfBranchAlreadyMerged;

@@ -3,9 +3,9 @@ import testScript from "../testScript";
 import { Exception } from "@locustjs/exception";
 import commitChanges from "../../utils/commitChanges";
 import chalk from 'chalk';
+import { isNullOrEmpty } from "@locustjs/base";
 
-async function testAndCommitChangeset(config, hasAnything) {
-    let error;
+async function testAndCommitChangeset(config) {
     const {
         scriptFilePath,
         scriptTempFilePath,
@@ -16,17 +16,17 @@ async function testAndCommitChangeset(config, hasAnything) {
 
     console.log("Testing changeset ...");
 
-    if (hasAnything) {
-        error = await testScript(config, tempScriptContent);
+    if (config.hasAnything) {
+        config.error = await testScript(config, tempScriptContent);
     } else {
         console.log(`No changes detected. Testing changeset skipped.`)
     }
 
-    if (error) {
+    if (config.error) {
         console.log(chalk.red("Failed.\n"));
-        console.log("See error.log for more details");
+        console.log("See config.error.log for more details");
     } else {
-        if (hasAnything) {
+        if (config.hasAnything) {
             console.log(chalk.green("Passed.\n"));
         }
         
@@ -38,17 +38,17 @@ async function testAndCommitChangeset(config, hasAnything) {
 
             config.debug2("Commiting changes", changes);
 
-            error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
+            config.error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
 
-            if (!error) {
+            if (!config.error) {
                 config.changesetCommitted = true;
             }
         } catch (ex) {
-            error = new Exception('error happened while renaming temp files or committing changes.', ex);
+            config.error = new Exception('config.error happened while renaming temp files or committing changes.', ex);
         }
     }
 
-    return error;
+    return isNullOrEmpty(config.error);
 }
 
 export default testAndCommitChangeset;

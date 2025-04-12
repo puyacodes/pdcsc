@@ -44,7 +44,8 @@ function getChangedFiles(config) {
 
         config.debug2("\nFinal changes", finalChanges);
 
-        return { finalChanges, deleted: deletedFiles };
+        config.finalDeleteds = [...config.uncommittedChanges.deleted, ...deletedFiles]
+        config.finalChanges = finalChanges;
     } catch (ex) {
         throw new Exception(`Error extracting changes from git logs`, ex);
     }

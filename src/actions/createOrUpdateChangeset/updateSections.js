@@ -1,14 +1,14 @@
 import chalk from "chalk";
 import path from "path";
 import { equals } from "../../extensions/equals";
+import { isNullOrEmpty } from "@locustjs/base";
 
-function updateSections(config, sections, finalChanges, finalDeleteds) {
-    config.debug("Updating sections with new uncommitted changes ...");
+function updateSections(config, allFiles) {
+    const { folders, sections, finalDeleteds, finalChanges } = config;
+    
+    config.debug("Updating sections with new uncommitted config.error ...");
     config.debug2({ deleteds: finalDeleteds })
-
-    const { folders } = config;
-
-    config.debug2("Adding new changes to sections ...");
+    config.debug2("Adding new config.error to sections ...");
 
     finalChanges.forEach((file) => {
         let fileName = path.basename(file);
@@ -27,7 +27,7 @@ function updateSections(config, sections, finalChanges, finalDeleteds) {
 
                         if (index >= 0) {
                             config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`)
-    
+
                             sections[section].splice(index, 1);
                         } else {
                             config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
@@ -67,7 +67,7 @@ function updateSections(config, sections, finalChanges, finalDeleteds) {
 
                         if (index >= 0) {
                             config.debug3(`\t\tsection: ${chalk.yellow(section)}: removed`);
-    
+
                             sections[section].splice(index, 1);
                         } else {
                             config.debug3(`\t\tsection: ${chalk.yellow(section)}: item not found!`);
@@ -78,7 +78,33 @@ function updateSections(config, sections, finalChanges, finalDeleteds) {
         }
     })
 
-    return sections;
+    for (const [section, folder] of Object.entries(folders)) {
+        for (let item of sections[section]) {
+            let found = false;
+
+            for (const filePath of allFiles) {
+                const fileName = path.basename(filePath);
+
+                if (filePath.contains(sections[section]) && (fileName.contains(item) || fileName.contains())) {
+                    found = true;
+
+                    break;
+                }
+            }
+
+            if (!found) {
+                error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(sections[section])} folder was not found.`;
+
+                break
+            }
+        }
+
+        if (error) {
+            break;
+        }
+    }
+
+    return isNullOrEmpty(config.error);
 }
 
 export default updateSections;

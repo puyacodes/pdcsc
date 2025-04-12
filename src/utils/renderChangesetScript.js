@@ -3,9 +3,10 @@ import fs from "fs";
 import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
-import { isEmpty, isNullOrEmpty, isSomeArray } from "@locustjs/base";
+import { isArray, isEmpty, isNullOrEmpty, isSomeArray } from "@locustjs/base";
 import getAppVersion from "./getAppVersion";
 import chalk from "chalk";
+import getAllSqlFiles from "./getAllSqlFiles";
 
 async function getEncoding(filepath) {
     const info = await detectEncoding(filepath);
@@ -36,23 +37,7 @@ async function readFile(filepath, codepage) {
 
     return content;
 }
-function getAllSqlFiles(dir) {
-    let result = [];
-    const list = fs.readdirSync(dir);
 
-    list.forEach((file) => {
-        const fullPath = path.join(dir, file);
-        const stat = fs.statSync(fullPath);
-
-        if (stat && stat.isDirectory()) {
-            result = result.concat(getAllSqlFiles(fullPath));
-        } else if (fullPath.toLowerCase().endsWith(".sql")) {
-            result.push(fullPath);
-        }
-    });
-
-    return result;
-}
 function extractObjects(config, changesetPath) {
     const objects = [];
     let currentSection = "";
@@ -94,7 +79,7 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-async function renderChangesetScript(config, changesetPath, changesetName, deleteds) {
+async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles) {
     let error;
     const sb = {
         schemas: [],
@@ -109,7 +94,14 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     }
 
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
-    const files = getAllSqlFiles(config.paths.scriptsPath);
+
+    if (!isArray(deleteds)) {
+        deleteds = [];
+    }
+    
+    if (!isArray(allFiles)) {
+        allFiles = getAllSqlFiles(config.paths.scriptsPath);
+    }
 
     for (const obj of objects) {
         let found = false;
@@ -122,7 +114,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
             found = true;
             break;
         } else {
-            for (const filePath of files) {
+            for (const filePath of allFiles) {
                 const fileName = path.basename(filePath);
 
 
@@ -157,63 +149,54 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     }
 
     const hasAnything = !isEmpty(customStart) ||
-                         !isEmpty(customEnd) ||
-                         isSomeArray(sb.schemas) ||
-                         isSomeArray(sb.types) ||
-                         isSomeArray(sb.tables) ||
-                         isSomeArray(sb.relations) ||
-                         isSomeArray(sb.functions) ||
-                         isSomeArray(sb.procedures) ||
-                         isSomeArray(sb.views) ||
-                         isSomeArray(sb.indexes) ||
-                         isSomeArray(sb.triggers);
+        !isEmpty(customEnd) ||
+        isSomeArray(sb.schemas) ||
+        isSomeArray(sb.types) ||
+        isSomeArray(sb.tables) ||
+        isSomeArray(sb.relations) ||
+        isSomeArray(sb.functions) ||
+        isSomeArray(sb.procedures) ||
+        isSomeArray(sb.views) ||
+        isSomeArray(sb.indexes) ||
+        isSomeArray(sb.triggers);
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${customStart}
--- ===================== Custom-Start ( end ) ======================
+${customStart}-- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${sb.schemas.join("\n")}
--- ===================== Schemas (end) ======================
+${sb.schemas.join("\n")}-- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${sb.types.join("\n")}
--- ===================== Types (end) ======================
+${sb.types.join("\n")}-- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${sb.tables.join("\n")}
--- ===================== Tables (end) ======================
+${sb.tables.join("\n")}-- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${sb.relations.join("\n")}
--- ===================== Relations (end) ======================
+${sb.relations.join("\n")}-- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${sb.functions.join("\n")}
--- ===================== Functions (end) ======================
+${sb.functions.join("\n")}-- ===================== Functions (end) ======================
 
 -- ===================== Procedures (start) ======================
-${sb.procedures.join("\n")}
--- ===================== Procedures (end) ======================
+${sb.procedures.join("\n")}-- ===================== Procedures (end) ======================
 
 -- ===================== Views (start) ======================
-${sb.views.join("\n")}
--- ===================== Views (end) ======================
+${sb.views.join("\n")}-- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${sb.indexes.join("\n")}
--- ===================== Indexes (end) ======================
+${sb.indexes.join("\n")}-- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================
-${sb.triggers.join("\n")}
--- ===================== Triggers (end) ======================
+${sb.triggers.join("\n")}-- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${customEnd}
--- ===================== Custom-End ( end ) ======================
+${customEnd}-- ===================== Custom-End ( end ) ======================
+
 go
 ${getAppVersion(config)}
+
 go
 `;
 

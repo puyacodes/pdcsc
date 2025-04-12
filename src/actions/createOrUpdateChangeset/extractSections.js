@@ -75,7 +75,9 @@ function extractSections(config) {
         }
     });
 
-    return tempSections;
+    config.sections = tempSections;
+    
+    config.debug3("\nCurrent sections", tempSections);
 }
 
 export default extractSections;

@@ -1,9 +1,9 @@
 import { Exception } from "@locustjs/exception";
 import simpleGit from "simple-git";
 import chalk from 'chalk';
+import { isNullOrEmpty } from "@locustjs/base";
 
 async function compareWithOrigin(config) {
-    let error;
     const { masterBranchName, realBranchName } = config
 
     config.debug(`Initializing simpleGit ...`)
@@ -20,15 +20,13 @@ async function compareWithOrigin(config) {
                 try {
                     isRepo = await git.checkIsRepo();
                 } catch (ex) {
-                    error = ex;
-                }
+                    config.error = ex;
 
-                if (error) {
                     break;
                 }
 
                 if (!isRepo) {
-                    error = 'We are not a git repository.';
+                    config.error = 'We are not a git repository.';
                     break;
                 } else {
                     config.debug("We are a git repo.");
@@ -50,7 +48,7 @@ async function compareWithOrigin(config) {
                 config.debug4('remote branches', branches)
 
                 if (!branches.all || !branches.all.includes(masterBranchName)) {
-                    error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
+                    config.error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
                     config.debug("master branch is valid.");
@@ -71,19 +69,19 @@ async function compareWithOrigin(config) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
                     console.log(`Please run ${chalk.yellow(`git pull ${masterBranchName}`)} to sync with the latest changes from master branch.`);
 
-                    error = " ";
+                    config.error = " ";
                 } else {
                     config.debug("We are not behind master branch.");
                 }
             } while (false);
         } catch (ex) {
-            error = new Exception(`Error checking ${masterBranchName} branch:`, ex);
+            config.error = new Exception(`Error checking ${masterBranchName} branch:`, ex);
         }
     } else {
-        error = "no master branch is specified";
+        config.error = "no master branch is specified";
     }
 
-    return error;
+    return isNullOrEmpty(config.error);
 }
 
 async function c1(config) {

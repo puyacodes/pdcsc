@@ -1,17 +1,17 @@
 import testAndCommitChangeset from "./testAndCommitChangeset.js";
 import extractSections from "./extractSections.js";
 import finalizeChangeset from "./finalizeChangeset.js";
-import getDropScripts from "./getDropScripts.js";
-import getUserChoice from "./getUserChoice.js";
+import generateDropScriptsIfRequested from "./generateDropScriptsIfRequested.js";
+import checkUncommittedChanges from "./checkUncommittedChanges.js";
 import getOrCreateChangeset from "./getOrCreateChangeset.js";
 import getChangedFiles from "./getChangedFiles.js";
-import restoreCommittedChanges from "../../utils/restoreCommittedChanges.js";
 import compareWithOrigin from "./compareWithOrigin.js";
 import saveFinalScript from "./saveFinalScript.js";
-import FileHelper from "../../services/FileHelper/index.js";
 import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 import updateChangesetTimestampIfNeeded from "./updateChangesetTimestampIfNeeded.js";
+import getAllSqlFiles from "../../utils/getAllSqlFiles.js";
+import restoreChangesIfNeeded from "./restoreChangesIfNeeded.js";
 import chalk from "chalk";
 
 async function createOrUpdateChangeset(config) {
@@ -19,115 +19,76 @@ async function createOrUpdateChangeset(config) {
         console.log((config.oldChangeset ? "Updating" : "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
     }
 
-    let error = await compareWithOrigin(config);
+    try {
+        do {
+            if (!await compareWithOrigin(config)) {
+                break
+            }
 
-    if (!error) {
-        // TODO: Done
-        // if current branch already merged with origin, exit.
-        // we should not allow changing previous branches.
-        // we show a message that user should create a new branch
-        // if he intends to change previous branches.
+            // TODO: Done
+            // if current branch already merged with origin, exit.
+            // we should not allow changing previous branches.
+            // we show a message that user should create a new branch
+            // if he intends to change previous branches.
 
-        error = checkIfBranchAlreadyMerged(config);
+            if (!checkIfBranchAlreadyMerged(config)) {
+                break
+            }
 
-        if (!error) {
             // Todo: Done
             // we should update changeset timestamp always.
 
-            error = await updateChangesetTimestampIfNeeded(config);
+            if (!await updateChangesetTimestampIfNeeded(config)) {
+                break
+            }
 
-            if (!error) {
-                let userChoice;
+            if (!await checkUncommittedChanges(config)) {
+                break;
+            }
 
-                try {
-                    const guc = await getUserChoice(config);
+            getOrCreateChangeset(config);
 
-                    if (guc.error) {
-                        error = guc.error
-                    } else {
-                        userChoice = guc.userChoice;
-    
-                        if (userChoice) {
-                            getOrCreateChangeset(config);
-    
-                            const sections = extractSections(config);
-                            const { finalChanges, deleted } = getChangedFiles(config);
-                            const finalDeleteds = [...guc.changes.deleted, ...deleted]
-    
-                            // Todo: Done
-                            // merge deletedFiles from getChangedFiles() and guc.changes.deleted
-    
-                            config.debug3("\nCurrent sections", sections);
-    
-                            updateSections(config, sections, finalChanges, finalDeleteds);
-    
-                            if (guc.generateDrops) {
-                                config.debug("Generating drop statements ...");
-                            }
-    
-                            // Todo
-                            // detect changeset items that cannot be found in file system
-                            // generate drop statements for them and remove them from changeset.
-                            // warn about this to user.
-                            
-                            const drops = guc.generateDrops ? getDropScripts(config, finalDeleteds, config.folders) : "";
-    
-                            config.debug3({ drops });
-    
-                            // Todo: Done
-                            // skip test and commit if changeset has no new changes
-    
-                            if (finalizeChangeset(config, sections, drops)) {
-        
-                                const ssr = await saveFinalScript(config, finalDeleteds);
-        
-                                if (!ssr.error) {
-                                    error = await testAndCommitChangeset(config, ssr.hasAnything);
-                                } else {
-                                    error = ssr.error;
-                                }
-                            }
-    
-                            if (!error) {
-                                console.log('Operation completed.')
-                            }
-                        }
-                    }
-                } catch (ex) {
-                    error = ex;
-                } finally {
-                    const {
-                        scriptTempFilePath,
-                        changesetTempFilePath
-                    } = config
+            extractSections(config);
 
-                    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+            getChangedFiles(config);
+
+            // Todo: Done
+            // merge deletedFiles from getChangedFiles() and config.uncommittedChanges.deleted
+
+            const allFiles = getAllSqlFiles(config.paths.scriptsPath);
+
+            if (!updateSections(config, allFiles)) {
+                break;
+            }
+
+            // Todo
+            // detect and warn about changeset items that cannot be found in file system
+
+            generateDropScriptsIfRequested(config);
+
+            // Todo: Done
+            // skip test and commit if changeset has no new changes
+
+            if (finalizeChangeset(config)) {
+                if (!await saveFinalScript(config, allFiles)) {
+                    break;
                 }
 
-                if (error && config.isNewChangeset) {
-                    // we do not delete changeset script.
-                    // changeset scripts are ignored in .gitignore and are not committed.
-                    FileHelper.deleteFile(config.finalChangesetFilePath);
-                }
-
-                if (error) {
-                    if (userChoice === "2") {
-                        // restoring back committed changes depends on whether we commited changeset or not.
-                        // if the changeset is committed, we should restore 2 level back, otherwise 1 level back
-
-                        restoreCommittedChanges(config.changesetCommitted ? 2 : 1);
-                    } else if (config.changesetCommitted) {
-                        // user didn't ask to commit sql changes.
-                        // only changeset was committed. we should restore only 1 level back.
-
-                        restoreCommittedChanges(1);
-                    }
+                if (!await testAndCommitChangeset(config)) {
+                    break;
                 }
             }
-        }
+
+            console.log('Operation completed.')
+        } while (false);
+    } catch (ex) {
+        config.error = ex;
+    } finally {
+        restoreChangesIfNeeded(config)
     }
 
-    return error;
+
+    return config.error;
 }
 
 export default createOrUpdateChangeset;

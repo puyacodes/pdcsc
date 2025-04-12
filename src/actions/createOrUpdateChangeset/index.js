@@ -12,11 +12,10 @@ import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 import updateChangesetTimestampIfNeeded from "./updateChangesetTimestampIfNeeded.js";
 import getAllSqlFiles from "../../utils/getAllSqlFiles.js";
 import restoreChangesIfNeeded from "./restoreChangesIfNeeded.js";
-import chalk from "chalk";
 
 async function createOrUpdateChangeset(config) {
     if (!config.debugMode) {
-        console.log((config.oldChangeset ? "Updating" : "Creating") + ` changeset ...\n  ${chalk.gray("This may take a while. Please wait.")}`);
+        console.log((config.oldChangeset ? "Updating" : "Creating") + ` changeset ...`);
     }
 
     try {
@@ -64,7 +63,7 @@ async function createOrUpdateChangeset(config) {
             // Todo
             // detect and warn about changeset items that cannot be found in file system
 
-            generateDropScriptsIfRequested(config);
+            await generateDropScriptsIfRequested(config);
 
             // Todo: Done
             // skip test and commit if changeset has no new changes

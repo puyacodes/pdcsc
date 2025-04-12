@@ -51,7 +51,6 @@ Enter your choice: `);
                 }
 
                 if (files.length) {
-                    console.log("\nUncommitted changes:");
                     console.log(files.join("\n"));
                 } else {
                     console.log("\nNo uncommitted changes found.");

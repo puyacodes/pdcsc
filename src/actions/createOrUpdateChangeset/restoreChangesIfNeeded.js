@@ -12,7 +12,9 @@ function restoreChangesIfNeeded(config) {
         error
     } = config
 
-    FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+    if (!config.debugMode) {
+        FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
+    }
 
     if (error && isNewChangeset) {
         // we do not delete changeset script.

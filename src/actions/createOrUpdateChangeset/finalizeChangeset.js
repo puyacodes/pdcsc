@@ -8,37 +8,49 @@ function finalizeChangeset(config) {
 
     const content = `
 ## ===================== Custom-Start (start) ======================
-${sections.customStart}${(dropStatements || "")}## ===================== Custom-Start ( end ) ======================
+${sections.customStart}
+${(dropStatements || "")}
+## ===================== Custom-Start ( end ) ======================
 
 ## ===================== Schemas (start) ======================
-${sections.schemas.join("\n")}## ===================== Schemas ( end ) ======================
+${sections.schemas.join("\n")}
+## ===================== Schemas ( end ) ======================
 
 ## ===================== Types (start) ======================
-${sections.types.join("\n")}## ===================== Types ( end ) ======================
+${sections.types.join("\n")}
+## ===================== Types ( end ) ======================
 
 ## ===================== Tables (start) ======================
-${sections.tables.join("\n")}## ===================== Tables ( end ) ======================
+${sections.tables.join("\n")}
+## ===================== Tables ( end ) ======================
 
 ## ===================== Relations (start) ======================
-${sections.relations.join("\n")}## ===================== Relations ( end ) ======================
+${sections.relations.join("\n")}
+## ===================== Relations ( end ) ======================
 
 ## ===================== Functions (start) ======================
-${sections.functions.join("\n")}## ===================== Functions ( end ) ======================
+${sections.functions.join("\n")}
+## ===================== Functions ( end ) ======================
 
 ## ===================== SPROCs (start) ======================
-${sections.procedures.join("\n")}## ===================== SPROCs ( end ) ======================
+${sections.procedures.join("\n")}
+## ===================== SPROCs ( end ) ======================
 
 ## ===================== Views (start) ======================
-${sections.views.join("\n")}## ===================== Views ( end ) ======================
+${sections.views.join("\n")}
+## ===================== Views ( end ) ======================
 
 ## ===================== Indexes (start) ======================
-${sections.indexes.join("\n")}## ===================== Indexes ( end ) ======================
+${sections.indexes.join("\n")}
+## ===================== Indexes ( end ) ======================
 
 ## ===================== Triggers (start) ======================
-${sections.triggers.join("\n")}## ===================== Triggers ( end ) ======================
+${sections.triggers.join("\n")}
+## ===================== Triggers ( end ) ======================
 
 ## ===================== Custom-End (start) ======================
-${sections.customEnd}## ===================== Custom-End ( end ) ======================
+${sections.customEnd}
+## ===================== Custom-End ( end ) ======================
 `
     const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 

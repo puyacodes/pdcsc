@@ -88,7 +88,7 @@ function updateSections(config, allFiles) {
             for (const filePath of allFiles) {
                 const fileName = path.basename(filePath);
 
-                if (filePath.contains(sections[section]) && (fileName.contains(item) || fileName.contains())) {
+                if (filePath.contains(folder) && fileName.contains(item)) {
                     found = true;
 
                     break;
@@ -96,7 +96,7 @@ function updateSections(config, allFiles) {
             }
 
             if (!found) {
-                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(sections[section])} folder was not found.`;
+                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.`;
 
                 break
             }

@@ -144,7 +144,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         // check object's file existence and throw error if not found
 
         if (!found) {
-            error = `Render changeset failed. ${chalk.yellow(config.folders[obj.type])}: ${chalk.yellow(obj.name)} file not found.`;
+            error = `Render changeset failed: ${chalk.yellow(obj.name)} file not found.`;
         }
     }
 
@@ -162,37 +162,48 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${customStart}-- ===================== Custom-Start ( end ) ======================
+${customStart}
+-- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${sb.schemas.join("\n")}-- ===================== Schemas (end) ======================
+${sb.schemas.join("\n")}
+-- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${sb.types.join("\n")}-- ===================== Types (end) ======================
+${sb.types.join("\n")}
+-- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${sb.tables.join("\n")}-- ===================== Tables (end) ======================
+${sb.tables.join("\n")}
+-- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${sb.relations.join("\n")}-- ===================== Relations (end) ======================
+${sb.relations.join("\n")}
+-- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${sb.functions.join("\n")}-- ===================== Functions (end) ======================
+${sb.functions.join("\n")}
+-- ===================== Functions (end) ======================
 
 -- ===================== Procedures (start) ======================
-${sb.procedures.join("\n")}-- ===================== Procedures (end) ======================
+${sb.procedures.join("\n")}
+-- ===================== Procedures (end) ======================
 
 -- ===================== Views (start) ======================
-${sb.views.join("\n")}-- ===================== Views (end) ======================
+${sb.views.join("\n")}
+-- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${sb.indexes.join("\n")}-- ===================== Indexes (end) ======================
+${sb.indexes.join("\n")}
+-- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================
-${sb.triggers.join("\n")}-- ===================== Triggers (end) ======================
+${sb.triggers.join("\n")}
+-- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${customEnd}-- ===================== Custom-End ( end ) ======================
+${customEnd}
+-- ===================== Custom-End ( end ) ======================
 
 go
 ${getAppVersion(config)}

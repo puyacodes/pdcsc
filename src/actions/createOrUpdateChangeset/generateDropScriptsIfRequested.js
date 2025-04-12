@@ -66,9 +66,9 @@ GO
     }
 };
 
-function generateDropScriptsIfRequested(config) {
-    if (askIfGenerateDrops(config)) {
-        config.debug("Generating drop statements ...");
+async function generateDropScriptsIfRequested(config) {
+    if (await askIfGenerateDrops(config)) {
+        config.debug("\nGenerating drop statements ...");
         
         const { finalDeleteds, folders } = config;
         const folderToObjectMap = {

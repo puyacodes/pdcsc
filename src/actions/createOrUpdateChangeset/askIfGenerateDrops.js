@@ -1,3 +1,6 @@
+import { isSomeArray } from "@locustjs/base";
+import promptUser from "../../utils/promptUser";
+
 async function askIfGenerateDrops(config) {
     let result = false;
 

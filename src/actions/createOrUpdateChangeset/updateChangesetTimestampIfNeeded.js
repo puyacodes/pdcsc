@@ -20,6 +20,8 @@ async function updateChangesetTimestampIfNeeded(config) {
 
             changes.push(config.oldChangesetFilePath);
             changes.push(cs.changesetFilePath);
+            
+            config.debug2("changeset timestamp changes", changes);
 
             fs.renameSync(config.oldChangesetFilePath, cs.changesetFilePath);
 

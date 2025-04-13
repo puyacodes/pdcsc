@@ -45,8 +45,6 @@ function init(config) {
             throw new Exception("Please specify all 'Scripts' subfolders in the 'folders' section of the config file.");
         }
 
-        console.log("initializing log functions ...")
-
         config.logger = new ConsoleLogger({ env: "node" });
         config.debug = (...args) => {
             if (config.debugMode) {
@@ -74,7 +72,7 @@ function init(config) {
             }
         }
 
-        console.log("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
+        config.debug("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
 
         config.mergeBase = execSync(
             `git merge-base HEAD ${config.masterBranchName}`,
@@ -87,7 +85,7 @@ function init(config) {
             config.debug2('merge-base =', config.mergeBase);
         }
 
-        console.log("getting current branch changeset ...")
+        config.debug("getting current branch changeset ...")
 
         config.oldChangeset = getCurrentBranchChangeset(config);
 

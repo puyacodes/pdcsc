@@ -22,6 +22,8 @@ async function init(config) {
         config.currentBranch = currentBranch;
         config.realBranchName = realBranchName;
 
+        console.log("initializing paths ...")
+
         config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
         config.paths.scriptsPath = path.join(config.basePath, config.paths.scriptsFolderName);
         config.paths.backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
@@ -43,6 +45,8 @@ async function init(config) {
         )) {
             throw new Exception("Please specify all 'Scripts' subfolders in the 'folders' section of the config file.");
         }
+
+        console.log("initializing log functions ...")
 
         config.logger = new ConsoleLogger({ env: "node" });
         config.debug = (...args) => {

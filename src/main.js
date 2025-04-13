@@ -14,7 +14,7 @@ import "./extensions";
 import { Exception } from '@locustjs/exception';
 
 function intro() {
-    console.log(chalk.whiteBright(`Puya Data Changeset Creator 2024-2025\n`));
+    console.log(chalk.whiteBright(`Puya Data Changeset Creator ${version} 2024-2025\n`));
 }
 
 async function main() {

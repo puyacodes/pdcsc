@@ -11,7 +11,7 @@ function getPendingChangesets(config, lastExecutedChangeset) {
             path: path.join(config.paths.changesetsPath, filepath)
         }));
     const lastExecutedChangesetName = lastExecutedChangeset?.name;
-    const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(lastExecutedChangesetName) : null;
+    const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(config, lastExecutedChangesetName) : null;
     let pendingChangesets = [];
 
     for (const file of sqlFiles) {
@@ -22,7 +22,7 @@ function getPendingChangesets(config, lastExecutedChangeset) {
         }
 
         let fileDateStr = match[1]; //example: 140311131345
-        let fileDate = extractDateFromString(fileDateStr);
+        let fileDate = extractDateFromString(config, fileDateStr);
 
         if (!lastExecutedDate || fileDate > lastExecutedDate) {
             if (!file.name.includes("update")) {

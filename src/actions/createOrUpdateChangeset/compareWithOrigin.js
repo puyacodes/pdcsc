@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
 
 async function compareWithOrigin(config) {
-    const { masterBranchName, realBranchName } = config
+    const { masterBranchName } = config
 
     config.debug(`Initializing simpleGit ...`)
 
@@ -54,9 +54,9 @@ async function compareWithOrigin(config) {
                     config.debug("master branch is valid.");
                 }
 
-                const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
+                // const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
+                base = config.mergeBase;
 
-                config.debug2('merge-base =', base)
                 config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
 
                 config.debug("Checking if we are behind master branch ...");

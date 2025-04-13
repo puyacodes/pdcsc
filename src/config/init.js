@@ -80,7 +80,7 @@ function init(config) {
         ).trim();
 
         if (!config.mergeBase) {
-            console.warn(`warning: merge-base for current branch (${realBranchName}) not found!`)
+            throw new Exception(`No merge-base for current branch (${realBranchName}) found. Please use pdcsc in another branch.`);
         } else {
             config.debug2('merge-base =', config.mergeBase);
         }

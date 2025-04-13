@@ -1,19 +1,25 @@
 import getChangesetContent from "./getChangesetContent.js";
 import testScript from "../testScript";
 import executeChangeset from "./executeChangeset";
+import compareWithOrigin from "../createOrUpdateChangeset/compareWithOrigin.js";
 
 async function run(config) {
-    let { content, error } = await getChangesetContent(config);
-    
-    if (content) {
-        error = await testScript(config, content);
+    if (compareWithOrigin(config)) {
+        let { content, error } = await getChangesetContent(config);
 
-        if (!error) {
-            error = await executeChangeset(config, content);
+        if (content) {
+            error = await testScript(config, content);
+
+            if (!error) {
+                error = await executeChangeset(config, content);
+            }
         }
+
+        return error;
+    } else {
+        return config.error;
     }
 
-    return error;
 }
 
 export default run;

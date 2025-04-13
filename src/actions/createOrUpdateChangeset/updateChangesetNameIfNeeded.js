@@ -6,7 +6,7 @@ import { Exception } from "@locustjs/exception";
 import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
 
-async function updateChangesetTimestampIfNeeded(config) {
+async function updateChangesetNameIfNeeded(config) {
     let { changesetsPath } = config.paths;
 
     if (!config.changeset && config.oldChangeset) {
@@ -55,4 +55,4 @@ ${config.oldChangesetName} => ${config.newChangesetName}`);
     return isNullOrEmpty(config.error);
 }
 
-export default updateChangesetTimestampIfNeeded;
+export default updateChangesetNameIfNeeded;

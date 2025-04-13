@@ -9,7 +9,7 @@ import compareWithOrigin from "../../utils/compareWithOrigin.js";
 import saveFinalScript from "./saveFinalScript.js";
 import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
-import updateChangesetTimestampIfNeeded from "./updateChangesetTimestampIfNeeded.js";
+import updateChangesetNameIfNeeded from "./updateChangesetNameIfNeeded.js";
 import getAllSqlFiles from "../../utils/getAllSqlFiles.js";
 import restoreChangesIfNeeded from "./restoreChangesIfNeeded.js";
 
@@ -37,7 +37,7 @@ async function createOrUpdateChangeset(config) {
             // Todo: Done
             // we should update changeset timestamp always.
 
-            if (!await updateChangesetTimestampIfNeeded(config)) {
+            if (!await updateChangesetNameIfNeeded(config)) {
                 break
             }
 

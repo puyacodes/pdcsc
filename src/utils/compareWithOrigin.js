@@ -47,7 +47,7 @@ async function compareWithOrigin(config) {
                 // await git.fetch(origin, branch);
 
                 config.debug("Fetch completed.");
-                config.debug(`Checking if master branch ${chalk.yellow(masterBranchName)} is valid ...`);
+                config.debug(`Checking if ${chalk.yellow(masterBranchName)} is valid ...`);
 
                 const branches = execSync(
                     `git branch -r`,
@@ -65,7 +65,7 @@ async function compareWithOrigin(config) {
                     config.error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
-                    config.debug("master branch is valid.");
+                    config.debug(`${masterBranchName} is valid.`);
                 }
 
                 // const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
@@ -73,7 +73,7 @@ async function compareWithOrigin(config) {
 
                 config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
 
-                config.debug("Checking if we are behind master branch ...");
+                config.debug(`Checking if we are behind ${masterBranchName} ...`);
 
                 // const logs = await git.log({ from: base, to: masterBranchName });
 
@@ -84,13 +84,13 @@ async function compareWithOrigin(config) {
 
                 config.debug3('\nlogs', logs)
 
-                if (logs.total > 0) {
+                if (logs.length > 0) {
                     console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
-                    console.log(`Please run ${chalk.yellow(`git pull | git merge | git push`)} to sync with the latest changes from master branch.`);
+                    console.log(`Please run ${chalk.yellow(`git pull | git merge | git push`)} to sync with the latest changes from ${masterBranchName}.`);
 
                     config.error = " ";
                 } else {
-                    config.debug("We are not behind master branch.");
+                    config.debug(`We are not behind ${masterBranchName}.`);
                 }
             } while (false);
         } catch (ex) {

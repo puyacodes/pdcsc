@@ -5,12 +5,12 @@ import getCurrentBranch from "./getCurrentBranch.js"
 import { DbHelperSqlServer } from '../services/DbHelper/index.js';
 import { ConsoleLogger } from "@locustjs/logging";
 import { Exception } from "@locustjs/exception";
-import { isString } from "@locustjs/base";
 import simpleGit from "simple-git";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
 import chalk from 'chalk';
+import { execSync } from "child_process";
 
-async function init(config) {
+function init(config) {
     if (!config.cliMode) {
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
@@ -75,11 +75,12 @@ async function init(config) {
             }
         }
 
-        const git = simpleGit();
-
         console.log("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
 
-        config.mergeBase = await git.raw(['merge-base', realBranchName, config.masterBranchName]);
+        config.mergeBase = execSync(
+            `git merge-base HEAD ${config.masterBranchName}`,
+            { encoding: "utf-8" }
+        ).trim();
 
         if (!config.mergeBase) {
             console.warn(`warning: merge-base for current branch (${realBranchName}) not found!`)

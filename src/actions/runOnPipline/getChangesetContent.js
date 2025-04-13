@@ -61,7 +61,7 @@ async function getChangesetContent(config) {
             }
         }
     } else {
-        console.warn(chalk.yellow(`No changeset found for branch ${chalk.yellow(realBranchName)}`));
+        error = `No changeset found for branch ${chalk.yellow(realBranchName)}`;
     }
 
     return { content, error };

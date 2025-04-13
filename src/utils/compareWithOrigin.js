@@ -43,7 +43,7 @@ async function compareWithOrigin(config) {
                     `git fetch ${origin} ${branch}`,
                     { encoding: "utf-8" }
                 );
-                
+
                 // await git.fetch(origin, branch);
 
                 config.debug("Fetch completed.");
@@ -80,7 +80,7 @@ async function compareWithOrigin(config) {
                 const logs = execSync(
                     `git log ${base}..${masterBranchName} --oneline`,
                     { encoding: "utf-8" }
-                ).trim().split("\n");
+                ).trim().split("\n").length(x => x.trim().length > 0);
 
                 config.debug3('\nlogs', logs)
 

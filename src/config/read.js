@@ -103,7 +103,9 @@ function read(args) {
 
     config.debugMode = debugMode;
     config.debugLevel = (getArg("-dbl") || "").split("");
-    config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
+    config.pipelineMode = config.action == ActionType.runOnPipline;
+    config.updateMode = config.action == ActionType.runAllChangesets;
+    config.runMode = config.pipelineMode || config.updateMode;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
 
     return config

@@ -2,6 +2,7 @@ import { Exception } from "@locustjs/exception";
 import simpleGit from "simple-git";
 import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
+import { execSync } from "child_process";
 
 async function compareWithOrigin(config) {
     const { masterBranchName } = config
@@ -38,16 +39,29 @@ async function compareWithOrigin(config) {
 
                 config.debug2({ origin, branch })
 
-                await git.fetch(origin, branch);
+                execSync(
+                    `git fetch ${origin} ${branch}`,
+                    { encoding: "utf-8" }
+                );
+                
+                // await git.fetch(origin, branch);
 
                 config.debug("Fetch completed.");
                 config.debug(`Checking if master branch ${chalk.yellow(masterBranchName)} is valid ...`);
 
-                const branches = await git.branch(['-r']);
+                const branches = execSync(
+                    `git branch -r`,
+                    { encoding: "utf-8" }
+                ).trim()
+                    .split("\n")
+                    .map(x => x.trim())
+                    .filter(x => x);
+
+                //branches = await git.branch(['-r']);
 
                 config.debug4('remote branches', branches)
 
-                if (!branches.all || !branches.all.includes(masterBranchName)) {
+                if (!branches || !branches.includes(masterBranchName)) {
                     config.error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
                     break;
                 } else {
@@ -61,7 +75,12 @@ async function compareWithOrigin(config) {
 
                 config.debug("Checking if we are behind master branch ...");
 
-                const logs = await git.log({ from: base.trim(), to: masterBranchName });
+                // const logs = await git.log({ from: base, to: masterBranchName });
+
+                const logs = execSync(
+                    `git log ${base}..${masterBranchName} --oneline`,
+                    { encoding: "utf-8" }
+                ).trim().split("\n");
 
                 config.debug3('\nlogs', logs)
 

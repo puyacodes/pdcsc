@@ -1,7 +1,7 @@
 import getChangesetContent from "./getChangesetContent.js";
 import testScript from "../testScript";
 import executeChangeset from "./executeChangeset";
-import compareWithOrigin from "../createOrUpdateChangeset/compareWithOrigin.js";
+import compareWithOrigin from "../../utils/compareWithOrigin.js";
 
 async function run(config) {
     if (compareWithOrigin(config)) {

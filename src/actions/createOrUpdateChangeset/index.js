@@ -5,7 +5,7 @@ import generateDropScriptsIfRequested from "./generateDropScriptsIfRequested.js"
 import checkUncommittedChanges from "./checkUncommittedChanges.js";
 import getOrCreateChangeset from "./getOrCreateChangeset.js";
 import getChangedFiles from "./getChangedFiles.js";
-import compareWithOrigin from "./compareWithOrigin.js";
+import compareWithOrigin from "../../utils/compareWithOrigin.js";
 import saveFinalScript from "./saveFinalScript.js";
 import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";

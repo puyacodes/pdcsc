@@ -80,7 +80,9 @@ async function compareWithOrigin(config) {
                 const logs = execSync(
                     `git log ${base}..${masterBranchName} --oneline`,
                     { encoding: "utf-8" }
-                ).trim().split("\n").length(x => x.trim().length > 0);
+                ).trim()
+                .split("\n")
+                .filter(x => x && x.trim().length > 0);
 
                 config.debug3('\nlogs', logs)
 

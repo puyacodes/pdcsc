@@ -59,8 +59,6 @@ function read(args) {
         customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
     }
 
-    debug(debugMode, { configPath, customizedConfigPath, config, customConfig })
-
     if (!isObject(config)) {
         config = {}
     }

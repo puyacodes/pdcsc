@@ -6,6 +6,11 @@ import { ActionType, UpdateMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
+function debug(debugMode, ...args) {
+    if (debugMode) {
+        console.log(...args)
+    }
+}
 function read(args) {
     function getArg(arg) {
         const index = args.indexOf(arg);
@@ -14,8 +19,11 @@ function read(args) {
         return result;
     }
 
-    let config;
+    let config = {};
     let customConfig;
+
+    const debugMode = args.includes("-dbm");
+
     const basePath = process.cwd();
     const changeset = getArg("-cs");
     const server = getArg("-s");
@@ -50,6 +58,8 @@ function read(args) {
     if (fs.existsSync(customizedConfigPath)) {
         customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
     }
+
+    debug(debugMode, { configPath, customizedConfigPath, config, customConfig })
 
     if (!isObject(config)) {
         config = {}
@@ -93,9 +103,8 @@ function read(args) {
         config.action = ActionType.createOrUpdateChangeset;
     }
 
-    config.debugMode = args.includes("-dbm");
+    config.debugMode = debugMode;
     config.debugLevel = (getArg("-dbl") || "").split("");
-
     config.runMode = config.action == ActionType.runOnPipline || config.action == ActionType.runAllChangesets;
     config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
 

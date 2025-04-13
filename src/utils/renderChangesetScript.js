@@ -98,7 +98,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     if (!isArray(deleteds)) {
         deleteds = [];
     }
-    
+
     if (!isArray(allFiles)) {
         allFiles = getAllSqlFiles(config.paths.scriptsPath);
     }
@@ -147,6 +147,8 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
             error = `Render changeset failed: ${chalk.yellow(obj.name)} file not found.`;
         }
     }
+
+    config.debug3({ sb })
 
     const hasAnything = !isEmpty(customStart) ||
         !isEmpty(customEnd) ||

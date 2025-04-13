@@ -85,7 +85,7 @@ async function compareWithOrigin(config) {
                 config.debug3('\nlogs', logs)
 
                 if (logs.length > 0) {
-                    console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.total} commits.`);
+                    console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.length} commits.`);
                     console.log(`Please run ${chalk.yellow(`git pull | git merge | git push`)} to sync with the latest changes from ${masterBranchName}.`);
 
                     config.error = "Operation aborted.";

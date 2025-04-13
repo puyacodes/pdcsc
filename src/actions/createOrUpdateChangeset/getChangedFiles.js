@@ -26,8 +26,11 @@ function getChangedFiles(config) {
             { encoding: "utf-8" }
         )
             .split("\n")
-            .map((file) => file.trim())
-            .filter((file) => file);
+            .filter(x => x).map(line => {
+                const parts = line.split("\t");
+
+                return { old: parts[1], new: parts[2] }
+            });
 
         const deletedFiles = execSync(
             `git diff --name-only --diff-filter=D ${mergeBase} HEAD`,
@@ -40,7 +43,7 @@ function getChangedFiles(config) {
         config.debug2("\nrenamed files", renamedFiles);
         config.debug2("\ndeleted files", deletedFiles);
 
-        const allFiles = [...modifiedAndAddedFiles, ...renamedFiles];
+        const allFiles = [...modifiedAndAddedFiles, ...renamedFiles.map(x => x.new)];
         const finalChanges = allFiles.filter((file) => isValidScriptFile(config, file));
 
         config.debug2("\nFinal changes", finalChanges);

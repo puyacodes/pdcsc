@@ -42,13 +42,17 @@ function updateSections(config, allFiles) {
 
                         sections[section].push(fileName);
 
-                        if (config.renamedFiles.find(filePath => {
+                        const rename = config.renamedFiles.find(x => {
+                            const filePath = x.new;
                             const _fileName = path.basename(filePath);
 
                             return filePath.contains(folder) && _fileName.contains(fileName);
-                        })) {
-                            console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
-    Don't forget to add ${chalk.yellow("DROP statement")} for old script into ${chalk.yellow("Custom-Start")} section of the Changeset to drop the old object.`);
+                        });
+
+                        if (rename) {
+                            finalDeleteds.push(rename.old)
+                            //                         console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
+                            // Don't forget to add ${chalk.yellow("DROP statement")} for old script into ${chalk.yellow("Custom-Start")} section of the Changeset to drop the old object.`);
                         }
                     } else {
                         config.debug3(`\t\tskipped (deleted)`);
@@ -104,7 +108,8 @@ function updateSections(config, allFiles) {
                 }
             }
 
-            if (!found && !config.renamedFiles.find(filePath => {
+            if (!found && !config.renamedFiles.find(x => {
+                const filePath = x.new;
                 const fileName = path.basename(filePath);
 
                 return filePath.contains(folder) && fileName.contains(item);

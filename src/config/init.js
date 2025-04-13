@@ -77,6 +77,8 @@ async function init(config) {
 
         const git = simpleGit();
 
+        console.log("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
+
         config.mergeBase = await git.raw(['merge-base', realBranchName, config.masterBranchName]);
 
         if (!config.mergeBase) {
@@ -84,6 +86,8 @@ async function init(config) {
         } else {
             config.debug2('merge-base =', config.mergeBase);
         }
+
+        console.log("getting current branch changeset ...")
 
         config.oldChangeset = getCurrentBranchChangeset(config);
 

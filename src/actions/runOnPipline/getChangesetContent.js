@@ -31,7 +31,7 @@ async function getChangesetContent(config) {
 
             config.debug("Last commit = " + lastCommit);
 
-            if (lastCommit && !lastCommit.startsWith('pdcsc: changeset timestamp updated')) {
+            if (lastCommit && !lastCommit.startsWith('pdcsc:')) {
                 error = `Changeset is not up-to-date (other commits found after last changeset push).
     Please update your changeset and try again.`
             } else {

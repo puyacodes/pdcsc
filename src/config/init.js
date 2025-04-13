@@ -5,7 +5,6 @@ import getCurrentBranch from "./getCurrentBranch.js"
 import { DbHelperSqlServer } from '../services/DbHelper/index.js';
 import { ConsoleLogger } from "@locustjs/logging";
 import { Exception } from "@locustjs/exception";
-import simpleGit from "simple-git";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
 import chalk from 'chalk';
 import { execSync } from "child_process";

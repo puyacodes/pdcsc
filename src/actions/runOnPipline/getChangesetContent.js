@@ -25,6 +25,8 @@ async function getChangesetContent(config) {
         // user must always use pdcsc.
         const lastCommit = execSync('git log --pretty=format:"%s" HEAD^..HEAD ', { encoding: "utf-8" }).trim();
 
+        config.debug("Last commit = " + lastCommit);
+
         if (lastCommit && !lastCommit.startsWith('pdcsc: changeset timestamp updated')) {
             error = `Changeset is not up-to-date (other commits found after last changeset push).
 Please update your changeset and try again.`
@@ -54,7 +56,7 @@ Cannot merge branch. Please sync your branch and try again.`;
             }
         }
     } else {
-        error = `No changeset found for branch ${chalk.yellow(realBranchName)}`;
+        console.warn(`No changeset found for branch ${chalk.yellow(realBranchName)}`);
     }
 
     return { content, error };

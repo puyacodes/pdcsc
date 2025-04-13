@@ -9,7 +9,7 @@ async function getConfig(args) {
     error = validate(config);
 
     if (!error) {
-        await init(config);
+        init(config);
     }
 
     return { config, error };

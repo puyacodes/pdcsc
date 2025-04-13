@@ -93,6 +93,8 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         triggers: []
     }
 
+    config.debug(`Rendering changeset ${changesetName} ...`)
+
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
 
     if (!isArray(deleteds)) {

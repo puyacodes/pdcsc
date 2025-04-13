@@ -55,7 +55,7 @@ async function compareWithOrigin(config) {
                 }
 
                 // const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
-                base = config.mergeBase;
+                const base = config.mergeBase;
 
                 config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
 

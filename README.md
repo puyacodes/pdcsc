@@ -51,9 +51,10 @@ pdcsc [arguments]
 - `-p [password]`: database password.
 - `-d [database]`: target database.
 - `-dbm`:	debug mode
-- `-dbl`:	debug level (1: simple, 2: advanced, 3: detail)
+- `-dbl`:	debug level (1: simple, 2: advanced, 3: details, 4: deep details)
+- `-iuc`:	ignores pdcsc update check
 
-**Note**: `-s`, `-u`, `-p` and `-d` have more priority over database setting in `pdcsc-config.json` config file.
+**Note**: `-s`, `-u`, `-p` and `-d` cli args have more priority over same database settings in `pdcsc-config.json` config.
 
 ### Main commands
 
@@ -63,7 +64,6 @@ pdcsc [arguments]
 - `-rop`: This switch should be used only in a pipeline. It Tests the changeset of current branch and if it succeeds, executes changeset over the database database specified (making it up-to-date).
 - `-ud`: Test/Updates a database by running all changesets against that.
 - `-rum`: Specifies update mode (`Test`, `TestAndUpdate` -*default- , `Update`)
-- `-uts`: Updates timestamp of the changeset in the current branch with current date/time.
 
 ## Examples
 
@@ -239,7 +239,8 @@ Note that, we should have `pdcsc-config.dev.json` and `pdcsc-config.main.json` f
 ```
 
 ### Speed-up pipeline
-We can create a Docker container, install `Node.js` and `Git` on it to increase pipeline speed, so that these steps are not executed over and over again.
+We can create a Docker container, install `Node.js` and `Git` in it, so that these steps are not executed over and over again.
+This can speed up pipeline execution.
 
 ```yaml
 stages:
@@ -257,7 +258,7 @@ before_merge_build:
 ```
 
 ## Manually updating a database
-Using `-ud` argument we can execute all changesets against a database and updating the database with the latest changes.
+Using `-ud` argument we can execute all changesets against a database and update it with the latest changes we have.
 
 ```bash
 pdcsc -ud -d MyDb

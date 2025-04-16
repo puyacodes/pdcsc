@@ -1,0 +1,19 @@
+{
+    "database": {
+        "server": ".",
+        "user": "sa",
+        "password": "****",
+        "databaseName": "MyDb"
+    },
+    "pipeline": "gitlabs",
+    "appVersionSprocName": "dbo.getAppVersion",
+    "paths": {
+        "backupDir": "C:\\temp\\",
+        "changesetFolderName": "Changes",
+        "scriptsFolderName": "Scripts",
+        "appVersionFormat": "YYYY-MM-DD HH:mm:ss",
+        "timestampLocale": "en",
+        "masterBranchName": "origin/dev",
+        "changesetsTableName": "Changesets"
+    }
+}

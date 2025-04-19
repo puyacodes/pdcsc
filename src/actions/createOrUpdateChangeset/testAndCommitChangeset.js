@@ -32,7 +32,7 @@ async function testAndCommitChangeset(config) {
         try {
             fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
 
-            const changes = [finalChangesetFilePath]
+            const changes = [finalChangesetFilePath, scriptFilePath]
 
             config.debug2("Commiting changes", changes);
 

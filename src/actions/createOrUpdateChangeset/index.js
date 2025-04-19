@@ -35,7 +35,7 @@ async function createOrUpdateChangeset(config) {
             }
 
             // Todo: Done
-            // we should update changeset timestamp always.
+            // we should update changeset timestamp and mergeBase always.
 
             if (!await updateChangesetNameIfNeeded(config)) {
                 break

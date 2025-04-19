@@ -1,18 +1,17 @@
 import { Enum } from '@locustjs/enum';
 
 const ActionType = Enum.define({
-    createOrUpdateChangeset: 0,
-    runOnPipline: 1,
-    runAllChangesets: 2,
-    getVersion: 3,
-    init: 4,
-    initfull: 5,
+    init: 0,
+    roll: 1,
+    pipline: 2,
+    apply: 3,
+    render: 4
 }, 'ActionType');
 
-const UpdateMode = Enum.define({
+const ApplyMode = Enum.define({
     TestAndUpdate: 0,
     Test: 1,
     Update: 2
-}, 'UpdateMode');
+}, 'ApplyMode');
 
-export { ActionType, UpdateMode };
+export { ActionType, ApplyMode };

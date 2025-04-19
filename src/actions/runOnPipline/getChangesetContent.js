@@ -47,16 +47,32 @@ async function getChangesetContent(config) {
                 } else {
                     // Todo: Done
                     // we should generate changeset script dynamically, not read it from .sql
+                    const changesetName = path.parse(oldChangeset).name;
+                    const scriptFile = path.join(changesetsPath, changesetName + ".sql");
 
-                    const cr = await renderChangesetScript(config, oldChangesetFilePath, path.parse(oldChangeset).name);
+                    if (!fs.existsSync(scriptFile)) {
+                        error = `Missing changeset .sql file`;
+                    }
+
+                    const existingContent = fs.readFileSync(scriptFile, "utf-8");
+
+                    const cr = await renderChangesetScript(config, oldChangesetFilePath, changesetName);
 
                     if (cr.error) {
                         error = cr.error
                     } else if (cr.hasAnything) {
-                        content = cr.script;
+                        // Todo: Done
+                        // generate error on missing changeset .sql file or .sql file content mismatch with rendered content
+                        
+                        if (existingContent == cr.script) {
+                            content = cr.script;
+                        } else {
+                            error = `Changeset's script is not in sync with changeset.`
+                        }
                     } else {
                         error = 'Changeset is empty and has no changes.';
                     }
+
                 }
             }
         }

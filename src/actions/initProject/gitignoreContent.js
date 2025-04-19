@@ -30,7 +30,6 @@ csx/
 
 # Logs and backups
 /Changes/error.log
-/Changes/*.sql
 /Changes/*~.txt
 `;
 }

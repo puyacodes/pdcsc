@@ -23,7 +23,7 @@ async function getLastExecutedChangeset(config) {
             config.debug('No changeset has already executed on database.');
         }
     } catch (ex) {
-        throw new Exception(`Cannot fetch last executed changeset`, ex);
+        throw new Exception(`Cannot read last executed changeset from database`, ex);
     }
 
     return result;

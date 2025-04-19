@@ -1,29 +1,50 @@
 import fs from "fs";
 import { Exception } from "@locustjs/exception";
 import testScript from "../testScript";
+import renderChangesetScript from "../../utils/renderChangesetScript";
+import FileHelper from "../../services/FileHelper";
+import getChangesetScript from "./getChangesetScript";
 
-async function testPendingChangesets(config, pendingChangesets) {
+async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;
-
+    const scripts = {}
     config.debug("Testing changesets ...");
 
     try {
-        const scripts = []
+        const _scripts = []
 
         for (let changeset of pendingChangesets) {
-            config.debug2(changeset);
-            
-            const content = fs.readFileSync(changeset.path, "utf-8");
+            let script;
+            const cr = await getChangesetScript(config, changeset, allFiles);
 
-            scripts.push(content);
+            if (cr.error) {
+                error = cr.error;
+                break;
+            } else {
+                script = cr.script;
+
+                scripts[changeset.name] = cr.script;
+            }
+
+            _scripts.push(script);
         }
 
-        error = await testScript(config, scripts.join("\ngo\n"));
+        if (!error) {
+            const all = _scripts.join("\ngo\n");
+
+            if (config.debugMode) {
+                FileHelper.createFile(path.join(config.paths.scriptsPath, "all.sql"));
+            }
+
+            error = await testScript(config, all);
+        } else {
+            console.log("Operation aborted.")
+        }
     } catch (ex) {
-        error = new Exception("Bundling changesets failed", ex);
+        error = new Exception("Bundling changesets failed.", ex);
     }
 
-    return error;
+    return { error, scripts };
 }
 
 export default testPendingChangesets;

@@ -12,9 +12,40 @@ import getConfig from "./config";
 import checkDbExistence from './checkDbExistence.js';
 import "./extensions";
 import { Exception } from '@locustjs/exception';
+import renderChangeset from './actions/renderChangeset/index.js';
 
 function intro() {
     console.log(chalk.whiteBright(`Puya Data Changeset Creator ${version} 2024-2025\n`));
+}
+
+function help() {
+    console.log(`
+Usage: pdcsc [command] [[[args...]] [[[options...]]]
+    command:
+        init        initialize a new db repo containing an slim config
+            args:
+                -f or --full    generate full config
+        roll        create/update changeset (default)
+        pipeline    run on pipeline (should be used only in cicd .yml files)
+        apply       apply all changesets in ./Changes folder on a database
+            args:
+                -m or --mode    apply mode (Test, Update, TestAndUpdate = default).
+        render      generate .sql file for a changeset (overwrites existing)
+            args:
+                -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
+                    
+    options (global):
+        -v or --version                 show pdcsc version number
+        -? or --help                    show pdcsc usage
+        -c or --config                  use config file specified
+        -s or --server                  database address (overrides pdcsc-config)
+        -u or --user                    database user (overrides pdcsc-config)
+        -p or --password                database password (overrides pdcsc-config)
+        -d or --database                database name (overrides pdcsc-config)
+        -dbm or --debug-mode            debug mode
+        -dbl or --debug-level           specify debug level (1,2,3,4)
+        -iuc or --ignore-update-check   ignore pdcsc npm update check
+`);
 }
 
 async function main() {
@@ -27,34 +58,39 @@ async function main() {
     try {
         const args = process.argv.slice(2);
 
-        if (!process.argv.includes("-iuc")) {
-            checkForUpdate();
-        }
+        if (args.includes("-v") || args.includes("--version")) {
+            console.log(`${name} version ${version})\n`);
+        } else if (args.includes("-?") || args.includes("--help")) {
+            help();
+        } else {
+            if (!args.includes("-iuc")) {
+                checkForUpdate();
+            }
 
-        const gcr = await getConfig(args);
+            const gcr = await getConfig(args);
 
-        config = gcr.config;
-        error = gcr.error;
+            config = gcr.config;
+            error = gcr.error;
 
-        if (!error) {
-            if (await checkDbExistence(config)) {
-                switch (config.action) {
-                    case ActionType.getVersion:
-                        console.log(`${name} version ${version})\n`);
-                        break;
-                    case ActionType.init:
-                    case ActionType.initfull:
-                        error = initProject(config);
-                        break;
-                    case ActionType.runOnPipline:
-                        error = await runOnPipline(config);
-                        break;
-                    case ActionType.runAllChangesets:
-                        error = await runAllChangesets(config);
-                        break;
-                    case ActionType.createOrUpdateChangeset:
-                        error = await createOrUpdateChangeset(config);
-                        break;
+            if (!error) {
+                if (await checkDbExistence(config)) {
+                    switch (config.action) {
+                        case ActionType.init:
+                            error = initProject(config);
+                            break;
+                        case ActionType.pipline:
+                            error = await runOnPipline(config);
+                            break;
+                        case ActionType.apply:
+                            error = await runAllChangesets(config);
+                            break;
+                        case ActionType.roll:
+                            error = await createOrUpdateChangeset(config);
+                            break;
+                        case ActionType.render:
+                            error = await renderChangeset(config);
+                            break;
+                    }
                 }
             }
         }

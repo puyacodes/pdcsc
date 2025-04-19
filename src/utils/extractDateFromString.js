@@ -1,11 +1,13 @@
 import { Exception } from "@locustjs/exception";
 
+//Todo: Done
+// no need to convert timestamp to a javascript Date
+
 function extractDateFromString(config, inputString) {
 
     config.debug2(`extracting date from: ${inputString}`)
 
     try {
-        let date;
         const regex = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/;
         const match = inputString.match(regex);
 
@@ -17,9 +19,11 @@ function extractDateFromString(config, inputString) {
             const minute = parseInt(match[5], 10);
             const second = match[6] ? parseInt(match[6], 10) : 0;
 
-            date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+            config.debug3({ year, month, day, hour, minute, second })
 
-            const formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
+            //const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+
+            const formattedDate = match[0]; // formattedDate = date.toISOString().replace('T', ' ').replace(/\.\d{3}Z/, '');
 
             return formattedDate;
         }

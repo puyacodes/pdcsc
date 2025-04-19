@@ -1,5 +1,3 @@
-import { ActionType } from "../../enums";
-
 function pdcscConfigContent(config) {
     const configContent = {
         database: {
@@ -10,7 +8,7 @@ function pdcscConfigContent(config) {
         }
     };
 
-    if (config.action == ActionType.initfull) {
+    if (config.initfull) {
         configContent.pipeline = "gitlabs";
         configContent.masterBranchName = "origin/main";
         configContent.appVersionSprocName = "dbo.getAppVersion";

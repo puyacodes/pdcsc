@@ -1,8 +1,8 @@
 import fs from "fs";
 import path from "path";
-import { isObject } from "@locustjs/base";
+import { isEmpty, isNullOrEmpty, isObject, isSomeString } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
-import { ActionType, UpdateMode } from "../enums";
+import { ActionType, ApplyMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
@@ -11,9 +11,15 @@ function debug(debugMode, ...args) {
         console.log(...args)
     }
 }
+
 function read(args) {
-    function getArg(arg) {
-        const index = args.indexOf(arg);
+    function getArg(arg, altArg) {
+        let index = args.indexOf(arg);
+
+        if (index < 0 && altArg) {
+            index = args.indexOf(altArg);
+        }
+
         const result = index >= 0 ? args[index + 1] : undefined;
 
         return result;
@@ -22,15 +28,50 @@ function read(args) {
     let config = {};
     let customConfig;
 
-    const debugMode = args.includes("-dbm");
+    if (args.length && args[0] && !args[0].startsWith("-")) {
+        config.action = args[0];
+    }
 
+    if (isEmpty(config.action)) {
+        config.action = ActionType.roll;
+    }
+
+    if (!ActionType.isValid(config.action)) {
+        throw new Exception(`invalid action: ${config.action}`);
+    }
+
+    config.action = ActionType.getNumber(config.action);
+
+    if (config.action == ActionType.apply) {
+        let mode = getArg("-m", "--mode");
+
+        if (isEmpty(mode)) {
+            mode = ApplyMode.TestAndUpdate;
+        }
+
+        if (!ApplyMode.isValid(mode)) {
+            throw new Exception(`invalid apply mode: ${mode}`);
+        }
+
+        config.applyMode = ApplyMode.getNumber(mode);
+    } else if (config.action == ActionType.render) {
+        config.changeset = getArg("-cs", "--changeset");
+
+        if (isNullOrEmpty(config.changeset) && !args[2].startsWith("-")) {
+            config.changeset = args[2];
+        }
+    } else if (config.action == ActionType.init) {
+        config.initfull = args.includes("-f") || args.includes("--full");
+    }
+
+    const debugMode = args.includes("-dbm", "--debug-mode");
     const basePath = process.cwd();
-    const changeset = getArg("-cs");
-    const server = getArg("-s");
-    const user = getArg("-u");
-    const password = getArg("-p");
-    const dbName = getArg("-d");
-    let configPath = getArg("-c");
+    const server = getArg("-s", "--server");
+    const user = getArg("-u", "--user");
+    const password = getArg("-p", "--password");
+    const dbName = getArg("-d", "--database");
+
+    let configPath = getArg("-c", "--config");
     let customizedConfigPath;
 
     if (configPath) {
@@ -63,7 +104,7 @@ function read(args) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { configPath, changeset, basePath })
+    config = merge({}, config, customConfig, { basePath })
 
     if (!isObject(config.database)) {
         config.database = {}
@@ -82,31 +123,9 @@ function read(args) {
         config.database.password = password;
     }
 
-    if (args.includes("-v")) {
-        config.action = ActionType.getVersion;
-    } else if (args.includes("-init")) {
-        config.action = ActionType.init;
-    } else if (args.includes("--init-full")) {
-        config.action = ActionType.initfull;
-    } else if (args.includes("-rop")) {
-        config.action = ActionType.runOnPipline;
-    } else if (args.includes("-ud")) {
-        config.action = ActionType.runAllChangesets;
-
-        const updatesMode = getArg("-rum");
-
-        config.updateMode = UpdateMode.isValid(updatesMode) ?
-            UpdateMode.getNumber(updatesMode) : UpdateMode.TestAndUpdate;
-    } else {
-        config.action = ActionType.createOrUpdateChangeset;
-    }
-
     config.debugMode = debugMode;
-    config.debugLevel = (getArg("-dbl") || "").split("");
-    config.pipelineMode = config.action == ActionType.runOnPipline;
-    config.updateMode = config.action == ActionType.runAllChangesets;
-    config.runMode = config.pipelineMode || config.updateMode;
-    config.cliMode = config.action == ActionType.getVersion || config.action == ActionType.init || config.action == ActionType.initfull;
+    config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");
+    config.cliMode = config.action == ActionType.init;
 
     return config
 }

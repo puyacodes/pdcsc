@@ -16,10 +16,10 @@ Last but not least, it can be used manually to execute all changesets on a custo
 
 - **Generate Changeset**: generates changeset based on committed changes detected in a current branch.
 - **Test Changeset**: creates a database backup and executes the changeset against that to see whether the changeset is ok or not.
-- **Pipeline Mode**: Using `-rop` argument, it can be used in `ci/cd pipelines` (like `gitlab`) to provide a safe merge, preventing the merge if the changeset has errors.
-- **Update database**: Using `-ud` argument, it can test/execute changesets against a database and making the database up-to-date.
+- **Pipeline Mode**: Using `pipeline` argument, it can be used in `ci/cd pipelines` (like `gitlab`) to provide a safe merge, preventing the merge if the changeset has errors.
+- **Update database**: Using `apply` argument, it can test/execute changesets against a database and making the database up-to-date.
 
-By default (withought specifying `-rop` or `-ud` arguments), `@puya/pdcsc` creates and manages a changeset.
+By default (withought specifying `pipeline` or `apply` arguments), `@puya/pdcsc` creates and manages a changeset.
 
 ## Installation
 ### Global
@@ -42,28 +42,28 @@ Once installed, you can use the `pdcsc` command in your terminal. You should run
 pdcsc [arguments]
 ```
 
-### CLI arguments
-
-- `-v [version]`: Shows pdcsc version.
-- `-c`: specifying custom config file
-- `-s [server]`: database server address.
-- `-u [user]`: database user.
-- `-p [password]`: database password.
-- `-d [database]`: target database.
-- `-dbm`:	debug mode
-- `-dbl`:	debug level (1: simple, 2: advanced, 3: details, 4: deep details)
-- `-iuc`:	ignores pdcsc update check
-
-**Note**: `-s`, `-u`, `-p` and `-d` cli args have more priority over same database settings in `pdcsc-config.json` config.
-
 ### Main commands
 
-- `-v`: displays `pdcsc` version
-- `-init`: Initializes a new database repository in current path, creates a git repo in it, creates default folders for database objects' scripts and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
-- `--init-full`: same as `-init`, but creates a full `pdcsc-config.json` config file (containing all options).
-- `-rop`: This switch should be used only in a pipeline. It Tests the changeset of current branch and if it succeeds, executes changeset over the database database specified (making it up-to-date).
-- `-ud`: Test/Updates a database by running all changesets against that.
-- `-rum`: Specifies update mode (`Test`, `TestAndUpdate` -*default- , `Update`)
+- `init`: Initializes a new database repository in current path, creates a git repo in it, creates default folders for database objects' scripts and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
+- `pipeline`: This switch should be used only in a pipeline. It Tests the changeset of current branch and if it succeeds, executes changeset over the database database specified (making it up-to-date).
+- `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
+- `roll`: Creates/Updates a changeset based on current branch and its `.sql` changes in `./Scripts` folder.
+- `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
+
+### CLI arguments
+
+- `-v` or `--version`: Shows pdcsc version.
+- `-?` or `--help`: Shows pdcsc help.
+- `-c` or `--config`: specifying custom config file
+- `-s` or `--server`: database server address.
+- `-u` or `--user`: database user.
+- `-p` or `--password`: database password.
+- `-d` or `--database`: target database.
+- `-dbm` or `--debug-mode`:	debug mode
+- `-dbl` or `--debug-level`:	debug level (1: simple, 2: advanced, 3: details, 4: deep details)
+- `-iuc` or `--ignore-update-check`:	ignores pdcsc npm update check
+
+**Note**: `-s`, `-u`, `-p` and `-d` cli args have more priority over same database settings in `pdcsc-config.json` config.
 
 ## Examples
 
@@ -82,13 +82,13 @@ pdcsc
 2. Updating master database upon merge requests in CI/CD:
 
 ```bash
-pdcsc -rop
+pdcsc pipeline
 ```
 
 3. Manually updating an existing database
 
 ```bash
-pdcsc -ud -d MyDb
+pdcsc apply -d MyDb
 ```
 
 5. Specifying database setting through cli:
@@ -144,15 +144,15 @@ The full `pdcsc config` file with all its options is as follows:
 		"scriptsFolderName": "...",		// .sql scripts folder name (default = 'Scripts')
 	},
 	"folders": {
-		"Procedures": "...",	// name of procedures folder (default = 'Procedures')
-		"Functions": "...",	// name of user-defined functions folder (default = 'Functions')
-		"Tables": "...",		// name of tables folder (default = 'Tables')
-		"Relations": "...",	// name of relations folder (default = 'Relations')
-		"Types": "...",		// name of user-defined types folder (default = 'Types')
-		"Views": "...",		// name of views folder (default = 'Views')
-		"Indexes": "...",	// name of indexes folder (default = 'Indexes')
-		"Triggers": "...",	// name of triggers folder (default = 'Triggers')
-		"Schemas": "..."		// name of schemas folder (default = 'Schemas')
+		"procedures": "...",	// name of procedures folder (default = 'Procedures')
+		"functions": "...",	// name of user-defined functions folder (default = 'Functions')
+		"tables": "...",		// name of tables folder (default = 'Tables')
+		"relations": "...",	// name of relations folder (default = 'Relations')
+		"types": "...",		// name of user-defined types folder (default = 'Types')
+		"views": "...",		// name of views folder (default = 'Views')
+		"indexes": "...",	// name of indexes folder (default = 'Indexes')
+		"triggers": "...",	// name of triggers folder (default = 'Triggers')
+		"schemas": "..."		// name of schemas folder (default = 'Schemas')
 	}
 }
 ```
@@ -169,7 +169,7 @@ In the second usage, we can then add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json`
 
 ## Using `pdcsc` in `gitlab CI/CD pipeline`
 
-In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `-rop` argument to ensure our database is updated automatically whenever a feature branche is merged.
+In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `pipeline` argument to ensure our database is updated automatically whenever a feature branche is merged.
 
 Here is a sample gitlab pipeline:
 
@@ -190,10 +190,10 @@ before_merge_build:
     - |
       if [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "dev" ]; then
         echo "updating database ..."
-        node index.js -ud -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
+        node index.js apply -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
       else
         echo "checking branch changeset before merge ..."
-        node index.js -rop -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
+        node index.js pipeline -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
       fi
   rules:
     - when: manual`
@@ -205,8 +205,8 @@ Notes:
 - The `dev` branch is our `development` stage where incomplete features are pushed and tested.
 - This way, we do not push incomplete/not-tested features directly to main branch.
 - Whenever we are ok with our `dev`, we merge it to `main` branch (bringing features to production).
-- Upon merging `dev` to `main`, previous features are already merged into `dev`, there is no need to use `-rop` switch.
-- We use `-ud` switch instead and update master database (apply changeset files from `dev` upon master database).
+- Upon merging `dev` to `main`, previous features are already merged into `dev`, there is no need to use `pipeline` switch.
+- We use `apply` switch instead and update master database (apply changeset files from `dev` upon master database).
 - In our pipeline, we explicitly specify config file for `pdcsc` through `-c` switch.
 - Name of the config file depends on the source branch that is going to be merged.
 - If it is `dev`, we are merging `dev` into `main`.
@@ -258,13 +258,13 @@ before_merge_build:
 ```
 
 ## Manually updating a database
-Using `-ud` argument we can execute all changesets against a database and update it with the latest changes we have.
+Using `apply` argument we can execute all changesets against a database and update it with the latest changes we have.
 
 ```bash
-pdcsc -ud -d MyDb
+pdcsc apply -d MyDb
 ```
 
-The `-ud` command has 3 modes which can be customized through `-rum` argument:
+The `apply` command has 3 modes which can be customized through `-rum` argument:
 
 - `Test`: test changesets against a backup of the database. This is useful when we want to make sure whether changesets will work correctly on the database or not.
 - `TestAndUpdate` (default): test changesets first and if they were ok, update database.

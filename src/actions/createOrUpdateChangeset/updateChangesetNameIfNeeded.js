@@ -19,11 +19,9 @@ async function updateChangesetNameIfNeeded(config) {
             config.newChangesetFilePath = cs.changesetFilePath;
 
             changes.push(config.oldChangesetFilePath);
-            changes.push(cs.changesetFilePath);
+            changes.push(config.newChangesetFilePath);
             
-            config.debug2("changeset timestamp changes", changes);
-
-            fs.renameSync(config.oldChangesetFilePath, cs.changesetFilePath);
+            fs.renameSync(config.oldChangesetFilePath, config.newChangesetFilePath);
 
             const oldSqlFileName = config.oldChangesetName + '.sql';
             config.oldSqlFilePath = path.join(changesetsPath, oldSqlFileName);
@@ -32,8 +30,13 @@ async function updateChangesetNameIfNeeded(config) {
                 const newSqlFileName = config.newChangesetName + '.sql';
                 const newSqlFilePath = path.join(changesetsPath, newSqlFileName);
 
+                changes.push(config.oldSqlFilePath);
+                changes.push(newSqlFilePath);
+
                 fs.renameSync(config.oldSqlFilePath, newSqlFilePath);
             }
+
+            config.debug2("changeset timestamp changes", changes);
 
             // we directly commit changeset timestamp update.
             // this is necessary. we do not ask user consent on this.

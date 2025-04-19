@@ -1,24 +1,37 @@
-import fs from "fs";
+import chalk from "chalk";
 import createErrorLog from "../../utils/createErrorLog.js";
 import addChangesetToDatabase from "./addChangesetToDatabase.js";
-import chalk from "chalk";
+import { isNullOrEmpty } from "@locustjs/base";
+import getChangesetScript from "./getChangesetScript.js";
 
-async function runAndAddChangeset(config, changeset) {
-    console.log(`Executing changeset ${chalk.cyan(changeset.name)} on database ...`);
-
+async function runAndAddChangeset(config, changeset, script, allFiles) {
     const { db } = config;
     let error;
 
     try {
-        const content = fs.readFileSync(changeset.path, "utf-8");
+        let content;
 
-        await db.executeBatch({ content });
+        if (isNullOrEmpty(script)) {
+            const cr = await getChangesetScript(config, changeset, allFiles);
 
-        console.log(`  ${chalk.green("Succeeded.")}`);
+            if (cr.error) {
+                error = cr.error
+            } else {
+                content = cr.script;
+            }
+        } else {
+            content = script;
+        }
 
-        await addChangesetToDatabase(config, changeset);
+        if (!error) {
+            await db.executeBatch({ content });
+
+            console.log(`\t${chalk.green("Succeeded.")}`);
+
+            await addChangesetToDatabase(config, changeset);
+        }
     } catch (ex) {
-        console.log(`  ${chalk.red("Failed.")}`);
+        console.log(`\t${chalk.red("Failed.")}`);
         console.log("See error.log for more details.");
 
         error = ex;

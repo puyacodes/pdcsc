@@ -210,7 +210,7 @@ ${customEnd}
 -- ===================== Custom-End ( end ) ======================
 
 go
-${getAppVersion(config)}
+${getAppVersion(config, changesetName)}
 
 go
 `;

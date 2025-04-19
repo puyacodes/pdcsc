@@ -1,14 +1,17 @@
 import ensureChangesTableCreated from "./ensureChangesTableCreated.js";
 import { Exception } from "@locustjs/exception";
-import runChangeset from "./runAndAddChangeset.js";
+import runAndAddChangeset from "./runAndAddChangeset.js";
 import testPendingChangesets from "./testPendingChangesets.js";
-import { UpdateMode } from "../../enums.js";
+import { ApplyMode } from "../../enums.js";
 import getLastExecutedChangeset from "./getLastExecutedChangeset.js";
 import getPendingChangesets from "./getPendingChangesets.js";
+import fs from "fs";
+import getAllSqlFiles from "../../utils/getAllSqlFiles";
+import chalk from "chalk";
 
 async function run(config) {
     let error;
-    const { updateMode } = config;
+    const { applyMode } = config;
 
     // TODO: Done
     // exec mode
@@ -17,33 +20,54 @@ async function run(config) {
     //  update
 
     try {
+        console.log(`Applying changesets on database ${chalk.magenta(config.database.database)} ...`);
+
         await ensureChangesTableCreated(config);
 
-        const lastExecutedChangeset = await getLastExecutedChangeset(config);
-        const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset);
+        if (fs.existsSync(config.paths.changesetsPath)) {
+            const lastExecutedChangeset = await getLastExecutedChangeset(config);
+            const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset);
 
-        if (pendingChangesets.length) {
-            if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Test) {
-                error = await testPendingChangesets(config, pendingChangesets);
-            }
+            if (pendingChangesets.length) {
+                let scripts;
+                const allFiles = getAllSqlFiles(config.paths.scriptsPath);
 
-            if (!error) {
-                // TODO: Done
-                // run changeset one by one instead of merging them together and create a large script and run that.
+                if (allFiles.length == 0) {
+                    console.warn(`${chalk.yellow("Warning: Scripts directory not found. Using existing rendered .sql files.")}`);
+                    console.warn(`${chalk.yellow("\tThis could lead to bugs if .sql files are not in sync with changesets.")}`);
+                }
 
-                if (updateMode == UpdateMode.TestAndUpdate || updateMode == UpdateMode.Update) {
-                    for (let changeset of pendingChangesets) {
-                        error = await runChangeset(config, changeset);
+                if (applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Test) {
+                    const tr = await testPendingChangesets(config, pendingChangesets, allFiles);
 
-                        if (error) {
-                            break;
+                    error = tr.error;
+                    scripts = tr.scripts;
+                }
+
+                if (!error) {
+                    // TODO: Done
+                    // run changeset one by one instead of merging them together and create a large script and run that.
+
+                    if (applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Update) {
+                        for (let changeset of pendingChangesets) {
+                            const script = scripts ? scripts[changeset.name] : null;
+
+                            error = await runAndAddChangeset(config, changeset, script, allFiles);
+
+                            if (error) {
+                                break;
+                            }
                         }
                     }
                 }
+            } else {
+                console.log("No pending changeset found. Database is up-to-date.")
             }
+        } else {
+            error = `Changes folder ${config.paths.changesetsPath} not found.`;
         }
     } catch (ex) {
-        error = new Exception('updating database failed', ex);
+        error = new Exception('updating database failed.', ex);
     }
 
     return error;

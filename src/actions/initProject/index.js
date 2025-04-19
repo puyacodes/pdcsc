@@ -45,7 +45,7 @@ async function initProject(config) {
                 "Scripts/Indexes"
             ];
 
-            config.debug("Creating script folders ...");
+            config.debug("Creating folders ...");
             config.debug2(folders);
 
             folders.forEach(folder => FileHelper.createDir(basePath, folder, true));

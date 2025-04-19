@@ -5,7 +5,7 @@ function getCurrentBranch(config) {
     let currentBranch;
     let realBranchName;
 
-    if (config.action == ActionType.runOnPipline) {
+    if (config.action == ActionType.pipline) {
         if (config.pipeline === "gitlabs") {
             if (process.env.CI_COMMIT_REF_NAME) {
                 currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");

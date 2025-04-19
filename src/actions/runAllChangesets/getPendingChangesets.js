@@ -3,25 +3,27 @@ import path from "path";
 import extractDateFromString from "../../utils/extractDateFromString";
 
 function getPendingChangesets(config, lastExecutedChangeset) {
-    const changesets = fs.readdirSync(config.paths.changesetsPath);
-    const sqlFiles = changesets
-        .filter(changeset => path.extname(changeset) == ".sql")
-        .map(filepath => ({
-            name: path.parse(filepath).name,
-            path: path.join(config.paths.changesetsPath, filepath)
+    const files = fs.readdirSync(config.paths.changesetsPath);
+    const changesets = files
+        .filter(changeset => path.extname(changeset) == ".txt")
+        .map(filepath => path.parse(filepath).name)
+        .map(name => ({
+            name,
+            path: path.join(config.paths.changesetsPath, name + ".txt"),
+            sqlPath: path.join(config.paths.changesetsPath, name + ".sql")
         }));
     const lastExecutedChangesetName = lastExecutedChangeset?.name;
     const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(config, lastExecutedChangesetName) : null;
     let pendingChangesets = [];
 
-    for (const file of sqlFiles) {
-        const match = file.name.match(/(\d{12,14})/);
+    for (const file of changesets) {
+        const match = file.name.match(/^(\d{14})/);
 
         if (!match) {
             continue;
         }
 
-        let fileDateStr = match[1]; //example: 140311131345
+        let fileDateStr = match[1]; //example: 14030125094518
         let fileDate = extractDateFromString(config, fileDateStr);
 
         if (!lastExecutedDate || fileDate > lastExecutedDate) {

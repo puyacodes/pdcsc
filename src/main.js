@@ -72,7 +72,7 @@ async function main() {
                         case ActionType.init:
                             error = await initProject(config);
                             break;
-                        case ActionType.pipline:
+                        case ActionType.pipeline:
                             error = await runOnPipline(config);
                             break;
                         case ActionType.apply:

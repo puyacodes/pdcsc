@@ -3,7 +3,7 @@ import { Enum } from '@locustjs/enum';
 const ActionType = Enum.define({
     init: 0,
     roll: 1,
-    pipline: 2,
+    pipeline: 2,
     apply: 3,
     render: 4,
     checkUpdate: 5

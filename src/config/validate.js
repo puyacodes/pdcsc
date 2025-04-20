@@ -5,15 +5,7 @@ import chalk from "chalk";
 function validate(config) {
     let error;
 
-    if (isEmpty(config.database.server)) {
-        error = `database server not specified`;
-    } else if (isEmpty(config.database.user)) {
-        error = `database user not specified`;
-    } else if (isEmpty(config.database.password)) {
-        error = `database password not specified`;
-    } else if (isEmpty(config.database.database)) {
-        error = `database not specified`;
-    } else {
+    do {
         if (!isObject(config.paths)) {
             config.paths = {}
         }
@@ -22,20 +14,45 @@ function validate(config) {
             config.paths.backupDir = "C:\\temp\\";
         }
 
-        if (isEmpty(config.pipeline)) {
-            config.pipeline = "gitlabs";
-        }
-
-        if (isEmpty(config.backupDbName)) {
-            config.backupDbName = "TempBackupDB";
-        }
-
         if (isEmpty(config.paths.changesetFolderName)) {
             config.paths.changesetFolderName = "Changes";
         }
 
         if (isEmpty(config.paths.scriptsFolderName)) {
             config.paths.scriptsFolderName = "Scripts";
+        }
+
+        if (config.cliMode) {
+            break;
+        }
+
+        if (isEmpty(config.database.server)) {
+            error = `database server not specified`;
+        } else if (isEmpty(config.database.user)) {
+            error = `database user not specified`;
+        } else if (isEmpty(config.database.password)) {
+            error = `database password not specified`;
+        } else if (isEmpty(config.database.database)) {
+            error = `database not specified`;
+        }
+
+        if (error) {
+            break;
+        }
+
+        if (isEmpty(config.pipeline)) {
+            config.pipeline = "gitlabs";
+        }
+
+        config.pipeline = config.pipeline.toLowerCase();
+
+        if (config.pipeline != "gitlabs" && config.pipeline != "azuredevops") {
+            error = `Unsupported cicd: ${chalk.yellow(config.pipeline)}`;
+            break;
+        }
+
+        if (isEmpty(config.backupDbName)) {
+            config.backupDbName = "TempBackupDB";
         }
 
         if (isEmpty(config.masterBranchName)) {
@@ -77,7 +94,7 @@ function validate(config) {
                 }
             }
         }
-    }
+    } while (false)
 
     return error;
 }

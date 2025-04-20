@@ -23,7 +23,7 @@ class FileHelper {
             }
         }
 
-        return filepath;
+        return filePath;
     }
     static createDir(basePath, folder, log = false) {
         const folderPath = path.join(basePath, folder);

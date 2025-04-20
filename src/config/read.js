@@ -27,22 +27,27 @@ function read(args) {
 
     let config = {};
     let customConfig;
+    let action;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
-        config.action = args[0];
+        action = args[0];
     }
 
-    if (isEmpty(config.action)) {
-        config.action = ActionType.roll;
+    if (isEmpty(action)) {
+        action = ActionType.roll;
     }
 
-    if (!ActionType.isValid(config.action)) {
-        throw new Exception(`invalid action: ${config.action}`);
+    if (action == "check-update") {
+        action = ActionType.checkUpdate;
     }
 
-    config.action = ActionType.getNumber(config.action);
+    if (!ActionType.isValid(action)) {
+        throw new Exception(`invalid action: ${action}`);
+    }
 
-    if (config.action == ActionType.apply) {
+    action = ActionType.getNumber(action);
+
+    if (action == ActionType.apply) {
         let mode = getArg("-m", "--mode");
 
         if (isEmpty(mode)) {
@@ -54,15 +59,17 @@ function read(args) {
         }
 
         config.applyMode = ApplyMode.getNumber(mode);
-    } else if (config.action == ActionType.render) {
+    } else if (action == ActionType.render) {
         config.changeset = getArg("-cs", "--changeset");
 
         if (isNullOrEmpty(config.changeset) && !args[2].startsWith("-")) {
             config.changeset = args[2];
         }
-    } else if (config.action == ActionType.init) {
+    } else if (action == ActionType.init) {
         config.initfull = args.includes("-f") || args.includes("--full");
     }
+
+    config.cliMode = action == ActionType.init || action == ActionType.checkUpdate;
 
     const debugMode = args.includes("-dbm", "--debug-mode");
     const basePath = process.cwd();
@@ -82,7 +89,7 @@ function read(args) {
         }
     } else {
         const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
-        let config_mode = process.env[config_key];
+        let config_mode = process.env[config_key] || '';
 
         if (config_mode) {
             config_mode = '.' + config_mode
@@ -94,17 +101,27 @@ function read(args) {
 
     if (fs.existsSync(configPath)) {
         config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    } else {
+        if (!config.cliMode) {
+            throw new Exception(`config file ${chalk.yellow(configPath)} not found.`);
+        }
     }
 
-    if (fs.existsSync(customizedConfigPath)) {
-        customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
+    if (customizedConfigPath) {
+        if (fs.existsSync(customizedConfigPath)) {
+            customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
+        } else {
+            if (!config.cliMode) {
+                throw new Exception(`custom config file ${chalk.yellow(customizedConfigPath)} not found.`);
+            }
+        }
     }
 
     if (!isObject(config)) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { basePath })
+    config = merge({}, config, customConfig, { basePath, action })
 
     if (!isObject(config.database)) {
         config.database = {}
@@ -125,7 +142,32 @@ function read(args) {
 
     config.debugMode = debugMode;
     config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");
-    config.cliMode = config.action == ActionType.init;
+
+    config.debug = (...args) => {
+        if (config.debugMode) {
+            console.log(...args);
+        }
+    }
+    config.debug1 = (...args) => {
+        if (config.debugMode && config.debugLevel.contains("1")) {
+            console.log(...args);
+        }
+    }
+    config.debug2 = (...args) => {
+        if (config.debugMode && config.debugLevel.contains("2")) {
+            console.log(...args);
+        }
+    }
+    config.debug3 = (...args) => {
+        if (config.debugMode && config.debugLevel.contains("3")) {
+            console.log(...args);
+        }
+    }
+    config.debug4 = (...args) => {
+        if (config.debugMode && config.debugLevel.contains("4")) {
+            console.log(...args);
+        }
+    }
 
     return config
 }

@@ -5,7 +5,8 @@ const ActionType = Enum.define({
     roll: 1,
     pipline: 2,
     apply: 3,
-    render: 4
+    render: 4,
+    checkUpdate: 5
 }, 'ActionType');
 
 const ApplyMode = Enum.define({

@@ -69,11 +69,12 @@ async function createOrUpdateChangeset(config) {
             // skip test and commit if changeset has no new changes
             const canTestAnDcommit = finalizeChangeset(config)
 
-            if (!await saveFinalScript(config, allFiles)) {
-                break;
-            }
-
+            
             if (canTestAnDcommit) {
+                if (!await saveFinalScript(config, allFiles)) {
+                    break;
+                }
+                
                 if (!await testAndCommitChangeset(config)) {
                     break;
                 }

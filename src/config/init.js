@@ -9,34 +9,6 @@ import chalk from 'chalk';
 import { execSync } from "child_process";
 
 function init(config) {
-    config.debug = (...args) => {
-        if (config.debugMode) {
-            console.log(...args);
-        }
-    }
-    config.debug1 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("1")) {
-            console.log(...args);
-        }
-    }
-    config.debug2 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("2")) {
-            console.log(...args);
-        }
-    }
-    config.debug3 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("3")) {
-            console.log(...args);
-        }
-    }
-    config.debug4 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("4")) {
-            console.log(...args);
-        }
-    }
-
-    console.log("initializing paths ...")
-
     config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
     config.paths.scriptsPath = path.join(config.basePath, config.paths.scriptsFolderName);
     config.paths.backupFile = path.join(config.paths.backupDir, `backup-${config.database.database}-temp.bak`);
@@ -52,8 +24,10 @@ function init(config) {
         triggers: "Triggers",
         schemas: "Schemas"
     }, config.folders)
-
+    
     if (!config.cliMode) {
+        let cmd;
+
         config.db = new DbHelperSqlServer(config.database);
         config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
 
@@ -72,10 +46,15 @@ function init(config) {
 
         config.debug("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
 
-        config.mergeBase = execSync(
-            `git merge-base HEAD ${config.masterBranchName}`,
-            { encoding: "utf-8" }
-        ).trim();
+        cmd = `git merge-base HEAD ${config.masterBranchName}`;
+
+        config.debug4(cmd);
+
+        try {
+            config.mergeBase = execSync(cmd, { encoding: "utf-8" }).trim();
+        } catch (ex) {
+            throw new Exception("Getting merge-base for current branch failed", ex);
+        }
 
         if (!config.mergeBase) {
             throw new Exception(`No merge-base for current branch (${realBranchName}) found. Please use pdcsc in another branch.`);
@@ -91,9 +70,9 @@ function init(config) {
             config.oldChangesetName = path.parse(config.oldChangeset).name;
             config.oldChangesetFilePath = path.join(config.paths.changesetsPath, config.oldChangeset);
         }
-
-        config.debug4(`config = `, config);
     }
+
+    config.debug4(`config = `, config);
 }
 
 

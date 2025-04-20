@@ -1,70 +1,49 @@
-import simpleGit from "simple-git";
 import FileHelper from "../../services/FileHelper";
 import initGitRepo from "./initGitRepo";
 import gitignoreContent from "./gitignoreContent";
 import pdcscConfigContent from "./pdcscConfigContent";
 import gitlabCiContent from "./gitlabCiContent";
 import commitChanges from "../../utils/commitChanges";
+import azuredevopsPipelineContent from "./azuredevopsPipelineContent";
 
 async function initProject(config) {
     let error;
 
-    const { basePath } = config;
+    const { basePath, debugMode, paths, folders } = config;
 
     do {
         try {
-            const git = simpleGit();
+            error = await initGitRepo(config);
 
-            config.debug(`Checking if we are a git repo ...`);
-
-            let hasGitRepo = await git.checkIsRepo();
-
-            if (!hasGitRepo) {
-                error = await initGitRepo(git);
-
-                if (error) {
-                    break;
-                }
-
-                hasGitRepo = true;
-            } else {
-                config.debug("We are in a git repo.");
+            if (error) {
+                break;
             }
 
-            const folders = [
-                "Changes",
-                "Data",
-                "Scripts/Schemas",
-                "Scripts/Types",
-                "Scripts/Tables",
-                "Scripts/Functions",
-                "Scripts/Triggers",
-                "Scripts/Views",
-                "Scripts/Procedures",
-                "Scripts/Relations",
-                "Scripts/Indexes"
-            ];
-
             config.debug("Creating folders ...");
-            config.debug2(folders);
 
-            folders.forEach(folder => FileHelper.createDir(basePath, folder, true));
+            Object.values(folders).forEach(folder => FileHelper.createDir(basePath + '/' + paths.scriptsFolderName, folder, debugMode));
 
             config.debug("Creating .gitlab-ci.yml file ...");
 
-            const gitlabCI = FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), true);
+            const gitlabCI = FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), debugMode);
+
+            config.debug("Creating azure-pipelines.yml file ...");
+
+            const azurePipelines = FileHelper.createFile(basePath, "azure-pipelines.yml", azuredevopsPipelineContent(), debugMode);
 
             config.debug("Creating pdcsc-config.json ...");
 
-            const pdcscConfig = FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), true);
+            const pdcscConfig = FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), debugMode);
 
             config.debug("Creating .gitignore ...");
 
-            const gitIgnore = FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), true);
+            const gitIgnore = FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), debugMode);
 
             config.debug("Committing changes ...");
 
-            error = await commitChanges([gitlabCI, pdcscConfig, gitIgnore], "pdcsc: initialized files and folders.")
+            error = await commitChanges([gitlabCI, azurePipelines, pdcscConfig, gitIgnore], "pdcsc: initialized files and folders.")
+
+            console.log("\nDone.");
         } catch (ex) { error = ex }
     } while (false);
 

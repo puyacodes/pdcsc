@@ -9,6 +9,8 @@ function pdcscConfigContent(config) {
     };
 
     if (config.initfull) {
+        console.log("Initializing a full pdcsc.config.");
+
         configContent.pipeline = "gitlabs";
         configContent.masterBranchName = "origin/main";
         configContent.appVersionSprocName = "dbo.getAppVersion";

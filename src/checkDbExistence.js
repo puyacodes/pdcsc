@@ -2,10 +2,10 @@ import chalk from "chalk";
 
 async function checkDbExistence(config) {
     let result = false;
-
-    config.debug(`Checking master database ${chalk.magenta(config.database.database)} ...`)
-
+    
     if (!config.cliMode) {
+        config.debug(`Checking master database ${chalk.magenta(config.database.database)} ...`)
+
         try {
             await config.db.dbExists(config.database.database);
 

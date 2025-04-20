@@ -1,28 +1,26 @@
-import promptUser from "../../utils/promptUser";
+import { Exception } from "@locustjs/exception";
+import simpleGit from "simple-git";
 
-async function initGitRepo(git) {
+async function initGitRepo(config) {
     let error;
 
-    do {
-        const choice = await promptUser("Would you like to initialize a git repository(Y/N)? ");
+    config.debug(`Checking if we are a git repo ...\n`);
 
-        if (choice === "y") {
-            try {
-                await git.init();
+    const git = simpleGit();
 
-                console.log("Git repository initialized successfully.");
-            } catch (ex) {
-                error = ex;
-                console.log("Initializing git repository failed");
-            }
+    let hasGitRepo = await git.checkIsRepo();
 
-            break;
-        } else if (choice === "n") {
-            break;
-        } else {
-            console.log("Invalid choice. Please enter a valid option.");
+    if (!hasGitRepo) {
+        try {
+            await git.init();
+
+            console.log("Initialized a new git repository successfully.");
+        } catch (ex) {
+            error = new Exception("Initializing git repository failed", ex);
         }
-    } while (true);
+    } else {
+        config.debug("We are in a git repo.");
+    }
 
     return error;
 }

@@ -10,14 +10,14 @@ function getCurrentBranch(config) {
             if (process.env.CI_COMMIT_REF_NAME) {
                 currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
             }
-            
-            realBranchName = process.env.CI_COMMIT_REF_NAME;
-        } else if (config.pipeline === "azuredevops") {
-            if (process.env.CI_COMMIT_REF_NAME) {
-                currentBranch = process.env.CI_COMMIT_REF_NAME.trim().replace("/", "-");
-            }
 
             realBranchName = process.env.CI_COMMIT_REF_NAME;
+        } else if (config.pipeline === "azuredevops") {
+            if (process.env.BUILD_SOURCEBRANCHNAME) {
+                currentBranch = process.env.BUILD_SOURCEBRANCHNAME.trim().replace("/", "-");
+            }
+
+            realBranchName = process.env.BUILD_SOURCEBRANCHNAME;
         }
     } else {
         currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim().replace("/", "-");

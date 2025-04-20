@@ -19,8 +19,7 @@ function intro() {
 }
 
 function help() {
-    console.log(`
-Usage: pdcsc [command] [[[args...]] [[[options...]]]
+    console.log(`Usage: pdcsc [command] [[[args...]] [[[options...]]]
     command:
         init        initialize a new db repo containing an slim config
             args:
@@ -33,7 +32,7 @@ Usage: pdcsc [command] [[[args...]] [[[options...]]]
         render      generate .sql file for a changeset (overwrites existing)
             args:
                 -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
-                    
+        update-check    checks npm to see whether pdcsc is up-to-date and a new version is available or not
     options (global):
         -v or --version                 show pdcsc version number
         -? or --help                    show pdcsc usage
@@ -44,7 +43,6 @@ Usage: pdcsc [command] [[[args...]] [[[options...]]]
         -d or --database                database name (overrides pdcsc-config)
         -dbm or --debug-mode            debug mode
         -dbl or --debug-level           specify debug level (1,2,3,4)
-        -iuc or --ignore-update-check   ignore pdcsc npm update check
 `);
 }
 
@@ -63,10 +61,6 @@ async function main() {
         } else if (args.includes("-?") || args.includes("--help")) {
             help();
         } else {
-            if (!args.includes("-iuc")) {
-                checkForUpdate();
-            }
-
             const gcr = await getConfig(args);
 
             config = gcr.config;
@@ -76,7 +70,7 @@ async function main() {
                 if (await checkDbExistence(config)) {
                     switch (config.action) {
                         case ActionType.init:
-                            error = initProject(config);
+                            error = await initProject(config);
                             break;
                         case ActionType.pipline:
                             error = await runOnPipline(config);
@@ -89,6 +83,9 @@ async function main() {
                             break;
                         case ActionType.render:
                             error = await renderChangeset(config);
+                            break;
+                        case ActionType.checkUpdate:
+                            error = checkForUpdate(config);
                             break;
                     }
                 }

@@ -14,9 +14,9 @@ before_merge_build:
     - npm i @puya/pdcsc -g
     - |
       if [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "dev" ] || [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "main" ]; then
-        pdcsc apply -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm -dbl 2
+        pdcsc apply -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm
       else
-        pdcsc pipeline -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm -dbl 2
+        pdcsc pipeline -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm
       fi
   rules:
     - when: manual`;

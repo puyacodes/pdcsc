@@ -6,7 +6,7 @@ import chalk from 'chalk';
 function getAppVersion(config, changesetName) {
     const template = isSomeString(config.appVersionSprocTemplate) ?
         config.appVersionSprocTemplate :
-        `create or alter proc ${config.appVersionSprocName} as select '{ts}' as applyDate, {changesetName} as changeset`;
+        `create or alter proc ${config.appVersionSprocName} as select '{ts}' as applyDate, '{changesetName}' as changeset`;
     const res = Timestamper({
         locale: `${config.timestampLocale}`,
         template: template.replace('{changesetName}', changesetName),

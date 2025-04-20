@@ -14,12 +14,12 @@ Last but not least, it can be used manually to execute all changesets on a custo
 
 ## Features
 
-- **Generate Changeset**: generates changeset based on committed changes detected in a current branch.
+- **Generate Changeset**: generates changeset based on committed changes detected in a branch.
 - **Test Changeset**: creates a database backup and executes the changeset against that to see whether the changeset is ok or not.
-- **Pipeline Mode**: Using `pipeline` argument, it can be used in `ci/cd pipelines` (like `gitlab`) to provide a safe merge, preventing the merge if the changeset has errors.
-- **Update database**: Using `apply` argument, it can test/execute changesets against a database and making the database up-to-date.
+- **Pipeline Mode**: Using `pipeline` argument, it can be used in `ci/cd pipelines` (like `gitlab` or `azuredevops`) to provide a safe merge, preventing the merge if the changeset has errors.
+- **Update database**: Using `apply` argument, it can apply changesets(s) on a database and making the database up-to-date.
 
-By default (withought specifying `pipeline` or `apply` arguments), `@puya/pdcsc` creates and manages a changeset.
+By default (withought specifying `pipeline` or `apply` arguments), `@puya/pdcsc` manages current branch's changeset.
 
 ## Installation
 ### Global
@@ -33,18 +33,22 @@ npm i @puya/pdcsc -g
 ```bash
 npm install @puya/pdcsc
 ```
+## Current Version
+```
+2.1.5
+```
 
 ## Usage
 
-Once installed, you can use the `pdcsc` command in your terminal. You should run this tool only in the root of your database repository.
+Once installed, you can use the `pdcsc` command in your terminal. You should run this tool only in the root of your database's scripts repository.
 
 ```bash
-pdcsc [arguments]
+pdcsc [cmd] [arguments] [options]
 ```
 
 ### Main commands
 
-- `init`: Initializes a new database repository in current path, creates a git repo in it, creates default folders for database objects' scripts and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
+- `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
 - `pipeline`: This switch should be used only in a pipeline. It Tests the changeset of current branch and if it succeeds, executes changeset over the database database specified (making it up-to-date).
 - `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
 - `roll`: Creates/Updates a changeset based on current branch and its `.sql` changes in `./Scripts` folder.

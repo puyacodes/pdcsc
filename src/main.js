@@ -32,7 +32,8 @@ function help() {
         render      generate .sql file for a changeset (overwrites existing)
             args:
                 -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
-        update-check    checks npm to see whether pdcsc is up-to-date and a new version is available or not
+        check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
+
     options (global):
         -v or --version                 show pdcsc version number
         -? or --help                    show pdcsc usage

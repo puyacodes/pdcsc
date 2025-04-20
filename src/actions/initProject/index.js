@@ -5,6 +5,22 @@ import pdcscConfigContent from "./pdcscConfigContent";
 import gitlabCiContent from "./gitlabCiContent";
 import commitChanges from "../../utils/commitChanges";
 import azuredevopsPipelineContent from "./azuredevopsPipelineContent";
+import fs from "fs";
+import path from "path";
+
+function createFile(config, name, fnContent) {
+    let result = path.join(config.basePath, name);
+
+    if (!fs.existsSync(result)) {
+        config.debug(`Creating ${name} file ...`);
+
+        result = FileHelper.createFile(config.basePath, name, fnContent(config), config.debugMode);
+    } else {
+        config.debug("already exist");
+    }
+
+    return result;
+}
 
 async function initProject(config) {
     let error;
@@ -23,21 +39,10 @@ async function initProject(config) {
 
             Object.values(folders).forEach(folder => FileHelper.createDir(basePath + '/' + paths.scriptsFolderName, folder, debugMode));
 
-            config.debug("Creating .gitlab-ci.yml file ...");
-
-            const gitlabCI = FileHelper.createFile(basePath, ".gitlab-ci.yml", gitlabCiContent(), debugMode);
-
-            config.debug("Creating azure-pipelines.yml file ...");
-
-            const azurePipelines = FileHelper.createFile(basePath, "azure-pipelines.yml", azuredevopsPipelineContent(), debugMode);
-
-            config.debug("Creating pdcsc-config.json ...");
-
-            const pdcscConfig = FileHelper.createFile(basePath, "pdcsc-config.json", pdcscConfigContent(config), debugMode);
-
-            config.debug("Creating .gitignore ...");
-
-            const gitIgnore = FileHelper.createFile(basePath, ".gitignore", gitignoreContent(), debugMode);
+            const gitlabCI = createFile(config, ".gitlab-ci.yml", gitlabCiContent);
+            const azurePipelines = createFile(config, "azure-pipelines.yml", azuredevopsPipelineContent);
+            const pdcscConfig = createFile(config, "pdcsc-config.json", pdcscConfigContent);
+            const gitIgnore = createFile(config, ".gitignore", gitignoreContent);
 
             config.debug("Committing changes ...");
 

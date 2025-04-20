@@ -49,9 +49,9 @@ pdcsc [cmd] [arguments] [options]
 ### Main commands
 
 - `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
-- `pipeline`: This switch should be used only in a pipeline. It Tests the changeset of current branch and if it succeeds, executes changeset over the database database specified (making it up-to-date).
+- `pipeline`: Used in CICD pipelines, tests changeset of current branch and if it succeeds, executes changeset over the database specified (making it up-to-date).
 - `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
-- `roll`: Creates/Updates a changeset based on current branch and its `.sql` changes in `./Scripts` folder.
+- `roll`: Creates/Updates a changeset based on `.sql` changes in current branch in `./Scripts` folder. This is the default command.
 - `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
 
 ### CLI arguments

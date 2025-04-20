@@ -69,7 +69,7 @@ function read(args) {
         config.initfull = args.includes("-f") || args.includes("--full");
     }
 
-    config.cliMode = action == ActionType.init || action == ActionType.checkUpdate;
+    const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
 
     const debugMode = args.includes("-dbm", "--debug-mode");
     const basePath = process.cwd();
@@ -102,7 +102,7 @@ function read(args) {
     if (fs.existsSync(configPath)) {
         config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     } else {
-        if (!config.cliMode) {
+        if (!cliMode) {
             throw new Exception(`config file ${chalk.yellow(configPath)} not found.`);
         }
     }
@@ -111,7 +111,7 @@ function read(args) {
         if (fs.existsSync(customizedConfigPath)) {
             customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
         } else {
-            if (!config.cliMode) {
+            if (!cliMode) {
                 throw new Exception(`custom config file ${chalk.yellow(customizedConfigPath)} not found.`);
             }
         }
@@ -121,7 +121,7 @@ function read(args) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { basePath, action })
+    config = merge({}, config, customConfig, { basePath, action, cliMode })
 
     if (!isObject(config.database)) {
         config.database = {}

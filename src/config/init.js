@@ -25,11 +25,11 @@ function init(config) {
         schemas: "Schemas"
     }, config.folders)
     
+    config.db = new DbHelperSqlServer(config.database);
+    config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
+    
     if (!config.cliMode) {
         let cmd;
-
-        config.db = new DbHelperSqlServer(config.database);
-        config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
 
         const { currentBranch, realBranchName } = getCurrentBranch(config);
 

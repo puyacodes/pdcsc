@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { isEmpty, isObject } from "@locustjs/base";
 import chalk from "chalk";
 
@@ -22,24 +23,30 @@ function validate(config) {
             config.paths.scriptsFolderName = "Scripts";
         }
 
-        if (config.cliMode) {
-            break;
-        }
+        if (config.changeset) {
+            config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
 
-        if (isEmpty(config.database.server)) {
-            error = `database server not specified`;
-        } else if (isEmpty(config.database.user)) {
-            error = `database user not specified`;
-        } else if (isEmpty(config.database.password)) {
-            error = `database password not specified`;
-        } else if (isEmpty(config.database.database)) {
-            error = `database not specified`;
+            if (!fs.existsSync(config.changesetFilePath)) {
+                if (!config.changeset.endsWith(".txt") && config.changeset.lastIndexOf(".") < 0) {
+                    const _changeset = `${config.changeset}.txt`;
+                    const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
+
+                    if (!fs.existsSync(_changesetFilePath)) {
+                        error = `Changeset file ${chalk.cyan(config.changeset)} or ${chalk.cyan(_changeset)} not found.`;
+                    } else {
+                        config.changeset = _changeset;
+                        config.changesetFilePath = _changesetFilePath;
+                    }
+                } else {
+                    error = `Changeset file ${chalk.cyan(config.changeset)} not found.`;
+                }
+            }
         }
 
         if (error) {
             break;
         }
-
+        
         if (isEmpty(config.pipeline)) {
             config.pipeline = "gitlabs";
         }
@@ -59,6 +66,10 @@ function validate(config) {
             config.masterBranchName = "origin/main";
         }
 
+        if (isEmpty(config.changesetsTableName)) {
+            config.changesetsTableName = "Changesets";
+        }
+
         if (isEmpty(config.appVersionFormat)) {
             config.appVersionFormat = "YYYY-MM-DD HH:mm:ss";
         }
@@ -67,32 +78,22 @@ function validate(config) {
             config.timestampLocale = "en";
         }
 
-        if (isEmpty(config.changesetsTableName)) {
-            config.changesetsTableName = "Changesets";
-        }
-
         if (isEmpty(config.appVersionSprocName)) {
             config.appVersionSprocName = "dbo.getAppVersion";
         }
 
-        if (config.changeset) {
-            config.changesetFilePath = path.join(config.paths.changesetsPath, config.changeset);
+        if (config.cliMode) {
+            break;
+        }
 
-            if (!fs.existsSync(config.changesetFilePath)) {
-                if (!config.changeset.endsWith(".txt") && config.changeset.lastIndexOf(".") < 0) {
-                    const _changeset = `${config.changeset}.txt`;
-                    const _changesetFilePath = path.join(config.paths.changesetsPath, _changeset);
-
-                    if (!fs.existsSync(_changesetFilePath)) {
-                        error = `Changeset file ${chalk.cyan(config.changeset)} or ${chalk.cyan(_changeset)} not found.`;
-                    } else {
-                        config.changeset = _changeset;
-                        config.changesetFilePath = _changesetFilePath;
-                    }
-                } else {
-                    error = `Changeset file ${chalk.cyan(config.changeset)} not found.`;
-                }
-            }
+        if (isEmpty(config.database.server)) {
+            error = `database server not specified`;
+        } else if (isEmpty(config.database.user)) {
+            error = `database user not specified`;
+        } else if (isEmpty(config.database.password)) {
+            error = `database password not specified`;
+        } else if (isEmpty(config.database.database)) {
+            error = `database not specified`;
         }
     } while (false)
 

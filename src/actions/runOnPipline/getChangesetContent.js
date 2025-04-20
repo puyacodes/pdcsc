@@ -63,11 +63,14 @@ async function getChangesetContent(config) {
                     } else if (cr.hasAnything) {
                         // Todo: Done
                         // generate error on missing changeset .sql file or .sql file content mismatch with rendered content
-                        
+
                         if (existingContent == cr.script) {
                             content = cr.script;
                         } else {
-                            error = `Changeset's script is not in sync with changeset.`
+                            console.warn(`Warning: changeset's script is not in sync (old length: ${existingContent.length}, new length: ${cr.script.length}).`);
+                            
+                            config.debug4("existing content", existingContent);
+                            config.debug4("new content", cr.script);
                         }
                     } else {
                         error = 'Changeset is empty and has no changes.';

@@ -12,10 +12,11 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
 
     try {
         const _scripts = []
+        let i = 1;
 
         for (let changeset of pendingChangesets) {
             let script;
-            const cr = await getChangesetScript(config, changeset, allFiles);
+            const cr = await getChangesetScript(config, changeset, allFiles, i);
 
             if (cr.error) {
                 error = cr.error;
@@ -27,6 +28,8 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
             }
 
             _scripts.push(script);
+            
+            i++;
         }
 
         if (!error) {

@@ -2,17 +2,18 @@ import { Exception } from "@locustjs/exception";
 import testScript from "../testScript";
 import FileHelper from "../../services/FileHelper";
 import getChangesetScript from "./getChangesetScript";
-import path from "path";
 
 async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;
     const scripts = {}
 
-    console.log("Bundling pending changesets ...");
+    console.log("Bundling and Testing pending changesets ...");
 
     try {
         const _scripts = []
         let i = 1;
+
+        console.log("Getting scripts ...");
 
         for (let changeset of pendingChangesets) {
             let script;
@@ -33,7 +34,7 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
         }
 
         if (!error) {
-            console.log("Creating bundle ...");
+            console.log("Bundling ...");
 
             const all = _scripts.join("\ngo\n");
 

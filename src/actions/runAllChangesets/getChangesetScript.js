@@ -8,20 +8,20 @@ async function getChangesetScript(config, changeset, allFiles, i) {
 
     if (allFiles.length == 0 || config.forceMode) {
         if (fs.existsSync(changeset.sqlPath)) {
-            config.debug(`${i}. ${changeset.name}: .sql found`);
+            config.debug2(`${i}. ${changeset.name}: .sql found`);
             script = fs.readFileSync(changeset.sqlPath, "utf-8");
         } else {
-            config.debug(`${i}. ${changeset.name}: .sql not found`);
+            config.debug2(`${i}. ${changeset.name}: .sql not found`);
             error = new Exception(`changeset ${changeset.name} .sql file not found.`);
         }
     } else {
         const rs = await renderChangesetScript(config, changeset.path, changeset.name, [], allFiles);
 
         if (rs.error) {
-            config.debug(`${i}. ${changeset.name}: render error`);
+            config.debug2(`${i}. ${changeset.name}: render error`);
             error = rs.error;
         } else {
-            config.debug(`${i}. ${changeset.name}: .sql generated`);
+            config.debug2(`${i}. ${changeset.name}: .sql generated`);
             script = rs.script;
         }
     }

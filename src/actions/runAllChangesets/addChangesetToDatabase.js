@@ -1,10 +1,10 @@
 import { Exception } from "@locustjs/exception";
-import chalk from "chalk";
 
 async function addChangesetToDatabase(config, changeset) {
+    let error;
     const { db, changesetsTableName } = config;
 
-    console.log(`   Adding changeset to database ...`);
+    console.log(`Journaling changeset ...`);
 
     try {
         const query = `INSERT INTO ${changesetsTableName} ([name]) VALUES ('${changeset.name}')`;
@@ -12,11 +12,11 @@ async function addChangesetToDatabase(config, changeset) {
         config.debug4(query);
 
         await db.executeQuery({ query });
-
-        console.log(`Changeset added.`);
     } catch (ex) {
-        throw new Exception(`Error adding changeset ${chalk.cyan(changeset.name)} to database`, ex);
+        error = new Exception(`Journaling changeset ${changeset.name} to database ${config.database.database} failed.`, ex);
     }
+
+    return error;
 }
 
 export default addChangesetToDatabase;

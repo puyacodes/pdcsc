@@ -6,10 +6,11 @@ import { Exception } from "@locustjs/exception";
 function createErrorLog(config, ex) {
     const { paths } = config;
     const { changesetsPath } = paths;
-    const { query } = ex;
+    let query;
     let error;
 
     if (ex instanceof ExecuteQueryException) {
+        query = ex.query;
         ex.query = null;
     }
 

@@ -20,7 +20,7 @@ async function run(config) {
     //  update
 
     try {
-        console.log(`Applying changesets on database ${chalk.magenta(config.database.database)} ...`);
+        console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, force = ${chalk.yellow(config.forceMode)}, database = ${chalk.magenta(config.database.database)} ...`);
 
         await ensureChangesTableCreated(config);
 
@@ -30,11 +30,12 @@ async function run(config) {
 
             if (pendingChangesets.length) {
                 let scripts;
-                const allFiles = getAllSqlFiles(config.paths.scriptsPath);
+                const allFiles = getAllSqlFiles(config, config.paths.scriptsPath);
 
                 if (allFiles.length == 0) {
-                    console.warn(`${chalk.yellow("Warning: Scripts directory not found. Using existing rendered .sql files.")}`);
-                    console.warn(`${chalk.yellow("\tThis could lead to bugs if .sql files are not in sync with changesets.")}`);
+                    console.warn(`${chalk.yellow("Warning: ./Scripts directory not found or it is empty.")}`);
+                    console.warn(`${chalk.yellow("\tWe have to fall back to changesets' rendered .sql files.")}`);
+                    console.warn(`${chalk.yellow("\tThis is not recommended and may lead to unexpected errors if .sql files are not in sync with changesets.")}`);
                 }
 
                 if (applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Test) {
@@ -49,16 +50,22 @@ async function run(config) {
                     // run changeset one by one instead of merging them together and create a large script and run that.
 
                     if (applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Update) {
+                        console.log(`Applying changesets ...`);
+
                         for (let changeset of pendingChangesets) {
                             const script = scripts ? scripts[changeset.name] : null;
 
                             error = await runAndAddChangeset(config, changeset, script, allFiles);
 
                             if (error) {
+                                console.log("Operation aborted due to errors.");
+
                                 break;
                             }
                         }
                     }
+                } else {
+                    console.log("Operation aborted.")
                 }
             } else {
                 console.log("No pending changeset found. Database is up-to-date.")
@@ -68,6 +75,10 @@ async function run(config) {
         }
     } catch (ex) {
         error = new Exception('updating database failed.', ex);
+    }
+
+    if (!error) {
+        config.debug("Operation completed.");
     }
 
     return error;

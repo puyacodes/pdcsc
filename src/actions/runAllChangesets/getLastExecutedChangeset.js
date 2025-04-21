@@ -1,12 +1,13 @@
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
+import formatDate from "../../utils/formatDate";
 
 async function getLastExecutedChangeset(config) {
     const { db, changesetsTableName } = config;
 
     let result;
 
-    config.debug("Getting last executed changeset on database ...");
+    console.log("Finding last changeset that was executed on database ...");
 
     try {
         const query = `SELECT TOP 1 [date], [name] FROM ${changesetsTableName} ORDER BY [date] DESC`;
@@ -18,9 +19,9 @@ async function getLastExecutedChangeset(config) {
         result = rs && rs.length ? rs[0] : null;
 
         if (result) {
-            config.debug(`Last changeset is ${chalk.cyan(result)}.`)
+            console.log(`Last changeset is ${chalk.cyan(result.name)}, executed at ${chalk.cyan(formatDate(result.date))}.`)
         } else {
-            config.debug('No changeset has already executed on database.');
+            console.log('No changeset has already executed on database.');
         }
     } catch (ex) {
         throw new Exception(`Cannot read last executed changeset from database`, ex);

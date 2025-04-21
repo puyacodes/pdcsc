@@ -1,8 +1,12 @@
 import fs from "fs";
 import path from "path";
 
-function getAllSqlFiles(dir) {
+function getAllSqlFiles(config, dir, level = 0) {
     let result = [];
+
+    if (level == 0) {
+        config.debug("Getting all .sql files ...");
+    }
 
     if (fs.existsSync(dir)) {
         const list = fs.readdirSync(dir);
@@ -12,11 +16,15 @@ function getAllSqlFiles(dir) {
             const stat = fs.statSync(fullPath);
 
             if (stat && stat.isDirectory()) {
-                result = result.concat(getAllSqlFiles(fullPath));
+                result = result.concat(getAllSqlFiles(config, fullPath, level + 1));
             } else if (fullPath.toLowerCase().endsWith(".sql")) {
                 result.push(fullPath);
             }
         });
+    }
+
+    if (level == 0) {
+        config.debug("Total .sql files = ", result.length);
     }
 
     return result;

@@ -3,6 +3,8 @@ import path from "path";
 import extractDateFromString from "../../utils/extractDateFromString";
 
 function getPendingChangesets(config, lastExecutedChangeset) {
+    console.log("Getting pending changesets ...");
+
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
         .filter(changeset => path.extname(changeset) == ".txt")
@@ -14,7 +16,7 @@ function getPendingChangesets(config, lastExecutedChangeset) {
         }));
     const lastExecutedChangesetName = lastExecutedChangeset?.name;
     const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(config, lastExecutedChangesetName) : null;
-    let pendingChangesets = [];
+    const result = [];
 
     for (const file of changesets) {
         const match = file.name.match(/^(\d{14})/);
@@ -28,20 +30,22 @@ function getPendingChangesets(config, lastExecutedChangeset) {
 
         if (!lastExecutedDate || fileDate > lastExecutedDate) {
             if (!file.name.includes("update")) {
-                pendingChangesets.push({ ...file, date: fileDate });
+                result.push({ ...file, date: fileDate });
             }
         }
     }
 
-    config.debug("pending Changesets", pendingChangesets.map(changeset => changeset.name));
+    result.sort((a, b) => a.date - b.date);
+    
+    config.debug2("Pending Changesets", result.map(changeset => changeset.name));
 
-    pendingChangesets.sort((a, b) => a.date - b.date);
-
-    if (pendingChangesets.length === 0) {
-        console.log("No new changesets found. Database is up-to-date.");
+    if (result.length === 0) {
+        console.log("No pending changeset found. Database is up-to-date.");
+    } else {
+        console.log(`${result.length} changesets found.`);
     }
 
-    return pendingChangesets;
+    return result;
 }
 
 export default getPendingChangesets;

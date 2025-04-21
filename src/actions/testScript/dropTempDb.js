@@ -11,14 +11,12 @@ async function dropTempDb(config) {
         config.debug4(query);
 
         await db.executeQuery({ query });
+
+        config.debug(`Temporary database dropped successfully.`);
     } catch (ex) {
-        config.debug(`Dropping temporary database failed.`);
+        config.debug(`Dropping temporary database failed.\n\t${ex.toString()}`);
 
         error = ex;
-    }
-
-    if (!error) {
-        config.debug(`Temporary database dropped successfully.`);
     }
 
     return error;

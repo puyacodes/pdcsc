@@ -54,7 +54,7 @@ async function createOrUpdateChangeset(config) {
             // Todo: Done
             // merge deletedFiles from getChangedFiles() and config.uncommittedChanges.deleted
 
-            const allFiles = getAllSqlFiles(config.paths.scriptsPath);
+            const allFiles = getAllSqlFiles(config, config.paths.scriptsPath);
 
             if (!updateSections(config, allFiles)) {
                 break;

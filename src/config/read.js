@@ -28,6 +28,8 @@ function read(args) {
     let config = {};
     let customConfig;
     let action;
+    let applyMode;
+    let forceMode = false;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
@@ -48,17 +50,18 @@ function read(args) {
     action = ActionType.getNumber(action);
 
     if (action == ActionType.apply) {
-        let mode = getArg("-m", "--mode");
+        applyMode = getArg("-m", "--mode");
+        forceMode = args.includes("-f") || args.includes("--force")
 
-        if (isEmpty(mode)) {
-            mode = ApplyMode.TestAndUpdate;
+        if (isEmpty(applyMode)) {
+            applyMode = ApplyMode.TestAndUpdate;
         }
 
-        if (!ApplyMode.isValid(mode)) {
-            throw new Exception(`invalid apply mode: ${mode}`);
+        if (!ApplyMode.isValid(applyMode)) {
+            throw new Exception(`invalid apply mode: ${applyMode}`);
         }
 
-        config.applyMode = ApplyMode.getNumber(mode);
+        applyMode = ApplyMode.getNumber(applyMode);
     } else if (action == ActionType.render) {
         config.changeset = getArg("-cs", "--changeset");
 
@@ -71,7 +74,7 @@ function read(args) {
 
     const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
 
-    const debugMode = args.includes("-dbm", "--debug-mode");
+    const debugMode = args.includes("-dbm") || args.includes("--debug-mode");
     const basePath = process.cwd();
     const server = getArg("-s", "--server");
     const user = getArg("-u", "--user");
@@ -121,7 +124,7 @@ function read(args) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { basePath, action, cliMode })
+    config = merge({}, config, customConfig, { basePath, action, cliMode, applyMode, forceMode })
 
     if (!isObject(config.database)) {
         config.database = {}

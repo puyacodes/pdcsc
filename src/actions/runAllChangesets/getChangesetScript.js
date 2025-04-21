@@ -1,26 +1,27 @@
 import fs from "fs";
 import renderChangesetScript from "../../utils/renderChangesetScript";
+import { Exception } from "@locustjs/exception";
 
 async function getChangesetScript(config, changeset, allFiles) {
     let error;
     let script;
 
-    if (allFiles.length == 0) {
+    if (allFiles.length == 0 || config.forceMode) {
         if (fs.existsSync(changeset.sqlPath)) {
-            config.debug2(`${changeset.name}: found`);
+            config.debug(`${changeset.name}: .sql found`);
             script = fs.readFileSync(changeset.sqlPath, "utf-8");
         } else {
-            config.debug2(`${changeset.name}: .sql not found`);
-            error = "changeset's .sql file not found and no Scripts directory found to dynamically render changeset.";
+            config.debug(`${changeset.name}: .sql not found`);
+            error = new Exception(`changeset ${changeset.name} .sql file not found.`);
         }
     } else {
         const rs = await renderChangesetScript(config, changeset.path, changeset.name, [], allFiles);
 
         if (rs.error) {
-            config.debug2(`${changeset.name}: render error`);
+            config.debug(`${changeset.name}: render error`);
             error = rs.error;
         } else {
-            config.debug2(`${changeset.name}: .sql generated`);
+            config.debug(`${changeset.name}: .sql generated`);
             script = rs.script;
         }
     }

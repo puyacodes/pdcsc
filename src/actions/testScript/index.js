@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import createErrorLog from "../../utils/createErrorLog.js";
 import backupMasterDatabase from "./backupMasterDatabase.js";
 import dropTempDb from "./dropTempDb.js";
@@ -14,7 +15,13 @@ async function testScript(config, script) {
     } catch (ex) {
         error = createErrorLog(config, ex);
     } finally {
-        error = await dropTempDb(config);
+        await dropTempDb(config);
+    }
+
+    if (error) {
+        config.debug2(chalk.red("\tFailed"));
+    } else {
+        config.debug2(chalk.green("\tPassed"));
     }
 
     return error;

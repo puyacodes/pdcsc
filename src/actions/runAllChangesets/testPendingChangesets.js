@@ -1,14 +1,13 @@
-import fs from "fs";
 import { Exception } from "@locustjs/exception";
 import testScript from "../testScript";
-import renderChangesetScript from "../../utils/renderChangesetScript";
 import FileHelper from "../../services/FileHelper";
 import getChangesetScript from "./getChangesetScript";
 
 async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;
     const scripts = {}
-    config.debug("Testing changesets ...");
+
+    console.log("Bundling pending changesets ...");
 
     try {
         const _scripts = []
@@ -36,12 +35,12 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
                 FileHelper.createFile(path.join(config.paths.scriptsPath, "all.sql"));
             }
 
+            console.log("Testing bundle ...");
+
             error = await testScript(config, all);
-        } else {
-            console.log("Operation aborted.")
         }
     } catch (ex) {
-        error = new Exception("Bundling changesets failed.", ex);
+        error = new Exception("Bundling/testing pending changesets was not successful.", ex);
     }
 
     return { error, scripts };

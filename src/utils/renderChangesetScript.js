@@ -102,7 +102,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
     }
 
     if (!isArray(allFiles)) {
-        allFiles = getAllSqlFiles(config.paths.scriptsPath);
+        allFiles = getAllSqlFiles(config, config.paths.scriptsPath);
     }
 
     for (const obj of objects) {
@@ -146,7 +146,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         // check object's file existence and throw error if not found
 
         if (!found) {
-            error = `Render changeset failed: ${chalk.yellow(obj.name)} file not found.`;
+            error = `Render changeset ${chalk.cyan(changesetName)} failed: ${chalk.yellow(obj.name)} file not found.`;
         }
     }
 

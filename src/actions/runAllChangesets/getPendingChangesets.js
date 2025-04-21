@@ -7,7 +7,7 @@ function getPendingChangesets(config, lastExecutedChangeset) {
 
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
-        .filter(changeset => path.extname(changeset) == ".txt")
+        .filter(changeset => path.extname(changeset) == ".txt" && extractDateFromString(config, changeset))
         .map(filepath => path.parse(filepath).name)
         .map(name => ({
             name,

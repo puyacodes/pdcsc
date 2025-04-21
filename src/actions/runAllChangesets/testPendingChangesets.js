@@ -28,12 +28,16 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
             }
 
             _scripts.push(script);
-            
+
             i++;
         }
 
         if (!error) {
+            console.log("Creating bundle ...");
+
             const all = _scripts.join("\ngo\n");
+
+            config.debug({ scriptsPath: config.paths.scriptsPath });
 
             if (config.debugMode) {
                 FileHelper.createFile(path.join(config.paths.scriptsPath, "all.sql"));

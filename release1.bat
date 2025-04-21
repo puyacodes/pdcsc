@@ -1,12 +1,12 @@
 @echo off
 setlocal enabledelayedexpansion
 
-if "%~1"=="" (
+if %NEW_VERSION%=="" (
     echo Please provide the new version as an argument.
     exit /b 1
 )
 
-set newVersion=%~1
+set newVersion=%NEW_VERSION%
 set tempFile=pack_temp.json
 
 (for /f "usebackq delims=" %%A in ("package.json") do (
@@ -20,12 +20,3 @@ set tempFile=pack_temp.json
 )) || exit /b 1
 
 move /y "!tempFile!" package.json >nul
-git add .
-git commit -m "released v%newVersion%"
-git push gh
-git push origin
-call npm publish --access public
-if errorlevel 1 (
-    echo npm publish
-    exit /b 1
-)

@@ -2,6 +2,7 @@ import { Exception } from "@locustjs/exception";
 import testScript from "../testScript";
 import FileHelper from "../../services/FileHelper";
 import getChangesetScript from "./getChangesetScript";
+import path from "path";
 
 async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;

@@ -29,4 +29,3 @@ if errorlevel 1 (
     echo npm publish
     exit /b 1
 )
-echo released pdcsc version %newVersion%.

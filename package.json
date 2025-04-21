@@ -6,7 +6,7 @@
     "clean": "rimraf bin",       
     "cp": "rollup -c rollup.config.dev.js && npm link",       
     "build": "npm run clean && rollup -c",       
-    "release": "echo releasing a new pdcsc version && npm run clean && rollup -c && release.bat"       
+    "release": "npm run clean && rollup -c && release.bat"       
   },       
   "keywords": [],       
   "author": "",       

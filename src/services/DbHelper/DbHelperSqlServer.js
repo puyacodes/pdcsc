@@ -14,7 +14,7 @@ class DbHelperSqlServer extends DbHelperBase {
         let conn_ok = false;
         let error;
 
-        query.replace(/^go\s+/i, '');
+        query = query.replace(/^go\s+/i, '');
 
         try {
             try {
@@ -56,7 +56,7 @@ class DbHelperSqlServer extends DbHelperBase {
         let error;
         let conn_ok = false;
 
-        query.replace(/^go\s+/i, '');
+        query = query.replace(/^go\s+/i, '');
 
         try {
             try {

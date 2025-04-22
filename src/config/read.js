@@ -29,7 +29,6 @@ function read(args) {
     let customConfig;
     let action;
     let applyMode;
-    let forceMode = false;
     let applyOneByOne = false;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
@@ -52,7 +51,6 @@ function read(args) {
 
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
-        forceMode = args.includes("-f") || args.includes("--force")
         applyOneByOne = args.includes("-11") || args.includes("--one-by-one");
 
         if (isEmpty(applyMode)) {
@@ -132,7 +130,6 @@ function read(args) {
         action,
         cliMode,
         applyMode,
-        forceMode,
         applyOneByOne,
         useMinification
     })

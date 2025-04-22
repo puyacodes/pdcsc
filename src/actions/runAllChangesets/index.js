@@ -20,7 +20,7 @@ async function run(config) {
     //  update
 
     try {
-        console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, force = ${chalk.yellow(config.forceMode)}, oneByOne = ${chalk.yellow(config.applyOneByOne)}, database = ${chalk.magenta(config.database.database)} ...`);
+        console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, one-by-one = ${chalk.yellow(config.applyOneByOne)}, database = ${chalk.magenta(config.database.database)} ...`);
 
         await ensureChangesTableCreated(config);
 
@@ -55,7 +55,7 @@ async function run(config) {
                         for (let changeset of pendingChangesets) {
                             const script = scripts ? scripts[changeset.name] : null;
 
-                            error = await runAndAddChangeset(config, changeset, script, allFiles);
+                            error = await runAndAddChangeset(config, changeset, script);
 
                             if (error) {
                                 console.log("Operation aborted due to errors.");

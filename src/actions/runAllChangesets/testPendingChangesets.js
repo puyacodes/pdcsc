@@ -17,7 +17,7 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
 
         for (let changeset of pendingChangesets) {
             let script;
-            const cr = await getChangesetScript(config, changeset, allFiles, i);
+            const cr = await getChangesetScript(config, changeset, i);
 
             if (cr.error) {
                 error = cr.error;

@@ -7,14 +7,22 @@ import commitChanges from "../../utils/commitChanges";
 import azuredevopsPipelineContent from "./azuredevopsPipelineContent";
 import fs from "fs";
 import path from "path";
+import { isFunction, isString } from "@locustjs/base";
 
 function createFile(config, name, fnContent) {
     let result = path.join(config.basePath, name);
 
     if (!fs.existsSync(result)) {
         config.debug(`Creating ${name} file ...`);
+        let content;
 
-        result = FileHelper.createFile(config.basePath, name, fnContent(config), config.debugMode);
+        if (isFunction(fnContent)) {
+            content = fnContent(config)
+        } else if (isString(fnContent)) {
+            content = fnContent;
+        }
+
+        result = FileHelper.createFile(config.basePath, name, content, config.debugMode);
     } else {
         config.debug("already exist");
     }
@@ -41,8 +49,21 @@ async function initProject(config) {
 
             const gitlabCI = createFile(config, ".gitlab-ci.yml", gitlabCiContent);
             const azurePipelines = createFile(config, "azure-pipelines.yml", azuredevopsPipelineContent);
-            const pdcscConfig = createFile(config, "pdcsc-config.json", pdcscConfigContent);
             const gitIgnore = createFile(config, ".gitignore", gitignoreContent);
+            const pdcscConfig = createFile(config, "pdcsc-config.json", pdcscConfigContent);
+
+            const customConfig = JSON.stringify({
+                database: {
+                    server: "127.0.0.1",
+                    user: "sa",
+                    password: "****",
+                    database: "mydb",
+                    encrypt: false
+                }
+            }, null, 4);
+
+            createFile(config, "pdcsc-config.development.json", customConfig);
+            createFile(config, "pdcsc-config.production.json", customConfig);
 
             config.debug("Committing changes ...");
 

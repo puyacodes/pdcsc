@@ -28,6 +28,10 @@ node_modules/
 csx/
 *.build.csdef
 
+# pdcsc-config
+pdcsc-config.development.json
+pdcsc-config.production.json
+
 # Logs and backups
 /Changes/error.log
 /Changes/*~.txt

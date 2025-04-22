@@ -3,7 +3,8 @@
         "server": ".",
         "user": "sa",
         "password": "****",
-        "database": "MyDb"
+        "database": "MyDb",
+        "encrypt": false
     },
     "pipeline": "gitlabs",
     "masterBranchName": "origin/main",

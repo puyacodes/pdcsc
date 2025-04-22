@@ -3,28 +3,35 @@ import DbHelperBase from './DbHelperBase'
 import { ExecuteQueryException } from "./exceptions";
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
-import { isSomeString } from "@locustjs/base";
+import { isBool, isSomeString } from "@locustjs/base";
 
 class DbHelperSqlServer extends DbHelperBase {
     constructor(config) {
         super(config)
     }
-    async executeNonQuery({ query, dbName }) {
+    getConnectionConfig(dbName) {
+        return {
+            user: this.config.user,
+            password: this.config.password,
+            server: this.config.server,
+            database: dbName ?? this.config.database,
+            options: { encrypt: isBool(this.config.encrypt) ? this.config.encrypt: false }
+        }
+    }
+    async executeNonQuery({ query, dbName, options }) {
         let pool;
         let conn_ok = false;
         let error;
 
         query = query.replace(/^go\s+/i, '');
 
+        if (options && options.minify) {
+            query = this.cleanQuery(query);
+        }
+
         try {
             try {
-                pool = await sql.connect({
-                    user: this.config.user,
-                    password: this.config.password,
-                    server: this.config.server,
-                    database: dbName ?? this.config.database,
-                    options: { encrypt: false }
-                });
+                pool = await sql.connect(this.getConnectionConfig(dbName));
 
                 conn_ok = true;
             } catch (e) {
@@ -50,7 +57,7 @@ class DbHelperSqlServer extends DbHelperBase {
             throw error;
         }
     }
-    async executeQuery({ query, dbName, noCatch = true }) {
+    async executeQuery({ query, dbName, options, noCatch = true }) {
         let result;
         let pool;
         let error;
@@ -58,19 +65,17 @@ class DbHelperSqlServer extends DbHelperBase {
 
         query = query.replace(/^go\s+/i, '');
 
+        if (options && options.minify) {
+            query = this.cleanQuery(query);
+        }
+
         try {
             try {
-                pool = await sql.connect({
-                    user: this.config.user,
-                    password: this.config.password,
-                    server: this.config.server,
-                    database: dbName ?? this.config.database,
-                    options: { encrypt: false }
-                });
+                pool = await sql.connect(this.getConnectionConfig(dbName));
 
                 conn_ok = true;
             } catch (e) {
-                console.log(e);
+                console.log("DbHelperSqlServer", e);
             }
 
             if (conn_ok) {
@@ -85,7 +90,7 @@ class DbHelperSqlServer extends DbHelperBase {
                 try {
                     await pool.close();
                 } catch (e) {
-                    console.error(e);
+                    console.error("DbHelperSqlServer", e);
                 }
             }
         }
@@ -96,7 +101,7 @@ class DbHelperSqlServer extends DbHelperBase {
 
         return result;
     }
-    async executeBatch({ content, dbName }) {
+    async executeBatch({ content, dbName, options }) {
         const parts = content.split(/\s+GO\s+/i);
 
         for (let part of parts) {
@@ -105,7 +110,7 @@ class DbHelperSqlServer extends DbHelperBase {
             part = part.trim();
 
             if (part.length) {
-                await this.executeQuery({ query: part, dbName });
+                await this.executeQuery({ query: part, dbName, options });
             }
         }
     }
@@ -238,7 +243,7 @@ class DbHelperSqlServer extends DbHelperBase {
                         break;
                     case states.inBracket:
                         result += ch;
-                        
+
                         if (ch == "]") {
                             state = states.main;
                         }

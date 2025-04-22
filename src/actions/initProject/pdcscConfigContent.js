@@ -4,7 +4,8 @@ function pdcscConfigContent(config) {
             server: "127.0.0.1",
             user: "sa",
             password: "****",
-            database: "mydb"
+            database: "mydb",
+            encrypt: false
         }
     };
 

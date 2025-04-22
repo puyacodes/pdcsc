@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
-import { isArray, isEmpty, isNullOrEmpty, isSomeArray } from "@locustjs/base";
+import { isArray, isEmpty, isNullOrEmpty, isSomeArray, isString } from "@locustjs/base";
 import getAppVersion from "./getAppVersion";
 import chalk from "chalk";
 import getAllSqlFiles from "./getAllSqlFiles";
@@ -77,6 +77,16 @@ function extractObjects(config, changesetPath) {
     config.debug2(`Total objects: ${objects.length}`);
 
     return { objects, customStart, customEnd };
+}
+
+function merge(config, items) {
+    let result = isString(items) ? items: items.join("\n");
+
+    if (config.useMinification) {
+        result = config.db.cleanQuery(result);
+    }
+
+    return result;
 }
 
 async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles) {
@@ -166,47 +176,47 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${customStart}
+${merge(config, customStart)}
 -- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${sb.schemas.join("\n")}
+${merge(config, sb.schemas)}
 -- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${sb.types.join("\n")}
+${merge(config, sb.types)}
 -- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${sb.tables.join("\n")}
+${merge(config, sb.tables)}
 -- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${sb.relations.join("\n")}
+${merge(config, sb.relations)}
 -- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${sb.functions.join("\n")}
+${merge(config, sb.functions)}
 -- ===================== Functions (end) ======================
 
 -- ===================== Procedures (start) ======================
-${sb.procedures.join("\n")}
+${merge(config, sb.procedures)}
 -- ===================== Procedures (end) ======================
 
 -- ===================== Views (start) ======================
-${sb.views.join("\n")}
+${merge(config, sb.views)}
 -- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${sb.indexes.join("\n")}
+${merge(config, sb.indexes)}
 -- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================
-${sb.triggers.join("\n")}
+${merge(config, sb.triggers)}
 -- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${customEnd}
+${merge(config, customEnd)}
 -- ===================== Custom-End ( end ) ======================
 
 go

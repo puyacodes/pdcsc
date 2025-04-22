@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { isEmpty, isNullOrEmpty, isObject, isSomeString } from "@locustjs/base";
+import { hasBool, isBool, isEmpty, isNullOrEmpty, isObject, isSomeString } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
 import { ActionType, ApplyMode } from "../enums";
 import { Exception } from "@locustjs/exception";
@@ -76,6 +76,7 @@ function read(args) {
 
     const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
 
+    const useMinification = args.includes("-min") || args.includes("--minify");
     const debugMode = args.includes("-dbm") || args.includes("--debug-mode");
     const basePath = process.cwd();
     const server = getArg("-s", "--server");
@@ -94,7 +95,7 @@ function read(args) {
         }
     } else {
         const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
-        let config_mode = process.env[config_key] || '';
+        let config_mode = (process.env[config_key] || '').trim();
 
         if (config_mode) {
             config_mode = '.' + config_mode
@@ -117,7 +118,7 @@ function read(args) {
             customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
         } else {
             if (!cliMode) {
-                throw new Exception(`custom config file ${chalk.yellow(customizedConfigPath)} not found.`);
+                console.warn(chalk.yellow(`Warning: custom config file ${chalk.cyan(customizedConfigPath)} not found.`));
             }
         }
     }
@@ -126,7 +127,15 @@ function read(args) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { basePath, action, cliMode, applyMode, forceMode, applyOneByOne })
+    config = merge({}, config, customConfig, {
+        basePath,
+        action,
+        cliMode,
+        applyMode,
+        forceMode,
+        applyOneByOne,
+        useMinification
+    })
 
     if (!isObject(config.database)) {
         config.database = {}
@@ -144,6 +153,8 @@ function read(args) {
     if (password) {
         config.database.password = password;
     }
+
+    config.database.encrypt = getArg("-e", "--encrypt") == 'true';
 
     config.debugMode = debugMode;
     config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");

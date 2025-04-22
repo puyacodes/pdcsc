@@ -25,27 +25,32 @@ function help() {
             args:
                 -f or --full    generate full config
         roll        create/update changeset (default)
+            args:
+                -min or --minify    minifies generated script
         pipeline    run on pipeline (should be used only in cicd .yml files)
         apply       apply all changesets in ./Changes folder on a database
             args:
                 -m or --mode        apply mode (Test, Update, TestAndUpdate = default).
                 -f or --force       force using changeset .sql files
                 -11 or --one-by-one apply changesets one by one
+                -min or --minify    use script minification
         render      generate .sql file for a changeset (overwrites existing)
             args:
                 -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
+                -min or --minify    minifies generated script
         check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
 
     options (global):
         -v or --version                 show pdcsc version number
-        -? or --help                    show pdcsc usage
+        -? or --help                    show help
         -c or --config                  use config file specified
         -s or --server                  database address (overrides pdcsc-config)
         -u or --user                    database user (overrides pdcsc-config)
         -p or --password                database password (overrides pdcsc-config)
         -d or --database                database name (overrides pdcsc-config)
+        -e or --encrypt                 database connection encryption (overrides pdcsc-config)
         -dbm or --debug-mode            debug mode
-        -dbl or --debug-level           specify debug level (1,2,3,4)
+        -dbl or --debug-level           specify debug level (1,2,3,4,5)
 `);
 }
 

@@ -13,6 +13,8 @@ class DbHelperSqlServer extends DbHelperBase {
         let conn_ok = false;
         let error;
 
+        query.replace(/^go\s+/i, '');
+        
         try {
             try {
                 pool = await sql.connect({

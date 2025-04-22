@@ -101,7 +101,7 @@ async function main() {
         if (error) {
             console.error(chalk.red(error.toString()));
 
-            if (config && config.debugMode && error instanceof Exception) {
+            if (config && config.debugMode && config.debugLevel.contains("5") && error instanceof Exception) {
                 console.error(JSON.stringify(error, null, 4))
             }
 

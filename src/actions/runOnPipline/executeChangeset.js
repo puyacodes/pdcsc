@@ -14,6 +14,8 @@ async function executeChangeset(config, changeset) {
         console.log(`Script executed successfully`);
     } catch (ex) {
         error = new Exception(`executing changeset on ${database} failed`, ex);
+
+        config.debug5({ content: changeset });
     }
 
     return error;

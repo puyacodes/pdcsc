@@ -171,6 +171,11 @@ function read(args) {
             console.log(...args);
         }
     }
+    config.debug5 = (...args) => {
+        if (config.debugMode && config.debugLevel.contains("5")) {
+            console.log(...args);
+        }
+    }
 
     return config
 }

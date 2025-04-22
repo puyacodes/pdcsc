@@ -20,7 +20,7 @@ async function run(config) {
     //  update
 
     try {
-        console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, force = ${chalk.yellow(config.forceMode)}, database = ${chalk.magenta(config.database.database)} ...`);
+        console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, force = ${chalk.yellow(config.forceMode)}, oneByOne = ${chalk.yellow(config.applyOneByOne)}, database = ${chalk.magenta(config.database.database)} ...`);
 
         await ensureChangesTableCreated(config);
 

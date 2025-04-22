@@ -2,6 +2,7 @@ import { Exception } from "@locustjs/exception";
 import FileHelper from "../../services/FileHelper";
 import getChangesetScript from "./getChangesetScript";
 import createErrorLog from "../../utils/createErrorLog";
+import chalk from "chalk";
 
 async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;
@@ -12,8 +13,6 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
     try {
         const _scripts = []
         let i = 1;
-
-        console.log("Getting scripts ...");
 
         for (let changeset of pendingChangesets) {
             let script;
@@ -29,13 +28,13 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
             }
 
             try {
-                config.debug2(`Testing ...`);
+                config.debug2(`\tTesting ...`);
 
                 await config.db.executeBatch({ content: cr.script });
 
-                config.debug2(chalk.green("\tSucceeded"));
+                config.debug2(chalk.green("\t\tSucceeded"));
             } catch (ex) {
-                config.debug(chalk.red("\tFailed"));
+                config.debug(chalk.red("\t\tFailed"));
                 config.debug5({ content: cr.script });
                 error = new Exception(`Testing changeset ${changeset.name} was not successful.`, ex);
 
@@ -58,9 +57,9 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
                 FileHelper.createFile(config.paths.scriptsPath, "all.sql", all);
             }
 
-            console.log(`Testing changesets: ${chalk.green("Succeeded")}`);
+            console.log(`${chalk.green("Succeeded")}`);
         } else {
-            console.log(`Testing changesets: ${chalk.red("Failed")}`);
+            console.log(`${chalk.red("Failed")}`);
         }
     } catch (ex) {
         error = new Exception("Testing pending changesets was not successful.", ex);

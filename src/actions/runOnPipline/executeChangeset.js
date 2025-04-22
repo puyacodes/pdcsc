@@ -15,7 +15,9 @@ async function executeChangeset(config, changeset) {
     } catch (ex) {
         error = new Exception(`executing changeset on ${database} failed`, ex);
 
-        config.debug5({ content: changeset });
+        if (ex instanceof ExecuteQueryException) {
+            config.debug5(`\n${ex.query}\n`);
+        }
     }
 
     return error;

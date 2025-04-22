@@ -28,8 +28,9 @@ function help() {
         pipeline    run on pipeline (should be used only in cicd .yml files)
         apply       apply all changesets in ./Changes folder on a database
             args:
-                -m or --mode    apply mode (Test, Update, TestAndUpdate = default).
-                -f or --force   force using changeset .sql files
+                -m or --mode        apply mode (Test, Update, TestAndUpdate = default).
+                -f or --force       force using changeset .sql files
+                -11 or --one-by-one apply changesets one by one
         render      generate .sql file for a changeset (overwrites existing)
             args:
                 -cs or --changeset  changeset name (if not specified, uses changeset in current branch)

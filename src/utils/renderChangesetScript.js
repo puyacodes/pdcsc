@@ -135,7 +135,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
                     found = true;
 
-                    config.debug2(`${obj.type}: ${obj.name} copied.`);
+                    config.debug3(`${obj.type}: ${obj.name} copied.`);
 
                     break;
                 }

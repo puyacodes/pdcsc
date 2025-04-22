@@ -30,6 +30,7 @@ function read(args) {
     let action;
     let applyMode;
     let forceMode = false;
+    let applyOneByOne = false;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
@@ -52,6 +53,7 @@ function read(args) {
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
         forceMode = args.includes("-f") || args.includes("--force")
+        applyOneByOne = args.includes("-11") || args.includes("--one-by-one");
 
         if (isEmpty(applyMode)) {
             applyMode = ApplyMode.TestAndUpdate;
@@ -124,7 +126,7 @@ function read(args) {
         config = {}
     }
 
-    config = merge({}, config, customConfig, { basePath, action, cliMode, applyMode, forceMode })
+    config = merge({}, config, customConfig, { basePath, action, cliMode, applyMode, forceMode, applyOneByOne })
 
     if (!isObject(config.database)) {
         config.database = {}

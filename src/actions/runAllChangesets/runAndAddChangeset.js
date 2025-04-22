@@ -33,7 +33,7 @@ async function runAndAddChangeset(config, changeset, script, allFiles) {
 
         } catch (ex) {
             console.log(chalk.red("\tFailed"));
-            config.debug5({ content });
+            
             error = new Exception(`Executing changeset ${changeset.name} was not successful.`, ex);
 
             createErrorLog(config, ex);

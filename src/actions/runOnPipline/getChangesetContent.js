@@ -29,7 +29,7 @@ async function getChangesetContent(config) {
             // user must always use pdcsc.
             const lastCommit = execSync('git log --pretty=format:"%s" HEAD^..HEAD ', { encoding: "utf-8" }).trim();
 
-            config.debug("Last commit = " + lastCommit);
+            config.debug("Last commit = " + lastCommit + "\n");
 
             if (lastCommit && !lastCommit.startsWith('pdcsc:')) {
                 error = `Changeset is not up-to-date (other commits found after last changeset push).

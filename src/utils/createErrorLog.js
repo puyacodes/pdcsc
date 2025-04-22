@@ -36,6 +36,8 @@ function createErrorLog(config, ex) {
         if (query) {
             fs.appendFileSync(logFile, query + "\n\n", "utf-8");
         }
+
+        config.debug5(`\n${query}\n`);
     } catch (ex) {
         console.error(`Error creating log file`, ex);
     }

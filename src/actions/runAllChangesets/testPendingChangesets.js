@@ -3,12 +3,13 @@ import FileHelper from "../../services/FileHelper";
 import getChangesetScript from "./getChangesetScript";
 import createErrorLog from "../../utils/createErrorLog";
 import chalk from "chalk";
+import testScript from "../testScript";
 
 async function testPendingChangesets(config, pendingChangesets, allFiles) {
     let error;
     const scripts = {}
 
-    console.log("Testing pending changesets ...");
+    console.log("Bundling/Testing pending changesets ...");
 
     try {
         const _scripts = []
@@ -27,20 +28,22 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
                 scripts[changeset.name] = cr.script;
             }
 
-            try {
-                config.debug2(`\tTesting ...`);
-
-                await config.db.executeBatch({ content: cr.script });
-
-                config.debug2(chalk.green("\t\tSucceeded"));
-            } catch (ex) {
-                config.debug(chalk.red("\t\tFailed"));
-                config.debug5({ content: cr.script });
-                error = new Exception(`Testing changeset ${changeset.name} was not successful.`, ex);
-
-                createErrorLog(config, ex);
-
-                break;
+            if (config.applyOneByOne) {
+                try {
+                    config.debug2(`\tTesting ...`);
+    
+                    await config.db.executeBatch({ content: cr.script });
+    
+                    config.debug2(chalk.green("\t\tSucceeded"));
+                } catch (ex) {
+                    config.debug(chalk.red("\t\tFailed"));
+                    
+                    error = new Exception(`Testing changeset ${changeset.name} was not successful.`, ex);
+    
+                    createErrorLog(config, ex);
+    
+                    break;
+                }
             }
 
             _scripts.push(script);
@@ -57,9 +60,17 @@ async function testPendingChangesets(config, pendingChangesets, allFiles) {
                 FileHelper.createFile(config.paths.scriptsPath, "all.sql", all);
             }
 
-            console.log(`${chalk.green("Succeeded")}`);
+            if (config.applyOneByOne) {
+                console.log(`${chalk.green("Succeeded")}`);
+            } else {
+                console.log("Testing bundle ...");
+    
+                error = await testScript(config, all);
+            }
         } else {
-            console.log(`${chalk.red("Failed")}`);
+            if (config.applyOneByOne) {
+                console.log(`${chalk.red("Failed")}`);
+            }
         }
     } catch (ex) {
         error = new Exception("Testing pending changesets was not successful.", ex);

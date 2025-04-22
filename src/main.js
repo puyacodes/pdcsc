@@ -60,8 +60,8 @@ async function main() {
         const args = process.argv.slice(2);
 
         if (args.includes("-v") || args.includes("--version")) {
-            console.log(`${name} version ${version})\n`);
-        } else if (args.includes("-?") || args.includes("--help")) {
+            console.log(`${name} version ${version}\n`);
+        } else if (args.includes("-?") || args.includes("/?") || args.includes("/help") || args.includes("--help")) {
             help();
         } else {
             const gcr = await getConfig(args);

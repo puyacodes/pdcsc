@@ -157,7 +157,7 @@ function read(args) {
         config.database.password = password;
     }
 
-    config.database.encrypt = getArg("-e", "--encrypt") == 'true';
+    config.database.encrypt = args.includes("-e") || args.includes("--encrypt")
 
     config.debugMode = debugMode;
     config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");

@@ -79,7 +79,7 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-function write(config, items) {
+function write(config, items, minify = true) {
     let result;
 
     if (isString(items)) {
@@ -87,7 +87,7 @@ function write(config, items) {
     } else {
         result = items.join("\n");
 
-        if (config.useMinification) {
+        if (config.useMinification && minify) {
             result = config.minifier.minify(result);
         }
         if (config.useUglification) {
@@ -192,19 +192,19 @@ ${write(config, customStart)}
 -- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${write(config, sb.schemas)}
+${write(config, sb.schemas, false)}
 -- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${write(config, sb.types)}
+${write(config, sb.types, false)}
 -- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${write(config, sb.tables)}
+${write(config, sb.tables, false)}
 -- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${write(config, sb.relations)}
+${write(config, sb.relations, false)}
 -- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
@@ -220,7 +220,7 @@ ${write(config, sb.views)}
 -- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${write(config, sb.indexes)}
+${write(config, sb.indexes, false)}
 -- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================

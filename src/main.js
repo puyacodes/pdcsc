@@ -62,7 +62,7 @@ command:
             -f or --full    generate full config
     roll        create/update changeset (default)
         args:
-            -m or --minify      minifies generated script
+            -m or --minify      minifies sprocs, udfs, views, triggers
     pipeline    run on pipeline (should be used only in cicd .yml files)
     apply       apply all changesets in ./Changes folder on a database
         args:
@@ -72,7 +72,7 @@ command:
     render      generate .sql file for a changeset (overwrites existing)
         args:
             -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
-            -m or --minify      minifies generated script
+            -m or --minify      minifies sprocs, udfs, views, triggers
     check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
 
 options (global):

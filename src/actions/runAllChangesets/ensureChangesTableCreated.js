@@ -36,7 +36,7 @@ ELSE
         const result = rs && rs.length && rs[0] ? rs[0].Result : false;
 
         if (!result) {
-            error = new Exception(`Journal table ${changesetsTableName} not found!`)
+            error = new Exception(`Journal table ${changesetsTableName} not found. Use -f or --force to create journal table.`)
         }
     }
 

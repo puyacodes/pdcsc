@@ -35,7 +35,7 @@ npm install @puya/pdcsc
 ```
 ## Current Version
 ```
-2.1.25
+2.1.26
 ```
 
 ## Usage
@@ -49,10 +49,11 @@ pdcsc [cmd] [arguments] [options]
 ### Main commands
 
 - `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
-- `pipeline`: Used in CICD pipelines, tests changeset of current branch and if it succeeds, executes changeset over the database specified (making it up-to-date).
-- `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
 - `roll`: Creates/Updates a changeset based on `.sql` changes in current branch in `./Scripts` folder. This is the default command.
+- `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
+- `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date).
 - `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
+- `check-update`: checks whether a new version for `pdcsc` is available or not.
 
 ### CLI arguments
 
@@ -63,11 +64,11 @@ pdcsc [cmd] [arguments] [options]
 - `-u` or `--user`: database user.
 - `-p` or `--password`: database password.
 - `-d` or `--database`: target database.
+- `-e` or `--encrypt`: encrypt database connection or not (default is `false`).
 - `-dbm` or `--debug-mode`:	debug mode
 - `-dbl` or `--debug-level`:	debug level (1: simple, 2: advanced, 3: details, 4: deep details)
-- `-iuc` or `--ignore-update-check`:	ignores pdcsc npm update check
 
-**Note**: `-s`, `-u`, `-p` and `-d` cli args have more priority over same database settings in `pdcsc-config.json` config.
+**Note**: `-s`, `-u`, `-p`, `-d` and `-e` cli args have more priority over same database settings in `pdcsc-config.json` config.
 
 ## Examples
 
@@ -77,19 +78,31 @@ pdcsc [cmd] [arguments] [options]
 pdcsc -init
 ```
 
-1. Creating/Updating changeset:
+Initializing a new database repository with full config:
+
+```bash
+pdcsc -init -f
+```
+
+2. Creating/Updating current feature branch's changeset:
+
+```bash
+pdcsc roll
+```
+
+or simply ...
 
 ```bash
 pdcsc
 ```
 
-2. Updating master database upon merge requests in CI/CD:
+3. Updating master database upon merge requests in CI/CD:
 
 ```bash
 pdcsc pipeline
 ```
 
-3. Manually updating an existing database
+4. Manually updating an existing database
 
 ```bash
 pdcsc apply -d MyDb
@@ -101,7 +114,7 @@ pdcsc apply -d MyDb
 pdcsc -s "192.168.10.120" -u "myUser" -p "myPassword" -d "MyDb"
 ```
 
-Database settings specified through cli have more priority over config file.
+As it was stated, database settings specified through cli have more priority over config file.
 
 ## Configuration
 The behavior of `pdcsc` can be customized through its config file.
@@ -116,7 +129,8 @@ Here's an example of a simple `pdcsc configuration file`:
     "server": "localhost",
     "user": "db_user",
     "password": "db_password",
-    "database": "my_database"
+    "database": "my_database",
+    "encrypt": false
   },
   "pipeline": "gitlabs",
   "masterBranchName": "origin/main"
@@ -132,7 +146,8 @@ The full `pdcsc config` file with all its options is as follows:
 		"server": "...",	  // database server address (default = 'localhost')
 		"user": "...",		  // database userid
 		"password": "...",	// database password
-		"database": "..."	  // master database name
+		"database": "...",	  // master database name
+		"encrypt": "..."	  // encrypt connection or not
 	},
 	"pipeline": "...",			    // pipeline type (gitlabs = default, azuredevops)
 	"masterBranchName": "...",		// master branch name (default = 'origin/main')
@@ -175,7 +190,7 @@ In the second usage, we can then add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json`
 
 In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `pipeline` argument to ensure our database is updated automatically whenever a feature branche is merged.
 
-Here is a sample gitlab pipeline:
+Here is a sample `gitlab` pipeline:
 
 ```yaml
 stages:
@@ -194,10 +209,10 @@ before_merge_build:
     - |
       if [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "dev" ]; then
         echo "updating database ..."
-        node index.js apply -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
+        node index.js apply -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json" -dbm -f
       else
         echo "checking branch changeset before merge ..."
-        node index.js pipeline -dbm -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json"
+        node index.js pipeline -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json" -dbm
       fi
   rules:
     - when: manual`
@@ -220,9 +235,9 @@ Notes:
 - This time, the config file `pdcsc-config-{CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json` would be `pdcsc-config-dev.json`.
 - So, the development database will be updated.
 
-Note that, we should have `pdcsc-config.dev.json` and `pdcsc-config.main.json` files in our repo.
+Note that, we should have `pdcsc-config-dev.json` and `pdcsc-config-main.json` files in our repo.
 
-`pdcsc-config.dev.json`
+`pdcsc-config-dev.json`
 ```json
 {
   "database": {
@@ -232,7 +247,7 @@ Note that, we should have `pdcsc-config.dev.json` and `pdcsc-config.main.json` f
 }
 ```
 
-`pdcsc-config.main.json`
+`pdcsc-config-main.json`
 ```json
 {
   "database": {
@@ -268,7 +283,35 @@ Using `apply` argument we can execute all changesets against a database and upda
 pdcsc apply -d MyDb
 ```
 
-The `apply` command has 3 modes which can be customized through `-rum` argument:
+### Changeset execution history
+`pdcsc` uses a table named `dbo.Changesets` in databases in order to save history of executed changesets.
+
+After a changeset executes successfully, `pdcsc` inserts its name into `dbo.Changesets` table. This is called `journaling`.
+
+Before `pdcsc` executes a changeset on a database, it checks `dbo.Changesets` table to see whether the changeset is already executed or not.
+
+If such table does not exist, it shows and error and exits.
+
+Using `-f` or `--force` cli argument, we can ask `pdcsc` to create such table if it does not exits.
+
+```bash
+pdcsc apply -d MyDb
+```
+Output:
+```
+Journal table dbo.Changesets not found. Use -f or --force to create journal table.
+```
+
+```bash
+pdcsc apply -d MyDb -f
+```
+
+This behavior (manually use `-f` or force mode) is intentional in order to avoid updating an old database that is far behind our changesets and other updates should be applied on that before hand.
+
+The name of journal table can be customized in `pdcsc` config file through `changesetsTableName` prop.
+
+### Update mode
+The `apply` command has 3 modes which can be customized through `-m` argument:
 
 - `Test`: test changesets against a backup of the database. This is useful when we want to make sure whether changesets will work correctly on the database or not.
 - `TestAndUpdate` (default): test changesets first and if they were ok, update database.
@@ -276,14 +319,51 @@ The `apply` command has 3 modes which can be customized through `-rum` argument:
 
 Ideally, we should use a `TestAndUpdate` mode as it is the default mode. However, if we are completely sure about our changesets or the test phase takes a long time due (database is very large or under heavy load and backup/restore will take a long time), we can directly execute them on the database.
 
-### Changeset execution history
-`pdcsc` uses a table named `dbo.Changesets` in databases in order to save history of executed changesets.
+Example: only test changesets on a backup of database, not directly on database.
+```bash
+pdcsc apply -d MyDb -m Test
+```
 
-After a changeset was executed successfully, `pdcsc` inserts its name into `dbo.Changesets` table.
+Example: apply changesets directly on database, do not test them beforehand.
+```bash
+pdcsc apply -d MyDb -m Update
+```
 
-Before `pdscs` executes a changeset on a database, it checks `dbo.Changesets` table to see whether the changeset is already executed or not.
+### Test changesets one by one
+By default, `pdcsc apply` creates a bundle out of changesets and executes the bundle against a database backup.
 
-The name of this table can be customized in `pdcsc` config file through `changesetsTableName` prop.
+Using `-11` or `--one-by-one` cli argument we can ask `pdcsc` to test changesets one by one.
 
-            
+This can better highlight faulting changesets in case of errors.
+
+```bash
+pdcsc apply -d MyDb -11
+```
+
+## Manually render a changeset
+By default `pdcsc` renders or generates `.sql` file of a changeset when using `roll` command (default command).
+
+Using `render` cli argument we can manually render a changeset.
+
+### Discussion
+Manually rendering a changeset is not recommended and should be avoided at all costs. Rendering a changeset should ONLY and ONLY be done exactly in the branch it was created at.
+
+If you render a changeset in another branch, the generated `.sql` may not be correct, may not be even generated and may not work or may lead to unwanted errors, bugs and disasters at worst case.
+
+Suppose we are in branch `feature/fix-product-update` and we fix a sproc named `usp_Product_update`.
+
+We generate a changeset, make a PR and the Team Lead in our company who performs code reviews merges the branch.
+
+Now, if we switch to branch `feature/create-reports` and we have not pulled our `main` branch to receive the changes, if we intend to render the changeset of `feature/fix-product-update` branch, the `.sql` file being generated definitely is not correct, since we are creating `usp_Product_update` sproc using the copy in our own branch which is not up-to-date.
+
+That is why, it is never recommended to manually render a changeset and this should be done in scarse cases and performed only by DBAs who know what they are doing.
+
+### Usage
+We can specify the changeset for which we intend to create `.sql` file using `-cs` cli argument.
+
+```bash
+pdcsc render -cs 20250412082457_b6775a321_feature-add-otp
+```
+
+The `-cs` argument is optional. If it is not specified, `pdcsc` shows list of all changesets found in `./Changes` folder and asks to choose which one to render.
 

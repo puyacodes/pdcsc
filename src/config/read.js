@@ -30,7 +30,8 @@ function read(args) {
     let action;
     let applyMode;
     let applyOneByOne = false;
-
+    let forceChangesetsTable = false;
+    
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
     }

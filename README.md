@@ -6,11 +6,11 @@ This tool is licensed under MIT License - see the [LICENSE](LICENSE) file for de
 
 ## Introduction
 
-`@puya/pdcsc` is a cli tool developed in nodejs that manages database scripts, generates changesets based on `.sql` file changes in repository, and provides automatic testing and executing of changesets.
+`@puya/pdcsc` is a cli tool developed in nodejs for managing `.sql` database repositories. It creates/updates changesets based on changes detected in feature branches in their `.sql` files in a `./Scripts` folder.
 
-Also, it can be used in CICD environments, like `gitlab pipeline` to automatically update a master database upon merging a feature branch to master branch.
+It can be integrated in cicd pipelines like `gitlab pipeline` and `azurdevops pipeline` and is able to apply changeset(s) on custom databases upon merging feature branches.
 
-Last but not least, it can be used manually to execute all changesets on a custom database, making the database up-to-date with the lastest changes.
+It can also be used to apply changesets on a custom database manually, making the database up-to-date with the lastest changes which can be a handy tool for support teams.
 
 ## Features
 

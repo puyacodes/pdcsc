@@ -35,7 +35,7 @@ npm install @puya/pdcsc
 ```
 ## Current Version
 ```
-2.1.5
+2.1.25
 ```
 
 ## Usage

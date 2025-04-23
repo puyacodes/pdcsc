@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { hasBool, isBool, isEmpty, isNullOrEmpty, isObject, isSomeString } from "@locustjs/base";
+import { isEmpty, isNullOrEmpty, isObject } from "@locustjs/base";
 import { merge } from "@locustjs/extensions-object";
 import { ActionType, ApplyMode } from "../enums";
 import { Exception } from "@locustjs/exception";
@@ -52,6 +52,7 @@ function read(args) {
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
         applyOneByOne = args.includes("-11") || args.includes("--one-by-one");
+        forceChangesetsTable = args.includes("-f") || args.includes("--force");
 
         if (isEmpty(applyMode)) {
             applyMode = ApplyMode.TestAndUpdate;
@@ -73,8 +74,10 @@ function read(args) {
     }
 
     const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
-
-    const useMinification = args.includes("-min") || args.includes("--minify");
+    const renderMode = action == ActionType.roll || action == ActionType.render;
+    const useMinification = renderMode && (args.includes("-m") || args.includes("--minify"));
+    const useUglification = renderMode && (args.includes("-u") || args.includes("--uglify"));
+    const useObfuscation = renderMode && (args.includes("-o") || args.includes("--obfuscate"));
     const debugMode = args.includes("-dbm") || args.includes("--debug-mode");
     const basePath = process.cwd();
     const server = getArg("-s", "--server");
@@ -131,7 +134,10 @@ function read(args) {
         cliMode,
         applyMode,
         applyOneByOne,
-        useMinification
+        forceChangesetsTable,
+        useMinification,
+        useUglification,
+        useObfuscation
     })
 
     if (!isObject(config.database)) {

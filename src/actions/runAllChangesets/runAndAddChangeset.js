@@ -3,29 +3,24 @@ import createErrorLog from "../../utils/createErrorLog.js";
 import addChangesetToDatabase from "./addChangesetToDatabase.js";
 import { Exception } from "@locustjs/exception";
 
-async function runAndAddChangeset(config, changeset, script) {
+async function runAndAddChangeset(config, changeset, script, i) {
     const { db } = config;
     let error;
 
-    if (!error) {
-        console.log(`Executing changeset ${chalk.cyan(changeset.name)} ...`);
+    console.log(`${i}. Executing changeset ${chalk.cyan(changeset.name)} ...`);
 
-        try {
-            await db.executeBatch({ content: script });
+    try {
+        await db.executeBatch({ content: script });
 
-            console.log(chalk.green("\tSucceeded"));
+        console.log(chalk.green("\tSucceeded"));
 
-        } catch (ex) {
-            console.log(chalk.red("\tFailed"));
-            
-            error = new Exception(`Executing changeset ${changeset.name} was not successful.`, ex);
+        error = await addChangesetToDatabase(config, changeset, i);
+    } catch (ex) {
+        console.log(chalk.red("\tFailed"));
 
-            createErrorLog(config, ex);
-        }
+        error = new Exception(`Executing changeset #${i} ${changeset.name} was not successful.`, ex);
 
-        if (!error) {
-            error = await addChangesetToDatabase(config, changeset);
-        }
+        createErrorLog(config, ex);
     }
 
     return error;

@@ -60,7 +60,7 @@ async function createOrUpdateChangeset(config) {
                 break;
             }
 
-            // Todo
+            // Todo: Done
             // detect and warn about changeset items that cannot be found in file system
 
             await generateDropScriptsIfRequested(config);

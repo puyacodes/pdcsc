@@ -79,11 +79,23 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-function merge(config, items) {
-    let result = isString(items) ? items: items.join("\n");
+function write(config, items) {
+    let result;
 
-    if (config.useMinification) {
-        result = config.db.cleanQuery(result);
+    if (isString(items)) {
+        result = items
+    } else {
+        result = items.join("\n");
+
+        if (config.useMinification) {
+            result = config.minifier.minify(result);
+        }
+        if (config.useUglification) {
+            result = config.uglifier.uglify(result);
+        }
+        if (config.useObfuscation) {
+            result = config.obfuscator.obfuscate(result);
+        }
     }
 
     return result;
@@ -176,47 +188,47 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     const script = `-- ***            Changeset ${changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${merge(config, customStart)}
+${write(config, customStart)}
 -- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
-${merge(config, sb.schemas)}
+${write(config, sb.schemas)}
 -- ===================== Schemas (end) ======================
 
 -- ===================== Types (start) ======================
-${merge(config, sb.types)}
+${write(config, sb.types)}
 -- ===================== Types (end) ======================
 
 -- ===================== Tables (start) ======================
-${merge(config, sb.tables)}
+${write(config, sb.tables)}
 -- ===================== Tables (end) ======================
 
 -- ===================== Relations (start) ======================
-${merge(config, sb.relations)}
+${write(config, sb.relations)}
 -- ===================== Relations (end) ======================
 
 -- ===================== Functions (start) ======================
-${merge(config, sb.functions)}
+${write(config, sb.functions)}
 -- ===================== Functions (end) ======================
 
 -- ===================== Procedures (start) ======================
-${merge(config, sb.procedures)}
+${write(config, sb.procedures)}
 -- ===================== Procedures (end) ======================
 
 -- ===================== Views (start) ======================
-${merge(config, sb.views)}
+${write(config, sb.views)}
 -- ===================== Views (end) ======================
 
 -- ===================== Indexes (start) ======================
-${merge(config, sb.indexes)}
+${write(config, sb.indexes)}
 -- ===================== Indexes (end) ======================
 
 -- ===================== Triggers (start) ======================
-${merge(config, sb.triggers)}
+${write(config, sb.triggers)}
 -- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${merge(config, customEnd)}
+${write(config, customEnd)}
 -- ===================== Custom-End ( end ) ======================
 
 go

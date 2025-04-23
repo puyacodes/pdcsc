@@ -1,10 +1,10 @@
 import { Exception } from "@locustjs/exception";
 
-async function addChangesetToDatabase(config, changeset) {
+async function addChangesetToDatabase(config, changeset, i) {
     let error;
     const { db, changesetsTableName } = config;
 
-    console.log(`Journaling changeset ...`);
+    console.log(`  Journaling changeset ...`);
 
     try {
         const query = `INSERT INTO ${changesetsTableName} ([name]) VALUES ('${changeset.name}')`;
@@ -13,7 +13,7 @@ async function addChangesetToDatabase(config, changeset) {
 
         await db.executeQuery({ query });
     } catch (ex) {
-        error = new Exception(`Journaling changeset ${changeset.name} to database ${config.database.database} failed.`, ex);
+        error = new Exception(`Journaling changeset #${i} ${changeset.name} to database ${config.database.database} failed.`, ex);
     }
 
     return error;

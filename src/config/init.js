@@ -7,6 +7,10 @@ import { Exception } from "@locustjs/exception";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
 import chalk from 'chalk';
 import { execSync } from "child_process";
+import { ActionType } from "../enums";
+import { TSqlMinifier } from "../services/SqlMinifier";
+import { NullSqlUglifier } from "../services/SqlUglifier";
+import { NullSqlObfuscator } from "../services/SqlObfuscator";
 
 function init(config) {
     config.paths.changesetsPath = path.join(config.basePath, config.paths.changesetFolderName);
@@ -24,11 +28,14 @@ function init(config) {
         triggers: "Triggers",
         schemas: "Schemas"
     }, config.folders)
-    
+
     config.db = new DbHelperSqlServer(config.database);
+    config.minifier = new TSqlMinifier();
+    config.uglifier = new NullSqlUglifier();
+    config.obfuscator = new NullSqlObfuscator();
     config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
-    
-    if (!config.cliMode) {
+
+    if (!config.cliMode && config.action != ActionType.apply) {
         let cmd;
 
         const { currentBranch, realBranchName } = getCurrentBranch(config);

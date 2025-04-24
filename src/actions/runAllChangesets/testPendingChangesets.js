@@ -64,12 +64,6 @@ async function testPendingChangesets(config, pendingChangesets) {
                 console.log("Testing bundle ...");
 
                 error = await testScript(config, all);
-
-                if (!error) {
-                    console.log(`\t${chalk.green("Succeeded")}`);
-                } else {
-                    console.log(`\t${chalk.red("Failed")}`);
-                }
             }
         }
     } catch (ex) {

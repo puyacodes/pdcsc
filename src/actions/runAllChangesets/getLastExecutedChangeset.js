@@ -10,7 +10,7 @@ async function getLastExecutedChangeset(config) {
     console.log("Finding last changeset that was executed on database ...");
 
     try {
-        const query = `SELECT TOP 1 [date], [name] FROM ${changesetsTableName} ORDER BY [date] DESC`;
+        const query = `SELECT TOP 1 [name], [date] FROM ${changesetsTableName} ORDER BY [name] DESC`;
 
         config.debug4(query);
 

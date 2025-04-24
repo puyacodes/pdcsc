@@ -2,7 +2,7 @@ function pdcscConfigContent(config) {
     const configContent = {
         database: {
             server: "127.0.0.1",
-            user: "sa",
+            user: "my_user",
             password: "****",
             database: "mydb",
             encrypt: false

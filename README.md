@@ -21,6 +21,21 @@ It can also be used to apply changesets on a custom database manually, making th
 
 By default (withought specifying `pipeline` or `apply` arguments), `@puya/pdcsc` manages current branch's changeset.
 
+## Disclaimer
+`@puya/pdcsc` IS AN IMPORTANT AND CRITICAL TOOL THAT TARGETS SQL SERVER DATABASES.
+
+THE TOOL NEVER CHANGES ANY DATA IN TARGET DATABASES EXCEPT THE TABLE IT CREATES ITSELF TO TRACK CHANGESETS JOURNALING.
+
+THE TOOL NEVER MANIPULATES ANY SCHEMA IN TARGET DATABASES. ALL SCHEMA CHANGES ARE PERFORMED BY DEVELOPERS WHO USE THE COMMAND AND PUT THEIR CUSTOM SCRIPTS IN THE CHANGESETS.
+
+IT IS HIGHLY RECOMMENDED TO HAVE A DBA IN YOUR TEAM WHO PERFORMS CODE REVIEW UPON FEATURE BRANCH MERGING AND IS COMPLETELY SURE ABOUT THE CHANGES APPLYING TO YOUR DATABASES.
+
+THIS TOOL IS DEVELOPED AS IS AND THE COMPANY AND DEVELOPERS WHO CREATED IT HAVE NO RESPONSIBILITY OVER ANY PROBLEMS HAPPEN OR CONSEQUENCES INCUR TO YOUR DATABASES.
+
+YOU USE IT SOLELY BASED ON YOUR OWN DECISION.
+
+PLEASE DO READ THE `Best Practices and Guidelines` SECTION OF THIS DOCUMENT TO FOLLOW BEST PRACTICES AND GUIDELINES.
+
 ## Installation
 ### Global
 
@@ -184,7 +199,7 @@ If so, it merges that file with `pdcsc-config.json` file.
 
 This, enables us to customize master branch name or database name based on env or store sensitive data such as database password in a customized `pdcsc config` file.
 
-In the second usage, we can then add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json` in the `.gitignore`, so that the database password is not stored in the repository.
+In the second usage, we can add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json` in the `.gitignore`, so that the database password is not stored in the repository.
 
 ## Using `pdcsc` in `gitlab CI/CD pipeline`
 
@@ -366,4 +381,23 @@ pdcsc render -cs 20250412082457_b6775a321_feature-add-otp
 ```
 
 The `-cs` argument is optional. If it is not specified, `pdcsc` shows list of all changesets found in `./Changes` folder and asks to choose which one to render.
+
+## Best Practices and Guidelines
+
+1. Do not store database passwords directly in `pdcsc-config.json` to prevent it being stored in your source-control. Instead, use custimized configs in the way described in `Config customization` section.
+2. Use a `dev` and/or `test` stage in your development workflow and do not directly push/merge on `master`/`main` branch.
+3. Employ a Sql Server DBA in your team who performs code review on feature branch merging and accepts merge only when he feels everything is all right.
+4. Use a separate database for `dev`/`test` and `main`/`master` branches.
+5. If possible, use a separate server for `main`/`master` database, other than `dev`/`test` server.
+6. In your pipelines, use `pdcsc pipeline` for merging feature PRs and `pdcsc apply` for merging `dev`/`test` branches with `main`/`master` branch.
+7. Do not change/alter `main`/`master` database directly. Let cicd pipelines and `pdcsc` update your database automatically.
+8. Merge `dev`/`test` branch with `main`/`master` branch only when you really intend to bring changesets to production.
+9. Do not use `sa` and/or `sysadmin` users in `dev`/`test` stages (otherwise, your development team maybe able to access  `main`/`master` database directly and change it out of notice).
+10. Use a less privilaged user in `dev`/`test` stages who can access only to development and test databases, not `master`/`main` database.
+11. Use `sa` and/or `sysadmin` users in `main`/`master` branch who only DBAs have access to.
+12. Never change/manipulate old changesets that fall behind other branches.
+13. Never render existing changesets in a branch other than the branch they were created in. This can produce incorrect script, resulting in bugs, errors, data loss or any other bad consequence.
+14. Do not remove feature branches immediately upon merge in your pipelines.
+15. Keep feature branches for a period of time (like two or three weeks), so that you can refer to them and render their changes later if needed.
+16. Dispose of feature branches only when you are sure the branches are ok and have no error and you will not return back to them in the future.
 

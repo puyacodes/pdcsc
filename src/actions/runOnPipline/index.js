@@ -19,7 +19,6 @@ async function run(config) {
     } else {
         return config.error;
     }
-
 }
 
 export default run;

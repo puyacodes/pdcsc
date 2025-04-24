@@ -5,8 +5,6 @@ function restoreChangesIfNeeded(config) {
     const {
         scriptTempFilePath,
         changesetTempFilePath,
-        finalChangesetFilePath,
-        isNewChangeset,
         changesetCommitted,
         userChoice,
         error
@@ -14,12 +12,6 @@ function restoreChangesIfNeeded(config) {
 
     FileHelper.deleteFiles(scriptTempFilePath, changesetTempFilePath);
     
-    if (error && isNewChangeset) {
-        // we do not delete changeset script.
-        // changeset scripts are ignored in .gitignore and are not committed.
-        FileHelper.deleteFile(finalChangesetFilePath);
-    }
-
     if (error) {
         if (userChoice === "2") {
             // restoring back committed changes depends on whether we commited changeset or not.

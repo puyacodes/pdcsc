@@ -24,7 +24,7 @@ async function run(config) {
     
             error = await ensureChangesTableCreated(config);
     
-            if (!error) {
+            if (error) {
                 break;
             }
 

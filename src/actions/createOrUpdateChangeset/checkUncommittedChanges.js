@@ -39,15 +39,15 @@ Enter your choice: `);
 
                 if (changes.modified.length > 0) {
                     files.push(chalk.whiteBright("\nModified files:"));
-                    files.push(...changes.modified.map(chalk.blue));
+                    changes.modified.forEach(x => files.push(chalk.blue(x)));
                 }
                 if (changes.not_added.length > 0) {
                     files.push(chalk.whiteBright("\nUntracked files:"));
-                    files.push(...changes.not_added.map(chalk.green));
+                    changes.not_added.forEach(x => files.push(chalk.green(x)));
                 }
                 if (changes.deleted.length > 0) {
                     files.push(chalk.whiteBright("\nDeleted files:"));
-                    files.push(...changes.deleted.map(chalk.red));
+                    changes.deleted.forEach(x => files.push(chalk.red(x)));
                 }
 
                 if (files.length) {

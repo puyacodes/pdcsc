@@ -35,3 +35,12 @@ roll:
 ## 2.1.32
     Fixed 'Skipped changeset testing'
         changes were skipped when the changeset didn't change, but changeset file changed
+
+## 2.1.33
+    init:
+        Updated gitlab-ci.yml
+        Update azure-pipelines.yml
+
+## 2.1.34
+    roll
+        Fixed bug: Unexpected changeset .sql file not found.

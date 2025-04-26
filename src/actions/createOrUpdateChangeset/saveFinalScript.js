@@ -17,7 +17,9 @@ async function saveFinalScript(config, allFiles) {
     let old;
 
     if (!error) {
-        old = fs.readFileSync(scriptFilePath, "utf-8");
+        if (fs.existsSync(scriptFilePath)) {
+            old = fs.readFileSync(scriptFilePath, "utf-8");
+        }
 
         fs.writeFileSync(scriptTempFilePath, script, "utf-8");
         fs.renameSync(scriptTempFilePath, scriptFilePath);
@@ -27,7 +29,7 @@ async function saveFinalScript(config, allFiles) {
 
     config.error = error;
     config.hasAnything = hasAnything;
-    config.hasChanges = old != script;
+    config.hasChanges = !old || old.trim() != script.trim();
 
     return isNullOrEmpty(config.error);
 }

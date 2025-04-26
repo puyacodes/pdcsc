@@ -6,9 +6,13 @@ import { ActionType, ApplyMode } from "../enums";
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
-function debug(debugMode, ...args) {
-    if (debugMode) {
-        console.log(...args)
+function addDebugFunctions(config) {
+    for (let i = 1; i < 10; i++) {
+        config[`debug${i > 1 ? i : ''}`] = (...args) => {
+            if (config.debugMode && (i == 1 || config.debugLevel.contains(`${i}`))) {
+                console.log(...args);
+            }
+        }
     }
 }
 
@@ -31,7 +35,7 @@ function read(args) {
     let applyMode;
     let applyOneByOne = false;
     let forceChangesetsTable = false;
-    
+
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
     }
@@ -86,6 +90,11 @@ function read(args) {
     const password = getArg("-p", "--password");
     const dbName = getArg("-d", "--database");
 
+    config.debugMode = debugMode;
+    config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");
+
+    addDebugFunctions(config);
+
     let configPath = getArg("-c", "--config");
     let customizedConfigPath;
 
@@ -96,19 +105,23 @@ function read(args) {
             throw new Exception(`config file ${chalk.yellow(configPath)} not found.`);
         }
     } else {
-        const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
-        let config_mode = (process.env[config_key] || '').trim();
-
-        if (config_mode) {
-            config_mode = '.' + config_mode
-        }
-
         configPath = path.join(basePath, `pdcsc-config.json`);
-        customizedConfigPath = path.join(basePath, `pdcsc-config${config_mode}.json`);
     }
 
+    const config_key = process.env["PDCSC_CONFIG_KEY"] || "PDCSC_CONFIG_MODE";
+    let config_mode = (process.env[config_key] || '').trim();
+
+    if (config_mode) {
+        config_mode = '.' + config_mode;
+        customizedConfigPath = path.join(basePath, `pdcsc-config${config_mode}.json`);
+    } else {
+        config.debug(`config mode ${config_key} is empty`);
+    }
+
+    let _config;
+
     if (fs.existsSync(configPath)) {
-        config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+        _config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     } else {
         if (!cliMode) {
             throw new Exception(`config file ${chalk.yellow(configPath)} not found.`);
@@ -116,20 +129,28 @@ function read(args) {
     }
 
     if (customizedConfigPath) {
+        config.debug(`Reading custom config ${path.parse(customizedConfigPath).name} ...`);
+
         if (fs.existsSync(customizedConfigPath)) {
             customConfig = JSON.parse(fs.readFileSync(customizedConfigPath, "utf-8"));
+
+            config.debug2(`custom config is`, customConfig);
         } else {
             if (!cliMode) {
                 console.warn(chalk.yellow(`Warning: custom config file ${chalk.cyan(customizedConfigPath)} not found.`));
             }
         }
+    } else {
+        config.debug(`No custom config is set.`);
     }
 
-    if (!isObject(config)) {
-        config = {}
+    if (!isObject(_config)) {
+        _config = {}
     }
 
-    config = merge({}, config, customConfig, {
+    config.debug(`Merging config ...`);
+
+    config = merge({}, config, _config, customConfig, {
         basePath,
         action,
         cliMode,
@@ -159,40 +180,6 @@ function read(args) {
     }
 
     config.database.encrypt = args.includes("-e") || args.includes("--encrypt")
-
-    config.debugMode = debugMode;
-    config.debugLevel = (getArg("-dbl", "--debug-level") || "").split("");
-
-    config.debug = (...args) => {
-        if (config.debugMode) {
-            console.log(...args);
-        }
-    }
-    config.debug1 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("1")) {
-            console.log(...args);
-        }
-    }
-    config.debug2 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("2")) {
-            console.log(...args);
-        }
-    }
-    config.debug3 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("3")) {
-            console.log(...args);
-        }
-    }
-    config.debug4 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("4")) {
-            console.log(...args);
-        }
-    }
-    config.debug5 = (...args) => {
-        if (config.debugMode && config.debugLevel.contains("5")) {
-            console.log(...args);
-        }
-    }
 
     return config
 }

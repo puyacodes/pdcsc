@@ -79,7 +79,7 @@ function init(config) {
         }
     }
 
-    config.debug4(`config = `, config);
+    config.debug6(`config = `, config);
 }
 
 

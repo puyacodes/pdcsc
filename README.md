@@ -50,7 +50,7 @@ npm install @puya/pdcsc
 ```
 ## Current Version
 ```
-2.1.26
+2.1.31
 ```
 
 ## Usage
@@ -81,9 +81,20 @@ pdcsc [cmd] [arguments] [options]
 - `-d` or `--database`: target database.
 - `-e` or `--encrypt`: encrypt database connection or not (default is `false`).
 - `-dbm` or `--debug-mode`:	debug mode
-- `-dbl` or `--debug-level`:	debug level (1: simple, 2: advanced, 3: details, 4: deep details)
+- `-dbl` or `--debug-level`:	debug level
 
 **Note**: `-s`, `-u`, `-p`, `-d` and `-e` cli args have more priority over same database settings in `pdcsc-config.json` config.
+
+#### Debug Levels
+- `1`: log app execution flow (default)
+- `2`: show local variables
+- `3`: show loop variables and more detailed variables
+- `4`: show db queries
+- `5`: show large db queries
+- `6`: show used pdcsc-config
+- `7`: resered
+- `8`: resered
+- `9`: show detailed exceptions and errors (expanded stack trace)
 
 ## Examples
 

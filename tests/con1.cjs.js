@@ -1,20 +1,48 @@
-import sql from "mssql";
-import DbHelperBase from './DbHelperBase'
-import { ExecuteQueryException } from "./exceptions";
-import { isBool, isNullOrEmpty } from "@locustjs/base";
-import ConnectionException from "./exceptions/ConnectionException";
+'use strict';
+
+var sql = require('mssql');
+var exception = require('@locustjs/exception');
+var base = require('@locustjs/base');
+
+class DbHelperBase {
+    constructor(config) {
+        exception.throwIfInstantiateAbstract(DbHelperBase, this);
+
+        this.config = Object.assign({}, config);
+    }
+    executeQuery({ query, dbName, noCatch = true }) {
+        exception.throwNotImplementedException(`${this.constructor.name}.executeQuery`, this);
+    }
+    async executeBatch({ content }) {
+        exception.throwNotImplementedException(`${this.constructor.name}.executeBatch`, this);
+    }
+    async dbExists(dbName) {
+        exception.throwNotImplementedException(`${this.constructor.name}.dbExists`, this);
+    }
+}
+
+class ExecuteQueryException extends exception.Exception {
+    constructor(query, ...args) {
+        super(...args);
+
+        this.query = query;
+    }
+}
+
+class ConnectionException extends exception.Exception {
+}
 
 class DbHelperSqlServer extends DbHelperBase {
     constructor(config) {
-        super(config)
+        super(config);
     }
     getConnectionConfig(dbName) {
         return {
             user: this.config.user,
             password: this.config.password,
             server: this.config.server,
-            database: isNullOrEmpty(dbName) ? this.config.database : dbName,
-            options: { encrypt: isBool(this.config.encrypt) ? this.config.encrypt : false }
+            database: base.isNullOrEmpty(dbName) ? this.config.database : dbName,
+            options: { encrypt: base.isBool(this.config.encrypt) ? this.config.encrypt : false }
         }
     }
     async executeNonQuery({ query, dbName, options }) {
@@ -34,7 +62,7 @@ class DbHelperSqlServer extends DbHelperBase {
 
                 conn_ok = true;
             } catch (e) {
-                error = new ConnectionException(`Database connection error`, e)
+                error = new ConnectionException(`Database connection error`, e);
             }
 
             if (conn_ok) {
@@ -74,7 +102,7 @@ class DbHelperSqlServer extends DbHelperBase {
 
                 conn_ok = true;
             } catch (e) {
-                error = new ConnectionException(`Database connection error`, e)
+                error = new ConnectionException(`Database connection error`, e);
             }
 
             if (conn_ok) {
@@ -121,4 +149,24 @@ class DbHelperSqlServer extends DbHelperBase {
     }
 }
 
-export default DbHelperSqlServer;
+const config = {
+    server: "192.168.10.119",
+    user: "sa",
+    password: "Rotart314",
+    database: "PuyaDbMain",
+    encrypt: false
+};
+
+async function start() {
+    const db = new DbHelperSqlServer(config);
+
+    try {
+        await db.dbExists(config.database);
+
+        console.log(`database exists`);
+    } catch (ex) {
+        console.log(ex.toString());
+    }
+}
+
+start().catch(console.log);

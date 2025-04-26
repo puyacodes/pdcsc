@@ -24,3 +24,10 @@ Readme.md
 ## 2.1.30
 roll:
     Fixed show uncommitted files output
+
+## 2.1.31
+    Fixed custom config reading
+    Fixed database existence checking
+    Added more debug levels
+        Used debug level 6 for config, debug level 9 for stack trace
+    Fixed conncetion error in DbHelperSqlServer

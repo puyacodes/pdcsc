@@ -1,4 +1,4 @@
-import { throwIfInstantiateAbstract, throwIfInvalid, throwIfNotObject, throwIfNotSomeString, throwNotImplementedException } from '@locustjs/exception';
+import { throwIfInstantiateAbstract, throwNotImplementedException } from '@locustjs/exception';
 
 class DbHelperBase {
     constructor(config) {

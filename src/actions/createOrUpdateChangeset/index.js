@@ -65,16 +65,15 @@ async function createOrUpdateChangeset(config) {
 
             await generateDropScriptsIfRequested(config);
 
+            finalizeChangeset(config)
+
+            if (!await saveFinalScript(config, allFiles)) {
+                break;
+            }
+            
             // Todo: Done
             // skip test and commit if changeset has no new changes
-            const canTestAnDcommit = finalizeChangeset(config)
-
-            
-            if (canTestAnDcommit) {
-                if (!await saveFinalScript(config, allFiles)) {
-                    break;
-                }
-                
+            if (config.hasChanges) {
                 if (!await testAndCommitChangeset(config)) {
                     break;
                 }

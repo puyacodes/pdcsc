@@ -31,3 +31,7 @@ roll:
     Added more debug levels
         Used debug level 6 for config, debug level 9 for stack trace
     Fixed conncetion error in DbHelperSqlServer
+
+## 2.1.32
+    Fixed 'Skipped changeset testing'
+        changes were skipped when the changeset didn't change, but changeset file changed

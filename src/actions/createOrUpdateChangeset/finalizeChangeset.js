@@ -52,13 +52,9 @@ ${sections.triggers.join("\n")}
 ${sections.customEnd}
 ## ===================== Custom-End ( end ) ======================
 `
-    const old = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
-
     fs.writeFileSync(config.changesetTempFilePath, content, "utf-8");
 
     config.debug(`Temp changeset created: ${chalk.gray(config.changesetTemp)}`);
-
-    return old != content;
 };
 
 export default finalizeChangeset;

@@ -54,11 +54,7 @@ async function initProject(config) {
 
             const customConfig = JSON.stringify({
                 database: {
-                    server: "127.0.0.1",
-                    user: "sa",
-                    password: "****",
-                    database: "mydb",
-                    encrypt: false
+                    password: "****"
                 }
             }, null, 4);
 

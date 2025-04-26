@@ -29,7 +29,7 @@ async function saveFinalScript(config, allFiles) {
 
     config.error = error;
     config.hasAnything = hasAnything;
-    config.hasChanges = !old || old.trim() != script.trim();
+    config.hasChanges = !error && (!old || old.trim() != script.trim());
 
     return isNullOrEmpty(config.error);
 }

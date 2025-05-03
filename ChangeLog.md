@@ -44,3 +44,11 @@ roll:
 ## 2.1.34
     roll
         Fixed bug: Unexpected changeset .sql file not found.
+
+## 2.1.35
+    roll
+        Fixed bug: Array.contains() returned true for incorrect items
+
+## 2.1.36
+    pipeline
+        Fixed bug: changeset is never executed on merging PRs

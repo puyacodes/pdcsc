@@ -56,3 +56,9 @@ roll:
 # 2.1.37
     pipeline
         Fixed bug: changeset is not journaled after being executed on database
+
+# 2.1.38
+    Added debug level 7: deep variables (rarely used)
+    used debug level 7
+        showing extracted changeset timestamp
+        show merged sections before finalizing render script

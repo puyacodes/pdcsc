@@ -119,6 +119,8 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
 
+    config.debug2('extracted objects', objects);
+
     if (!isArray(deleteds)) {
         deleteds = [];
     }
@@ -172,7 +174,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         }
     }
 
-    config.debug3({ sb })
+    config.debug7({ sb })
 
     const hasAnything = !isEmpty(customStart) ||
         !isEmpty(customEnd) ||

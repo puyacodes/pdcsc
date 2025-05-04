@@ -50,7 +50,7 @@ npm install @puya/pdcsc
 ```
 ## Current Version
 ```
-2.1.37
+2.1.38
 ```
 
 ## Usage
@@ -92,7 +92,7 @@ pdcsc [cmd] [arguments] [options]
 - `4`: show db queries
 - `5`: show large db queries
 - `6`: show used pdcsc-config
-- `7`: resered
+- `7`: show deepest variables (rarely used)
 - `8`: resered
 - `9`: show detailed exceptions and errors (expanded stack trace)
 

@@ -19,7 +19,7 @@ function extractDateFromString(config, inputString) {
             const minute = parseInt(match[5], 10);
             const second = match[6] ? parseInt(match[6], 10) : 0;
 
-            config.debug3({ year, month, day, hour, minute, second })
+            config.debug7({ year, month, day, hour, minute, second })
 
             //const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 

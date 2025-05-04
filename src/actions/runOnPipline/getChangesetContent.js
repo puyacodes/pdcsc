@@ -10,6 +10,7 @@ async function getChangesetContent(config) {
 
     let content;
     let error;
+    let changesetName;
     const { oldChangeset, oldChangesetFilePath, realBranchName } = config;
     const { changesetsPath } = config.paths;
 
@@ -47,7 +48,8 @@ async function getChangesetContent(config) {
                 } else {
                     // Todo: Done
                     // we should generate changeset script dynamically, not read it from .sql
-                    const changesetName = path.parse(oldChangeset).name;
+                    changesetName = path.parse(oldChangeset).name;
+
                     const scriptFile = path.join(changesetsPath, changesetName + ".sql");
 
                     if (!fs.existsSync(scriptFile)) {
@@ -74,7 +76,6 @@ async function getChangesetContent(config) {
                     } else {
                         error = 'Changeset is empty and has no changes.';
                     }
-
                 }
             }
         }
@@ -82,7 +83,7 @@ async function getChangesetContent(config) {
         error = `No changeset found for branch ${chalk.yellow(realBranchName)}`;
     }
 
-    return { content, error };
+    return { content, error, changesetName };
 }
 
 export default getChangesetContent;

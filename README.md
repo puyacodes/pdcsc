@@ -50,7 +50,7 @@ npm install @puya/pdcsc
 ```
 ## Current Version
 ```
-2.1.31
+2.1.37
 ```
 
 ## Usage
@@ -66,7 +66,7 @@ pdcsc [cmd] [arguments] [options]
 - `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
 - `roll`: Creates/Updates a changeset based on `.sql` changes in current branch in `./Scripts` folder. This is the default command.
 - `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
-- `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date).
+- `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date). If changeset execution was successful as well, it  is journaled in the database (journaling is explained later in `Changeset execution history` section).
 - `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
 - `check-update`: checks whether a new version for `pdcsc` is available or not.
 

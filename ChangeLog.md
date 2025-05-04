@@ -52,3 +52,7 @@ roll:
 ## 2.1.36
     pipeline
         Fixed bug: changeset is never executed on merging PRs
+
+# 2.1.37
+    pipeline
+        Fixed bug: changeset is not journaled after being executed on database

@@ -62,3 +62,6 @@ roll:
     used debug level 7
         showing extracted changeset timestamp
         show merged sections before finalizing render script
+
+# 2.1.39
+    Updated readme

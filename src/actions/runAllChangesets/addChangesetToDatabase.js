@@ -1,3 +1,4 @@
+import { isNullOrEmpty } from "@locustjs/base";
 import { Exception } from "@locustjs/exception";
 
 async function addChangesetToDatabase(config, changeset, i) {
@@ -13,7 +14,7 @@ async function addChangesetToDatabase(config, changeset, i) {
 
         await db.executeQuery({ query });
     } catch (ex) {
-        error = new Exception(`Journaling changeset #${i} ${changeset.name} to database ${config.database.database} failed.`, ex);
+        error = new Exception(`Journaling changeset${isNullOrEmpty(i) ? "": ` #${i}`} ${changeset.name} to database ${config.database.database} failed.`, ex);
     }
 
     return error;

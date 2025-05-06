@@ -69,3 +69,7 @@ roll:
 # 2.1.40
     init
         Fixed issue: creatd Changes folder in the init process
+
+# 2.1.41
+    pipeline
+        Fixed bug: Invalid object name 'Changesets' (on new empty databases)

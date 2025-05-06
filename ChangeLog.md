@@ -65,3 +65,7 @@ roll:
 
 # 2.1.39
     Updated readme
+
+# 2.1.40
+    init
+        Fixed issue: creatd Changes folder in the init process

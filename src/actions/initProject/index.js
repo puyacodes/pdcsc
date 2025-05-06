@@ -47,6 +47,8 @@ async function initProject(config) {
 
             Object.values(folders).forEach(folder => FileHelper.createDir(basePath + '/' + paths.scriptsFolderName, folder, debugMode));
 
+            FileHelper.createDir(basePath, "Changes", debugMode);
+
             const gitlabCI = createFile(config, ".gitlab-ci.yml", gitlabCiContent);
             const azurePipelines = createFile(config, "azure-pipelines.yml", azuredevopsPipelineContent);
             const gitIgnore = createFile(config, ".gitignore", gitignoreContent);

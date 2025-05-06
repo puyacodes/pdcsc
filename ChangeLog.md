@@ -73,3 +73,7 @@ roll:
 # 2.1.41
     pipeline
         Fixed bug: Invalid object name 'Changesets' (on new empty databases)
+
+# 2.1.42
+    pipeline
+        Fixed bug: -f arg is not applied

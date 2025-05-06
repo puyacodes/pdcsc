@@ -54,10 +54,11 @@ function read(args) {
 
     action = ActionType.getNumber(action);
 
+    forceChangesetsTable = args.includes("-f") || args.includes("--force");
+
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
         applyOneByOne = args.includes("-11") || args.includes("--one-by-one");
-        forceChangesetsTable = args.includes("-f") || args.includes("--force");
 
         if (isEmpty(applyMode)) {
             applyMode = ApplyMode.TestAndUpdate;

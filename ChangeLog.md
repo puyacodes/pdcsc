@@ -77,3 +77,9 @@ roll:
 # 2.1.42
     pipeline
         Fixed bug: -f arg is not applied
+
+# 2.2.0
+    roll
+        applied major changes.
+        removed rolling back committed changes due to various bugs.
+        enhanced script comparison to avoid testing not-changed scripts.

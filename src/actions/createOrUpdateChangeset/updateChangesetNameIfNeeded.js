@@ -41,7 +41,7 @@ async function updateChangesetNameIfNeeded(config) {
             // we directly commit changeset timestamp update.
             // this is necessary. we do not ask user consent on this.
 
-            config.error = await commitChanges(changes, `pdcsc: changeset name updated.`);
+            config.error = await commitChanges(changes, `changeset name updated.`);
 
             if (!config.error) {
                 config.debug(`Changeset timestamp updated.`);

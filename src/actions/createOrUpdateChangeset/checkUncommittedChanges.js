@@ -32,7 +32,7 @@ Enter your choice: `);
             } else if (userChoice === "2") {
                 console.log("Committing changes...");
 
-                config.error = await commitChanges(changes.all, "pdcsc: commited current changes");
+                config.error = await commitChanges(changes.all, "commited current changes");
                 break;
             } else if (userChoice === "3") {
                 const files = [];

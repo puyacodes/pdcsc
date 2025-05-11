@@ -65,7 +65,7 @@ async function initProject(config) {
 
             config.debug("Committing changes ...");
 
-            error = await commitChanges([gitlabCI, azurePipelines, pdcscConfig, gitIgnore], "pdcsc: initialized files and folders.")
+            error = await commitChanges([gitlabCI, azurePipelines, pdcscConfig, gitIgnore], "initialized files and folders.")
 
             console.log("\nDone.");
         } catch (ex) { error = ex }

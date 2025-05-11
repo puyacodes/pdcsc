@@ -14,6 +14,8 @@ async function getFileGroups(config) {
                 sys.databases db ON db.database_id = mf.database_id
             WHERE db.name = '${config.database.database}'
         `;
+        config.debug4(query);
+        
         const result = await config.db.executeQuery({ query });
 
         return result;

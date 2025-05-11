@@ -6,11 +6,11 @@ async function restoreTempDatabase(config) {
 
     config.debug("Restoring backup to temporary database...");
 
-    const restoreCommand = await generateRestoreCommand(config);
+    const query = await generateRestoreCommand(config);
 
-    config.debug2(restoreCommand);
+    config.debug4(query);
 
-    await db.executeQuery({ query: restoreCommand });
+    await db.executeQuery({ query });
 
     config.debug(`Backup restored: ${chalk.cyan(backupDbName)}`);
 }

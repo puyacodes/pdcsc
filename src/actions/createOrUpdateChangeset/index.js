@@ -12,6 +12,8 @@ import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 import updateChangesetNameIfNeeded from "./updateChangesetNameIfNeeded.js";
 import getAllSqlFiles from "../../utils/getAllSqlFiles.js";
 import restoreChangesIfNeeded from "./restoreChangesIfNeeded.js";
+import changesFolderIsReady from "./changesFolderIsReady.js";
+import chalk from "chalk";
 
 async function createOrUpdateChangeset(config) {
     if (!config.debugMode) {
@@ -20,6 +22,11 @@ async function createOrUpdateChangeset(config) {
 
     try {
         do {
+            if (!await changesFolderIsReady(config)) {
+                console.log(`Please commit or discard changes in ${chalk.yellow(config.paths.changesetFolderName)} folder first.`)
+                break;
+            }
+
             if (!await compareWithOrigin(config)) {
                 break
             }
@@ -65,20 +72,16 @@ async function createOrUpdateChangeset(config) {
 
             await generateDropScriptsIfRequested(config);
 
-            finalizeChangeset(config)
+            if (!await finalizeChangeset(config)) {
+                break;
+            }
 
             if (!await saveFinalScript(config, allFiles)) {
                 break;
             }
-            
-            // Todo: Done
-            // skip test and commit if changeset has no new changes
-            if (config.hasChanges) {
-                if (!await testAndCommitChangeset(config)) {
-                    break;
-                }
-            } else {
-                console.log("Skipped changeset testing. No new changes detected.")
+
+            if (!await testAndCommitChangeset(config)) {
+                break;
             }
 
             console.log('Operation completed.')
@@ -86,7 +89,7 @@ async function createOrUpdateChangeset(config) {
     } catch (ex) {
         config.error = ex;
     } finally {
-        restoreChangesIfNeeded(config)
+        // restoreChangesIfNeeded(config)
     }
 
     return config.error;

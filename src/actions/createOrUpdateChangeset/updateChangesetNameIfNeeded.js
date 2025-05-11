@@ -47,10 +47,10 @@ async function updateChangesetNameIfNeeded(config) {
                 config.debug(`Changeset timestamp updated.`);
                 config.debug2(`  old: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
             } else {
-                config.error = new Exception(`Updating changeset timestamp failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, config.error);
+                config.error = new Exception(`committing changeset name failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, config.error);
             }
         } catch (ex) {
-            config.error = new Exception(`updating changeset timestamp failed.`, ex);
+            config.error = new Exception(`updating changeset name failed.`, ex);
         }
     }
 

@@ -6,7 +6,7 @@ function checkIfBranchAlreadyMerged(config) {
     const { realBranchName, masterBranchName } = config;
 
     try {
-        config.debug("Checking if branch alrady merged ...")
+        config.debug("Checking if branch already merged ...")
         
         const result = execSync(
             `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,

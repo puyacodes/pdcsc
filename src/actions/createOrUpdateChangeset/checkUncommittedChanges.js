@@ -64,7 +64,7 @@ Enter your choice: `);
             }
         } while (true);
     } else {
-        config.debug("Nothing found.");
+        config.debug("No uncommitted change(s) found.");
     }
 
     if (!isArray(changes.deleted) || userChoice == "1") {

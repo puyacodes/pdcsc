@@ -37,13 +37,8 @@ function getOrCreateChangeset(config) {
         config.isNewChangeset = false;
     }
 
-    const cleanFilename = path.parse(config.finalChangeset).name;
-
-    config.finalChangesetName = cleanFilename;
-    config.changesetTemp = `${cleanFilename}~.txt`;
-    config.changesetTempFilePath = path.join(changesetsPath, config.changesetTemp);
-    config.scriptFilePath = path.join(changesetsPath, `${cleanFilename}.sql`);
-    config.scriptTempFilePath = path.join(changesetsPath, `${cleanFilename}~.sql`);
+    config.finalChangesetName = path.parse(config.finalChangeset).name;;
+    config.scriptFilePath = path.join(changesetsPath, `${config.finalChangesetName}.sql`);
 }
 
 export default getOrCreateChangeset;

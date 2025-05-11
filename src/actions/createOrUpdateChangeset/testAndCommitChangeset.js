@@ -8,41 +8,46 @@ import { isNullOrEmpty } from "@locustjs/base";
 async function testAndCommitChangeset(config) {
     const {
         scriptFilePath,
-        finalChangesetFilePath,
-        changesetTempFilePath
+        finalChangeset,
+        isNewChangeset,
+        finalScript
     } = config
     const tempScriptContent = fs.readFileSync(scriptFilePath, "utf-8");
 
     console.log("Testing changeset ...");
 
-    if (config.hasAnything) {
-        config.error = await testScript(config, tempScriptContent);
+    // Todo: Done
+    // skip test and commit if changeset has no new changes
+
+    config.debug2(`hasChanges: ${config.hasChanges}, hasAnything: ${config.hasAnything}`);
+
+    if (config.hasChanges) {
+        if (config.hasAnything) {
+            config.error = await testScript(config, tempScriptContent);
+        } else {
+            console.log(`No changes detected. Testing changeset skipped.`)
+        }
     } else {
-        console.log(`No changes detected. Testing changeset skipped.`)
+        console.log("Skipped changeset testing. No new changes detected.")
     }
 
     if (config.error) {
-        console.log(chalk.red("Failed.\n"));
-        console.log("See error.log for more details");
+        console.log(`See 'error.log' for more details`);
     } else {
-        if (config.hasAnything) {
+        if (config.hasChanges && config.hasAnything) {
             console.log(chalk.green("Passed.\n"));
         }
-        
+
         try {
-            fs.renameSync(changesetTempFilePath, finalChangesetFilePath);
+            fs.writeFileSync(scriptFilePath, finalScript, "utf-8");
 
-            const changes = [finalChangesetFilePath, scriptFilePath]
-
-            config.debug2("Commiting changes", changes);
-
-            config.error = await commitChanges(changes, `pdcsc: changeset ${config.finalChangeset} ${config.isNewChangeset ? "created" : `updated`}.`);
+            config.error = await commitChanges([scriptFilePath], `pdcsc: changeset ${finalChangeset} ${isNewChangeset ? "created" : `updated`}.`);
 
             if (!config.error) {
                 config.changesetCommitted = true;
             }
         } catch (ex) {
-            config.error = new Exception('error happened while renaming temp files or committing changes.', ex);
+            config.error = new Exception('error happened while finalizing changeset.', ex);
         }
     }
 

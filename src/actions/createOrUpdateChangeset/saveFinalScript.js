@@ -1,35 +1,69 @@
+import fs from "fs";
 import { isNullOrEmpty } from "@locustjs/base";
 import renderChangesetScript from "../../utils/renderChangesetScript";
-import fs from "fs";
+import commitChanges from "../../utils/commitChanges";
+import getAppVersion from "../../utils/getAppVersion";
+import chalk from "chalk";
 
 async function saveFinalScript(config, allFiles) {
     config.debug("Saving final changeset script ...");
 
     const {
         scriptFilePath,
-        scriptTempFilePath,
-        changesetTempFilePath,
+        finalChangeset,
         finalChangesetName,
-        finalDeleteds
+        finalChangesetFilePath,
+        finalDeleteds,
+        isNewChangeset
     } = config;
-    const { script, error, hasAnything } = await renderChangesetScript(config, changesetTempFilePath, finalChangesetName, finalDeleteds, allFiles);
+    const { script, error, hasAnything } = await renderChangesetScript(config, finalChangesetFilePath, finalChangesetName, finalDeleteds, allFiles, false);
 
     let old;
+    let hasChanges = true;
 
     if (!error) {
         if (fs.existsSync(scriptFilePath)) {
             old = fs.readFileSync(scriptFilePath, "utf-8");
         }
 
-        fs.writeFileSync(scriptTempFilePath, script, "utf-8");
-        fs.renameSync(scriptTempFilePath, scriptFilePath);
+        config.finalScript = `${script}
+${getAppVersion(config, finalChangesetName)}
 
-        config.debug(`Temp changeset saved.`)
+go
+`;
+        if (old) {
+            const i = old.lastIndexOf(`create or alter proc ${config.appVersionSprocName}`);
+
+            if (i >= 0) {
+                const s1 = script.trim();
+                const s2 = old.substr(0, i).trim();
+
+                hasChanges = s1 != s2;
+
+                config.debug2(`Script length: old = ${s1.length}, new = ${s2.length}`);
+                config.debug7(`scripts`, { old: s1, "new": s2 });
+            }
+        }
+
+        fs.writeFileSync(scriptFilePath, script, "utf-8");
+
+        config.debug(`changeset ${chalk.gray(finalChangesetName)} script saved`);
+
+        const changes = [scriptFilePath];
+
+        config.error = await commitChanges(changes, `changeset ${finalChangeset}: script ${isNewChangeset ? "created" : `updated`}.`);
+
+        if (!config.error) {
+            config.changesetScriptChanged = true;
+        }
+    } else {
+        config.error = error;
+
+        console.warn(chalk.yellow(`WARNING: changeset template created, but rendering it was not successful.\n\tChangeset script is not in sync with its template.`))
     }
 
-    config.error = error;
     config.hasAnything = hasAnything;
-    config.hasChanges = !error && (!old || old.trim() != script.trim());
+    config.hasChanges = !error && hasChanges;
 
     return isNullOrEmpty(config.error);
 }

@@ -19,9 +19,9 @@ async function testScript(config, script) {
     }
 
     if (error) {
-        config.debug(chalk.red("Failed"));
+        config.debug(chalk.red("Testing script Failed"));
     } else {
-        config.debug(chalk.green("Passed"));
+        config.debug(chalk.green("Testing script Passed"));
     }
 
     return error;

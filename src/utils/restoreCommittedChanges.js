@@ -1,10 +1,11 @@
 import { Exception } from "@locustjs/exception";
 import { execSync } from "child_process";
 
-function restoreCommittedChanges(num) {
+function restoreCommittedChanges(config, num) {
     const command = `git reset --mixed HEAD~${num ?? 1}`
 
     try {
+        config.debug2(` resting commiitted changes ${num} level(s) back ...`)
         execSync(
             command,
             { encoding: "utf-8" }

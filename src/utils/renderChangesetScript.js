@@ -101,7 +101,7 @@ function write(config, items, minify = true) {
     return result;
 }
 
-async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles) {
+async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles, appendAppVersion = true) {
     let error;
     const sb = {
         schemas: [],
@@ -188,9 +188,9 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         isSomeArray(sb.indexes) ||
         isSomeArray(sb.triggers);
 
-    const script = `-- ***            Changeset ${changesetName}          ***
+    const script = `-- ***            Changeset ${config.realBranchName || changesetName}          ***
 -- ===================== Custom-Start (start) ======================
-${write(config, customStart)}
+${write(config, customStart).trim()}
 -- ===================== Custom-Start ( end ) ======================
 
 -- ===================== Schemas (start) ======================
@@ -230,13 +230,14 @@ ${write(config, sb.triggers)}
 -- ===================== Triggers (end) ======================
 
 -- ===================== Custom-End (start) ======================
-${write(config, customEnd)}
+${write(config, customEnd).trim()}
 -- ===================== Custom-End ( end ) ======================
 
 go
+${appendAppVersion ? `
 ${getAppVersion(config, changesetName)}
 
-go
+go` : ''}
 `;
 
     return { script, error, hasAnything }

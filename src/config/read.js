@@ -35,6 +35,7 @@ function read(args) {
     let applyMode;
     let applyOneByOne = false;
     let forceChangesetsTable = false;
+    let fullChangeset = false;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
@@ -77,6 +78,8 @@ function read(args) {
         }
     } else if (action == ActionType.init) {
         config.initfull = args.includes("-f") || args.includes("--full");
+    } else if (action == ActionType.roll) {
+        fullChangeset = getArg("-fc", "--full-changeset");
     }
 
     const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
@@ -160,7 +163,8 @@ function read(args) {
         forceChangesetsTable,
         useMinification,
         useUglification,
-        useObfuscation
+        useObfuscation,
+        fullChangeset
     })
 
     if (!isObject(config.database)) {

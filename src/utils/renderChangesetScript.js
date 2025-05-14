@@ -3,10 +3,14 @@ import fs from "fs";
 import path from "path";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from 'iconv-lite';
-import { isArray, isEmpty, isNullOrEmpty, isSomeArray, isString } from "@locustjs/base";
+import { isArray, isEmpty, isNullOrEmpty, isSomeArray, isSomeString, isString } from "@locustjs/base";
 import getAppVersion from "./getAppVersion";
 import chalk from "chalk";
 import getAllSqlFiles from "./getAllSqlFiles";
+import extractChangesetItems from "./extractChangesetItems";
+import getSectionMarker from "./getSectionMarker";
+import createSectionsStore from "./createSectionsStore";
+import getChangesetHeader from "./getChangesetHeader";
 
 async function getEncoding(filepath) {
     const info = await detectEncoding(filepath);
@@ -39,6 +43,27 @@ async function readFile(filepath, codepage) {
 }
 
 function extractObjects(config, changesetPath) {
+    const content = fs.readFileSync(changesetPath, "utf-8");
+    const sections = extractChangesetItems(config, content);
+    const { customStart, customEnd } = sections;
+    const objects = [];
+
+    config.debug2(`\tSections: `, sections);
+
+    for (let section of Object.keys(sections)) {
+        if (isArray(sections[section])) {
+            for (let item of sections[section]) {
+                objects.push({ type: section, name: item });
+            }
+        }
+    }
+
+    config.debug2(`\tTotal objects: ${objects.length}`);
+
+    return { objects, customStart, customEnd }
+}
+
+function extractObjectsOld(config, changesetPath) {
     const objects = [];
     let currentSection = "";
     let customStart = "";
@@ -79,23 +104,34 @@ function extractObjects(config, changesetPath) {
     return { objects, customStart, customEnd };
 }
 
-function write(config, items, minify = true) {
-    let result;
+function write(config, key, items, minify = false) {
+    let result = "";
+    const header = `
+-- ============ ${getSectionMarker(key)} ============
+`;
 
     if (isString(items)) {
-        result = items
-    } else {
-        result = items.join("\n");
+        if (isSomeString(items.trim())) {
+            result = header + items.trim();
+        }
+    } else if (isArray(items)) {
+        if (items.length) {
+            result = items.join("\n");
 
-        if (config.useMinification && minify) {
-            result = config.minifier.minify(result);
+            if (config.useMinification && minify) {
+                result = config.minifier.minify(result);
+            }
+            if (config.useUglification) {
+                result = config.uglifier.uglify(result);
+            }
+            if (config.useObfuscation) {
+                result = config.obfuscator.obfuscate(result);
+            }
         }
-        if (config.useUglification) {
-            result = config.uglifier.uglify(result);
-        }
-        if (config.useObfuscation) {
-            result = config.obfuscator.obfuscate(result);
-        }
+    }
+
+    if (result) {
+        result = header + result;
     }
 
     return result;
@@ -103,19 +139,10 @@ function write(config, items, minify = true) {
 
 async function renderChangesetScript(config, changesetPath, changesetName, deleteds, allFiles, appendAppVersion = true) {
     let error;
-    const sb = {
-        schemas: [],
-        procedures: [],
-        functions: [],
-        tables: [],
-        relations: [],
-        indexes: [],
-        types: [],
-        views: [],
-        triggers: []
-    }
+    const sb = createSectionsStore();
 
     config.debug(`Rendering changeset ${changesetName} ...`)
+    config.debug2(`\t${changesetPath}`)
 
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
 
@@ -174,10 +201,13 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         }
     }
 
+    sb.customStart = customStart;
+    sb.customEnd = customEnd;
+
     config.debug7({ sb })
 
-    const hasAnything = !isEmpty(customStart) ||
-        !isEmpty(customEnd) ||
+    const hasAnything = !isEmpty(sb.customStart) ||
+        !isEmpty(sb.customEnd) ||
         isSomeArray(sb.schemas) ||
         isSomeArray(sb.types) ||
         isSomeArray(sb.tables) ||
@@ -186,59 +216,31 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
         isSomeArray(sb.procedures) ||
         isSomeArray(sb.views) ||
         isSomeArray(sb.indexes) ||
+        isSomeArray(sb.sequences) ||
+        isSomeArray(sb.queues) ||
+        isSomeArray(sb.assemblies) ||
+        isSomeArray(sb.synonyms) ||
+        isSomeArray(sb.statistics) ||
         isSomeArray(sb.triggers);
 
-    const script = `-- ***            Changeset ${config.realBranchName || changesetName}          ***
--- ===================== Custom-Start (start) ======================
-${write(config, customStart).trim()}
--- ===================== Custom-Start ( end ) ======================
-
--- ===================== Schemas (start) ======================
-${write(config, sb.schemas, false)}
--- ===================== Schemas (end) ======================
-
--- ===================== Types (start) ======================
-${write(config, sb.types, false)}
--- ===================== Types (end) ======================
-
--- ===================== Tables (start) ======================
-${write(config, sb.tables, false)}
--- ===================== Tables (end) ======================
-
--- ===================== Relations (start) ======================
-${write(config, sb.relations, false)}
--- ===================== Relations (end) ======================
-
--- ===================== Functions (start) ======================
-${write(config, sb.functions)}
--- ===================== Functions (end) ======================
-
--- ===================== Procedures (start) ======================
-${write(config, sb.procedures)}
--- ===================== Procedures (end) ======================
-
--- ===================== Views (start) ======================
-${write(config, sb.views)}
--- ===================== Views (end) ======================
-
--- ===================== Indexes (start) ======================
-${write(config, sb.indexes, false)}
--- ===================== Indexes (end) ======================
-
--- ===================== Triggers (start) ======================
-${write(config, sb.triggers)}
--- ===================== Triggers (end) ======================
-
--- ===================== Custom-End (start) ======================
-${write(config, customEnd).trim()}
--- ===================== Custom-End ( end ) ======================
-
-go
-${appendAppVersion ? `
-${getAppVersion(config, changesetName)}
-
-go` : ''}
-`;
+    const script = getChangesetHeader(config, true, changesetName) +
+        write(config, "customStart", sb.customStart) +
+        write(config, "assemblies", sb.assemblies) +
+        write(config, "schemas", sb.schemas) +
+        write(config, "types", sb.types) +
+        write(config, "sequences", sb.sequences) +
+        write(config, "tables", sb.tables) +
+        write(config, "relations", sb.relations) +
+        write(config, "functions", sb.functions) +
+        write(config, "synonyms", sb.synonyms) +
+        write(config, "procedures", sb.procedures) +
+        write(config, "queues", sb.queues) +
+        write(config, "views", sb.views) +
+        write(config, "indexes", sb.indexes) +
+        write(config, "triggers", sb.triggers) +
+        write(config, "statistics", sb.statistics) +
+        write(config, "customEnd", sb.customEnd) +
+        (appendAppVersion ? getAppVersion(config, changesetName) : '');
 
     return { script, error, hasAnything }
 }

@@ -80,7 +80,12 @@ async function generateDropScriptsIfRequested(config) {
             [folders.views]: "VIEW",
             [folders.indexes]: "INDEX",
             [folders.triggers]: "TRIGGER",
-            [folders.schemas]: "SCHEMA"
+            [folders.schemas]: "SCHEMA",
+            [folders.sequences]: "SEQUENCE",
+            [folders.synonyms]: "SYNONYM",
+            [folders.assemblies]: "ASSEMBLY",
+            [folders.queues]: "QUEUE",
+            [folders.statistics]: "STATISTICS",
         };
 
         const dropQuery = finalDeleteds

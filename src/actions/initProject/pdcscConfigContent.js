@@ -34,7 +34,13 @@ function pdcscConfigContent(config) {
             views: "Views",
             indexes: "Indexes",
             triggers: "Triggers",
-            schemas: "Schemas"
+            schemas: "Schemas",
+            sequences: "Sequences",
+            synonyms: "Synonyms",
+            queues: "Queues",
+            assemblies: "Assemblies",
+            statistics: "Statistics",
+            serviceQueues: "Queues",
         }
     }
 

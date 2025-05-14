@@ -27,10 +27,7 @@ async function saveFinalScript(config, allFiles) {
         }
 
         config.finalScript = `${script}
-${getAppVersion(config, finalChangesetName)}
-
-go
-`;
+${getAppVersion(config, finalChangesetName)}`;
         if (old) {
             const i = old.lastIndexOf(`create or alter proc ${config.appVersionSprocName}`);
 

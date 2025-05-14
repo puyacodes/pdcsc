@@ -51,7 +51,7 @@ npm install @puya/pdcsc
 
 # Current Version
 ```
-2.1.42
+2.3.0
 ```
 
 # Usage
@@ -61,6 +61,20 @@ Once installed, you can use the `pdcsc` command in your terminal. You should run
 ```bash
 pdcsc [cmd] [arguments] [options]
 ```
+
+# Requirements
+- This tool requires `git` be already installed on the machine.
+- It also requries to be executed in a `git` repository.
+- There should be a `Scripts` folder at the repository where `Sql Server Objects` (`table`, `udf`, `sproc`, `view`, etc.) are stored.
+- Each `Sql Server object` must be stored as a distinct `.sql` file.
+- A table file should only include a script that creates the table. Definition of foreign keys must be put in a separate folder named `Relations`. The reason behind this is explain at `` section.
+
+# Limitations
+At the moment, `pdcsc` does not support the following items:
+- `External Tables`
+- `Statistics`
+
+While, these items are not internally supported at the moment, managing them is possible through custom scripts by the user in specific sections provided in changesets.
 
 # Main commands
 
@@ -198,7 +212,12 @@ The full `pdcsc config` file with all its options is as follows:
 		"views": "...",		// name of views folder (default = 'Views')
 		"indexes": "...",	// name of indexes folder (default = 'Indexes')
 		"triggers": "...",	// name of triggers folder (default = 'Triggers')
-		"schemas": "..."		// name of schemas folder (default = 'Schemas')
+		"schemas": "...",		// name of schemas folder (default = 'Schemas')
+    "sequences": "...",		// name of sequences folder (default = 'Sequences')
+    "synonyms": "...",		// name of synonyms folder (default = 'Synonyms')
+    "queues": "...",		// name of service queues folder (default = 'Queues')
+    "assemblies": "...",		// name of assemblies folder (default = 'Assemblies')
+    "statistics": "...",		// name of statistics folder (default = 'Statistics')
 	}
 }
 ```
@@ -212,6 +231,94 @@ If so, it merges that file with `pdcsc-config.json` file.
 This, enables us to customize master branch name or database name based on env or store sensitive data such as database password in a customized `pdcsc config` file.
 
 In the second usage, we can add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json` in the `.gitignore`, so that the database password is not stored in the repository.
+
+# roll: creating changeset
+In order to create a new changeset, we can use the `roll` command.
+
+```bash
+pdcsc roll
+```
+
+This is the default command and mentioning it is not neccessary.
+
+```bash
+pdcsc
+```
+
+After issuing this command, `pdcsc` looks into the changes in current repo in `./Scripts` folder, looking for any changes in `.sql` files.
+
+A change includes:
+
+- newly created files
+- modified files
+- renamed files
+- deleted files
+
+If there is any uncommitted changes, it first questions the user to specify whether he wants to commit the changes and include them in the changeset or not.
+
+It also checks the history of current branch and includes any changes in `.sql` files in `./Scripts` folder.
+
+Then, `pdcsc` merges all the changes and creates a changeset template based on the collected changes.
+
+After that, it renders the template and generates a `.sql` file for the changeset.
+
+## Changeset template structure
+Each changeset tempalte is simply a `.txt` file in which there are specific sections for each `Sql Server Object`.
+
+In each section, name of a changed `.sql` file (file name with extension) is listed. Again, a change can be a new file, a modified file, a renamed file or a deleted file.
+
+The sections are as follows:
+
+- `Assemblies`: changed/modified assembly objects
+- `Types`: changed/modified user-defined types
+- `Schemas`: changed/modified schema objects
+- `Sequences`: changed/modified sequence objects
+- `Synonyms`: changed/modified synonym objects
+- `Queues`: changed/modified service queue objects
+- `Statistics`: changed/modified service statistic objects
+- `Tables`: changed/modified tables
+- `Relations`: changed/modified relations (foreign keys)
+- `Functions`: changed/modified user-defined functions (sclaer, table-valued, ...)
+- `Procedures`: changed/modified stored-procedures
+- `Views`: changed/modified user-defined views
+
+The reason why `Tables` and `Relations` have two distinct sections is explained later.
+
+There are also two especial sections that provide the user to define any custom script to be executed at the start (before) and the end (after) the changeset.
+
+- `Custom Start`: custom script and sql statements that are run before changeset script.
+- `Custom End`: custom script and sql statements that are run after changeset script.
+
+Each section is denoted by a `#` character at the begining of the line and the name of the section. Other characters are ignored.
+
+### example of a changeset
+```
+# ===================== Custom-Start =====================
+update Products set IsActive = 0 where IsActive is null
+# ===================== Schemas =====================
+
+# ===================== Types =====================
+
+# ===================== Tables =====================
+dbo.Payments.sql
+# ===================== Relations =====================
+
+# ===================== Functions =====================
+
+# ===================== SPROCs =====================
+
+# ===================== Views =====================
+
+# ===================== Indexes =====================
+
+# ===================== Triggers =====================
+
+# ===================== Custom-End =====================
+```
+
+## Rendering a changeset
+
+
 
 # Using `pdcsc` in `gitlab CI/CD pipeline`
 

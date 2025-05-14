@@ -26,7 +26,12 @@ function init(config) {
         views: "Views",
         indexes: "Indexes",
         triggers: "Triggers",
-        schemas: "Schemas"
+        schemas: "Schemas",
+        sequences: "Sequences",
+        synonyms: "Synonyms",
+        queues: "Queues",
+        assemblies: "Assemblies",
+        statistics: "Statistics",
     }, config.folders)
 
     config.db = new DbHelperSqlServer(config.database);

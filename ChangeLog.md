@@ -83,3 +83,6 @@ roll:
         applied major changes.
         removed rolling back committed changes due to various bugs.
         enhanced script comparison to avoid testing not-changed scripts.
+
+# 2.3.0
+    made changeset template content more flexible

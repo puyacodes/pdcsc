@@ -1,0 +1,60 @@
+
+    ##  Custom-Start (start) 
+    
+
+    sdf
+    sdfsd
+    Functionsdf
+    sdfsdf
+
+
+
+    sdf
+    
+
+
+    
+    ##  Schemas (start) 
+    
+    
+    ##  Tables (start) 
+    dbo.Books.sql
+dbo.BookTypes.sql
+    ##  SPROCs (start) 
+    pp1
+    sp2
+    sp3
+    
+    
+##  Functions
+    
+
+    f1
+    f1
+
+##  SPROCs (start) 
+    sp4
+    ##  Functions
+    f1
+
+    f2
+    
+    ##  Views (start) 
+    
+    ##  Views ( end ) 
+    
+    ##  Indexes (start) 
+    
+    ##  Triggers (start) 
+    
+    ##  Triggers ( end ) 
+
+##  Custom-End (start) 
+    
+    hi
+
+    ##  Custom-End ( end ) 
+    ##  Relations (start) 
+    rr
+    
+    

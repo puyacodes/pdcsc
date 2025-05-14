@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import path from "path";
 import { equals } from "../../extensions/equals";
-import { isNullOrEmpty } from "@locustjs/base";
+import { isEmpty, isNullOrEmpty } from "@locustjs/base";
 
 function updateSections(config, allFiles) {
     const { folders, sections, finalDeleteds, finalChanges } = config;
@@ -96,6 +96,10 @@ function updateSections(config, allFiles) {
 
     for (const [section, folder] of Object.entries(folders)) {
         for (let item of sections[section]) {
+            if (isEmpty(item)) {
+                continue;
+            }
+
             let found = false;
 
             for (const filePath of allFiles) {
@@ -114,7 +118,7 @@ function updateSections(config, allFiles) {
 
                 return filePath.contains(folder) && fileName.contains(item);
             })) {
-                config.error = `The source file for changeset item ${chalk.yellow(item)} in ${chalk.yellow(folder)} folder was not found.
+                config.error = `The source file for changeset item '${chalk.yellow(item)}' in ${chalk.yellow(folder)} folder was not found.
 \tEither remove ${chalk.yellow(item)} from your changeset or create such a file in your repo.`;
 
                 break

@@ -39,8 +39,7 @@ function pdcscConfigContent(config) {
             synonyms: "Synonyms",
             queues: "Queues",
             assemblies: "Assemblies",
-            statistics: "Statistics",
-            serviceQueues: "Queues",
+            statistics: "Statistics"
         }
     }
 

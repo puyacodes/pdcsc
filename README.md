@@ -12,6 +12,28 @@ It can be integrated in cicd pipelines like `gitlab pipeline` and `azurdevops pi
 
 It can also be used to apply changesets on a custom database manually, making the database up-to-date with the lastest changes which can be a handy tool for support teams.
 
+# What does `pdcsc` do?
+- It manages a database repository containing `.sql` files.
+- It targets database schema management, not the data inside of a database.
+- It creates changeset scripts for modifications developers perform in each branch.
+- It assists in having a smooth and streamlined ci/cd workflow to update database of a product/project.
+- It provides a safe, smooth and automated mechanism to apply schema updates on `SQL Server` databases.
+- It is a tool best used in teams, but can be used by single developers as well.
+
+# What does not `pdcsc` do?
+- It does not merge `.sql` files and generate a single bundle to create the database together with all its objects.
+- It dos not work in an `Up/Down` mindset. It always works in an `Up` midset.
+- It does not have anything to do with a project's business logic.
+
+# Why not `Up/Down`?
+Lets accept this. Most of the time we are going `Up`. We go `Down` mostly in case of errors.
+
+Going back is a dangerous thing. It can lead to data loss.
+
+The way `pdcsc` works together with proper ci/cd scripts, ensures that database is updated without any errors.
+
+If we know we always are go up step by step and we are always safe, there is no need to go down.
+
 # Features
 
 - **Generate Changeset**: generates changeset based on committed changes detected in a branch.
@@ -63,18 +85,26 @@ pdcsc [cmd] [arguments] [options]
 ```
 
 # Requirements
-- This tool requires `git` be already installed on the machine.
-- It also requries to be executed in a `git` repository.
-- There should be a `Scripts` folder at the repository where `Sql Server Objects` (`table`, `udf`, `sproc`, `view`, etc.) are stored.
-- Each `Sql Server object` must be stored as a distinct `.sql` file.
-- A table file should only include a script that creates the table. Definition of foreign keys must be put in a separate folder named `Relations`. The reason behind this is explain at `` section.
+- `pdscs` requires `git` to be installed on the machine where it is run.
+- `pdcsc` must be executed in a `git` repository.
+- There should be a `Scripts` folder where sql server objects' scripts are stored.
+- `pdcsc` config files should be placed near the `Scripts` folder.
+- `pdcsc` should be executed where `Scripts` folder is located.
+- `pdcsc` requires a ci/cd tool like `gitlabs` or `azuredevops`.
 
-# Limitations
-At the moment, `pdcsc` does not support the following items:
-- `External Tables`
-- `Statistics`
+# Recommendations
+`pdcsc` does not enforce any rules for file names and their content.
+Nevertheless, while the following rules are not obligatory for `pdcsc`, it is recommended to employ them in your database repository to have a smooth database maintenance.
 
-While, these items are not internally supported at the moment, managing them is possible through custom scripts by the user in specific sections provided in changesets.
+- It is recommended to put `Scripts` folder at the root of the repo.
+- Each `Sql Server object` (`table`, `udf`, `sproc`, etc.) must be stored as a distinct `.sql` file.
+- Filename should match the object name created by the file.
+- Include schema of the object in the filename (use `dbo.MyTbl.sql` not `MyTbl.sql`)
+- Each file should only create a single object.
+- File of tables should include default constriants as well, but not foreign keys.
+- Definition of all foreign keys of a table must be put in `Relations` folder in a file with the same name as table name. The reason behind this is explain at `Why Tables and Relations are separated` section.
+- Any command to modify objects or manipulate records should be placed in `Custom-Start`/`Custom-End` sections provided in changesets.
+- Object's scripts and custom scripts should be written in an idempotent way (i.e. if they are executed multiple times, no error is raised and no side-effect is happened).
 
 # Main commands
 
@@ -239,33 +269,35 @@ In order to create a new changeset, we can use the `roll` command.
 pdcsc roll
 ```
 
-This is the default command and mentioning it is not neccessary.
+This is the default command and mentioning it is not required.
 
 ```bash
 pdcsc
 ```
 
-After issuing this command, `pdcsc` looks into the changes in current repo in `./Scripts` folder, looking for any changes in `.sql` files.
+After issuing this command, `pdcsc` looks into the changes in current branch in `./Scripts` folder, looking for any changes in `.sql` files.
 
-A change includes:
+A change means:
 
-- newly created files
-- modified files
-- renamed files
-- deleted files
+- newly created file(s)
+- modified file(s)
+- renamed file(s)
+- deleted file(s)
 
-If there is any uncommitted changes, it first questions the user to specify whether he wants to commit the changes and include them in the changeset or not.
+If there are any uncommitted changes, `pdcsc` first questions the user to specify whether he wants to commit the changes and include them in the changeset or not.
 
-It also checks the history of current branch and includes any changes in `.sql` files in `./Scripts` folder.
+Then, it checks the history of current branch and includes any changes in `.sql` files.
 
-Then, `pdcsc` merges all the changes and creates a changeset template based on the collected changes.
+After that, it merges all the changes and creates a changeset template based on the collected changes.
 
-After that, it renders the template and generates a `.sql` file for the changeset.
+It finally renders the template and generates a `.sql` script for the changeset.
+
+Ech time `roll` command is issued, `pdcsc` updates the timestamp of the changeset filename.
+
+This is neccessary and guarantees that changesets created by developers who push later, always placed at the bottom in the `/Changes` folder.
 
 ## Changeset template structure
-Each changeset tempalte is simply a `.txt` file in which there are specific sections for each `Sql Server Object`.
-
-In each section, name of a changed `.sql` file (file name with extension) is listed. Again, a change can be a new file, a modified file, a renamed file or a deleted file.
+Each changeset template is simply a `.txt` file in which there are specific sections for each `Sql Server Object`.
 
 The sections are as follows:
 
@@ -278,43 +310,128 @@ The sections are as follows:
 - `Statistics`: changed/modified service statistic objects
 - `Tables`: changed/modified tables
 - `Relations`: changed/modified relations (foreign keys)
-- `Functions`: changed/modified user-defined functions (sclaer, table-valued, ...)
+- `Functions`: changed/modified user-defined functions (scaler, table-valued, aggregate, ...)
 - `Procedures`: changed/modified stored-procedures
 - `Views`: changed/modified user-defined views
+- `Indexes`: changed/modified user-defined indexes
+- `Triggers`: changed/modified triggers
 
-The reason why `Tables` and `Relations` have two distinct sections is explained later.
+Each section is denoted using a `##` marker at the beginning of the line.
 
-There are also two especial sections that provide the user to define any custom script to be executed at the start (before) and the end (after) the changeset.
+Example:
+```
+## Procedures
+
+## Tables
+```
+
+It is possible to use any other arbitrary characters in the section marker as well for more clarification.
+
+```
+## ============ Procedures ============
+
+## ============ Tables ============
+```
+
+Lines with a single `#` characters are assumed comments and ignored. Empty lines are also ignored.
+
+```
+## ============ Procedures ============
+# my comment
+## ============ Tables ============
+```
+
+In each section, name of a changed `.sql` file (file name with extension) is listed.
+
+```
+## ============ Procedures ============
+dbo.usp_Product_add.sql
+dbo.usp_Product_edit.sql
+dbo.usp_Product_remove.sql
+dbo.usp_Product_getall.sql
+## ============ Tables ============
+dbo.Products.sql
+```
+
+The order of the sections is not important.
+
+Whitespaces at the start of the lines are also ignored.
+
+## Custom sections
+There are two especial sections that provide the user to define any custom script to be executed at the start (before) and the end (after) of executing the changeset.
 
 - `Custom Start`: custom script and sql statements that are run before changeset script.
 - `Custom End`: custom script and sql statements that are run after changeset script.
 
-Each section is denoted by a `#` character at the begining of the line and the name of the section. Other characters are ignored.
+## Changeset modification
+By default, `pdcsc` manages the changeset automatically, adding new items or removing deleted ones if their files are deleted. 
+
+So, the user doesn't need to worry about anything.
+
+The only thing he needs to do is working his normal job, adding new scripts, editing existing scripts, or removing an object (like a sproc).
+
+The only thing the user needs to do is to issue a `pdcsc` command to update current branche's changeset.
+
+While `pdcsc` manages the changeset automatically, it is also possible for the user to manually manipulate the changeset, like adding new items.
+
+Although, this is not required, at times, user may want to encforce an object to be listed in a changeset even though it didn't have any changes in current branch.
+
+## Rendering a changeset
+Upon rendering a changeset, `pdcsc` processes sections in the following order:
+
+1. Custom-Start
+2. Assemblies
+3. Schemas
+4. Types
+5. Sequences
+6. Tables
+7. Relations
+8. Functions
+9. Synonyms
+10. Procedures
+11. Service Queues
+12. Views
+13. Indexes
+14. Triggers
+15. Statistics
+16. Custom-End
+
+`pdcsc` reads items listed in each section, looks up the file in `Scripts` folder, reads its content and appends it to the generated script.
+
+## Why `Tables` and `Relations` are separated?
+The reason why `Tables` and `Relations` have two distinct sections and foreign key declaration should be put in a distinct script file separated from the table is that we may want to create foreign keys in a distinct stage than creating the tables.
+
+In fact, this is not a `pdcsc` concern. It is more a database creation concern.
+
+A foreign key can be created only when the parent table exist.
+
+If the script of a child table is executed before its parent table is created, creating foreign key will definitely fail.
+
+Thus, we are better to create all tables at first, without any relations.
+
+Then, create foreign keys one by one.
+
+This is the way the `Generate Script` works in `SQL Server Management Studio`.
 
 ### example of a changeset
 ```
+# ***            Changeset feature/f01          ***
 # ===================== Custom-Start =====================
-update Products set IsActive = 0 where IsActive is null
-# ===================== Schemas =====================
-
-# ===================== Types =====================
-
+if not exists (select 1 from sys.all_collumns where object_id = object_id('Products') and name = 'Visible')
+  alter table Products add Visible bit null constraint DF_Products_Visible default (1)
+go
 # ===================== Tables =====================
 dbo.Payments.sql
-# ===================== Relations =====================
-
-# ===================== Functions =====================
-
-# ===================== SPROCs =====================
-
-# ===================== Views =====================
-
-# ===================== Indexes =====================
-
-# ===================== Triggers =====================
-
+# ===================== Procedures =====================
+dbo.usp_Products_report.sql
 # ===================== Custom-End =====================
+update Products set Visible = 1 where Visible is null
 ```
+
+- This changeset adds a new column named `Visible` to a `Products` table at the start of its execution.
+- In order for the changeset script to be idempotent, it first checks whether `Products` table already
+includes the `Visible` column or not and adds it only when the table does not have such column.
+- At the end, the changeset updates those `Visible` columns in `Products` table whose value is `NULL` with `1`.
 
 ## Rendering a changeset
 

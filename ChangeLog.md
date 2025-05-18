@@ -86,3 +86,7 @@ roll:
 
 # 2.3.0
     made changeset template content more flexible
+
+# 2.3.2
+    apply
+        fixed bug in getting pending changesets

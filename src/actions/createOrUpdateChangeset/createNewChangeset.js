@@ -4,6 +4,8 @@ import { Exception } from "@locustjs/exception";
 import getNewChangeset from "./getNewChangeset";
 import chalk from "chalk";
 import getChangesetHeader from "../../utils/getChangesetHeader";
+import getSectionHeader from "../../utils/getSectionHeader";
+import getOrderedSections from "../../utils/getOrderedSections";
 
 function createNewChangeset(config) {
     let changeset;
@@ -12,41 +14,8 @@ function createNewChangeset(config) {
     try {
         const cs = getNewChangeset(config);
 
-        const content = `
-${getChangesetHeader(config, false)}` +
-            (config.fullChangeset ? `
-## ===================== Custom-Start =====================
-
-## ===================== Assemblies =====================
-
-## ===================== Schemas =====================
-
-## ===================== Types =====================
-
-## ===================== Sequences =====================
-
-## ===================== Tables =====================
-
-## ===================== Relations =====================
-
-## ===================== Functions =====================
-
-## ===================== Synonyms =====================
-
-## ===================== Procedures =====================
-
-## ===================== Service Queues =====================
-
-## ===================== Views =====================
-
-## ===================== Indexes =====================
-
-## ===================== Triggers =====================
-
-## ===================== Statistics =====================
-
-## ===================== Custom-End =====================
-`: ``);
+        const content = getChangesetHeader(config) + "\n" +
+            (config.fullChangeset ? getOrderedSections().map(section => getSectionHeader(section) + "\n").join("\n") : "");
         changeset = cs.changeset;
         changesetFilePath = cs.changesetFilePath;
 

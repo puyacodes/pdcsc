@@ -2,6 +2,7 @@ const { isNullOrEmpty, isNullOrUndefined, isSomeString, isArray, isString, isEmp
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
+const { isCustomEndSection, isCustomStartSection } = require("../src/utils/isCustomSection");
 
 function equals(str1, str2, ignoreCase = true) {
     let result = false;
@@ -257,7 +258,7 @@ function createNewTemplate(config, content, sections, dropStatements) {
                         result.push(item);
                     }
                 }
-            } else if (section == "customStart" && dropStatements) {
+            } else if (isCustomStartSection(section) && dropStatements) {
                 result.push(dropStatements);
             }
         }
@@ -279,7 +280,7 @@ function createNewTemplate(config, content, sections, dropStatements) {
                 if (!section) {
                     section = sec;
                 } else if (section == sec) {
-                    if ((section != "customEnd" && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
+                    if ((!isCustomEndSection(section) && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
                         addNewItems();
 
                         section = "";

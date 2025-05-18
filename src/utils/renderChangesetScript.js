@@ -8,9 +8,11 @@ import getAppVersion from "./getAppVersion";
 import chalk from "chalk";
 import getAllSqlFiles from "./getAllSqlFiles";
 import extractChangesetItems from "./extractChangesetItems";
-import getSectionMarker from "./getSectionMarker";
 import createSectionsStore from "./createSectionsStore";
 import getChangesetHeader from "./getChangesetHeader";
+import getSectionHeader from "./getSectionHeader";
+import getOrderedSections from "./getOrderedSections";
+import { isCustomSection } from "./isCustomSection";
 
 async function getEncoding(filepath) {
     const info = await detectEncoding(filepath);
@@ -72,29 +74,27 @@ function extractObjectsOld(config, changesetPath) {
     const lines = fs.readFileSync(changesetPath, "utf-8").split("\n");
 
     for (const line of lines) {
-        const trimmed = line.trim();
+        const trimmedLine = line.trim();
 
-        if (trimmed.startsWith("##")) {
-            if (trimmed.containsAny("Procedure", "Sproc")) currentSection = "procedures";
-            else if (trimmed.containsAny("Function", "udf")) currentSection = "functions";
-            else if (trimmed.contains("Table")) currentSection = "tables";
-            else if (trimmed.contains("Type")) currentSection = "types";
-            else if (trimmed.contains("Index")) currentSection = "indexes";
-            else if (trimmed.contains("Trigger")) currentSection = "triggers";
-            else if (trimmed.contains("Relation")) currentSection = "relations";
-            else if (trimmed.contains("View")) currentSection = "views";
-            else if (trimmed.contains("Schema")) currentSection = "schemas";
-            else if (trimmed.contains("Custom-Start")) currentSection = "customStart";
-            else if (trimmed.contains("Custom-End")) currentSection = "customEnd";
-        } else if (currentSection === "customStart") {
-            customStart += `\n${trimmed}`;
-        } else if (currentSection === "customEnd") {
-            customEnd += `\n${trimmed}`;
-        } else if (trimmed && !trimmed.startsWith("##")) {
+        if (trimmedLine.startsWith("##")) {
+            if (trimmedLine.containsAny("Procedure", "Sproc")) currentSection = "procedures";
+            else if (trimmedLine.containsAny("Function", "udf")) currentSection = "functions";
+            else if (trimmedLine.contains("Table")) currentSection = "tables";
+            else if (trimmedLine.contains("Type")) currentSection = "types";
+            else if (trimmedLine.contains("Index")) currentSection = "indexes";
+            else if (trimmedLine.contains("Trigger")) currentSection = "triggers";
+            else if (trimmedLine.contains("Relation")) currentSection = "relations";
+            else if (trimmedLine.contains("View")) currentSection = "views";
+            else if (trimmedLine.contains("Schema")) currentSection = "schemas";
+            else if (trimmedLine.contains("Custom-Start")) currentSection = "customStart";
+            else if (trimmedLine.contains("Custom-End")) currentSection = "customEnd";
+        } else if (isCustomSection(currentSection)) {
+            customStart += `\n${trimmedLine}`;
+        } else if (trimmedLine && !trimmedLine.startsWith("##")) {
             if (currentSection) {
-                objects.push({ type: currentSection, name: trimmed });
+                objects.push({ type: currentSection, name: trimmedLine });
             } else {
-                console.warn("\tOrphan line ignored: " + trimmed);
+                console.warn("\tOrphan line ignored: " + trimmedLine);
             }
         }
     }
@@ -106,9 +106,7 @@ function extractObjectsOld(config, changesetPath) {
 
 function write(config, key, items, minify = false) {
     let result = "";
-    const header = `
--- ============ ${getSectionMarker(key)} ============
-`;
+    const header = getSectionHeader(key, "", "sql") + "\n";
 
     if (isString(items)) {
         if (isSomeString(items.trim())) {
@@ -128,10 +126,10 @@ function write(config, key, items, minify = false) {
                 result = config.obfuscator.obfuscate(result);
             }
         }
-    }
 
-    if (result) {
-        result = header + result;
+        if (result) {
+            result = header + result;
+        }
     }
 
     return result;
@@ -206,40 +204,14 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     config.debug7({ sb })
 
-    const hasAnything = !isEmpty(sb.customStart) ||
-        !isEmpty(sb.customEnd) ||
-        isSomeArray(sb.schemas) ||
-        isSomeArray(sb.types) ||
-        isSomeArray(sb.tables) ||
-        isSomeArray(sb.relations) ||
-        isSomeArray(sb.functions) ||
-        isSomeArray(sb.procedures) ||
-        isSomeArray(sb.views) ||
-        isSomeArray(sb.indexes) ||
-        isSomeArray(sb.sequences) ||
-        isSomeArray(sb.queues) ||
-        isSomeArray(sb.assemblies) ||
-        isSomeArray(sb.synonyms) ||
-        isSomeArray(sb.statistics) ||
-        isSomeArray(sb.triggers);
+    const hasAnything = getOrderedSections()
+        .some(section => isString(sb[section]) ? !isEmpty(sb[section]) : isSomeArray(sb[section]));
 
-    const script = getChangesetHeader(config, true, changesetName) +
-        write(config, "customStart", sb.customStart) +
-        write(config, "assemblies", sb.assemblies) +
-        write(config, "schemas", sb.schemas) +
-        write(config, "types", sb.types) +
-        write(config, "sequences", sb.sequences) +
-        write(config, "tables", sb.tables) +
-        write(config, "relations", sb.relations) +
-        write(config, "functions", sb.functions) +
-        write(config, "synonyms", sb.synonyms) +
-        write(config, "procedures", sb.procedures) +
-        write(config, "queues", sb.queues) +
-        write(config, "views", sb.views) +
-        write(config, "indexes", sb.indexes) +
-        write(config, "triggers", sb.triggers) +
-        write(config, "statistics", sb.statistics) +
-        write(config, "customEnd", sb.customEnd) +
+    const script = getChangesetHeader(config, "sql", changesetName) + "\n" +
+        getOrderedSections()
+            .map(section => write(config, section, sb[section]))
+            .filter(x => x)
+            .join("\n") +
         (appendAppVersion ? getAppVersion(config, changesetName) : '');
 
     return { script, error, hasAnything }

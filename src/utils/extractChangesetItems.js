@@ -2,6 +2,7 @@ import { isArray, isNullOrEmpty } from "@locustjs/base";
 import getSection from "./getSection";
 import chalk from "chalk";
 import createSectionsStore from "./createSectionsStore";
+import { isCustomSection } from "./isCustomSection";
 
 function extractChangesetItems(config, content) {
     const result = createSectionsStore(false);
@@ -13,7 +14,7 @@ function extractChangesetItems(config, content) {
         i++;
         line = line.trim()
 
-        if (isNullOrEmpty(line) && (!section || section == "customStart" || section == "customEnd")) {
+        if (isNullOrEmpty(line) && (!section || isCustomSection(section))) {
             continue;
         }
 

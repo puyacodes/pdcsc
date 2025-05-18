@@ -2,6 +2,7 @@ import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 import fs from "fs";
 import extractChangesetItems from "../../utils/extractChangesetItems";
+import { isCustomSection } from "../../utils/isCustomSection";
 
 function _extractOld(config, content) {
     const result = {
@@ -17,7 +18,6 @@ function _extractOld(config, content) {
         schemas: [],
         customEnd: ""
     };
-
 
     const sections = [
         { name: "customStart", start: "## ===================== Custom-Start (start) ======================", end: "## ===================== Custom-Start ( end ) ======================" },
@@ -49,7 +49,7 @@ function _extractOld(config, content) {
             .trim();
 
         if (innerContent.length > 0) {
-            if (section.name != "customStart" && section.name != "customEnd") {
+            if (!isCustomSection(section.name)) {
                 const lines = innerContent.split("\n");
 
                 lines.forEach(line => {

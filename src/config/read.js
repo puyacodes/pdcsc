@@ -55,6 +55,7 @@ function read(args) {
 
     action = ActionType.getNumber(action);
 
+    fullChangeset = args.includes("-fc") || args.includes("--full-changeset");
     forceChangesetsTable = args.includes("-f") || args.includes("--force");
 
     if (action == ActionType.apply) {
@@ -78,8 +79,6 @@ function read(args) {
         }
     } else if (action == ActionType.init) {
         config.initfull = args.includes("-f") || args.includes("--full");
-    } else if (action == ActionType.roll) {
-        fullChangeset = getArg("-fc", "--full-changeset");
     }
 
     const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;

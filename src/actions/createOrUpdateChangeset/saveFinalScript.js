@@ -32,13 +32,13 @@ ${getAppVersion(config, finalChangesetName)}`;
             const i = old.lastIndexOf(`create or alter proc ${config.appVersionSprocName}`);
 
             if (i >= 0) {
-                const s1 = script.trim();
-                const s2 = old.substr(0, i).trim();
+                const scriptOld = old.substr(0, i).trim();
+                const scriptNew = script.trim() + "\n\ngo";
 
-                hasChanges = s1 != s2;
+                hasChanges = scriptNew != scriptOld;
 
-                config.debug2(`Script length: old = ${s1.length}, new = ${s2.length}`);
-                config.debug7(`scripts`, { old: s1, "new": s2 });
+                config.debug2(`Script length: old = ${scriptOld.length}, new = ${scriptNew.length}`);
+                config.debug7(`scripts`, { old: scriptOld, "new": scriptNew });
             }
         }
 

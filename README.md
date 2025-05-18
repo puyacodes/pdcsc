@@ -6,33 +6,44 @@ This tool is licensed under MIT License - see the [LICENSE](LICENSE) file for de
 
 # Introduction
 
-`@puya/pdcsc` is a cli tool developed in nodejs for managing `.sql` database repositories. It creates/updates changesets based on changes detected in feature branches in their `.sql` files in a `./Scripts` folder.
+`@puya/pdcsc` or in short `pdcsc` is a CLI tool developed in `nodejs` for managing `.sql` database repositories that target `Microsoft` `SQL Server` databases.
 
-It can be integrated in cicd pipelines like `gitlab pipeline` and `azurdevops pipeline` and is able to apply changeset(s) on custom databases upon merging feature branches.
+It creates/updates changeset files based on `.sql` files' changes detected in feature branches in a `./Scripts` folder.
 
-It can also be used to apply changesets on a custom database manually, making the database up-to-date with the lastest changes which can be a handy tool for support teams.
+The tool can be integrated in cicd pipelines like `gitlab pipeline` and `azurdevops pipeline` and is also able to apply changeset(s) on custom databases upon merging branches.
+
+Last but not least, `pdcsc` can also be used manually to update a custom database by applying changesets on it, making the database up-to-date with the lastest changes of the project. Thus, `pdcsc` can be a handy tool for support teams as well.
+
+# What does `pdcsc` mean?
+It is an acronym for `Puya Data Changeset Creator`. `Puya` is a `persian` word (`پویا`), meaning `dynamic`.
+
+It means a tool that creates changesets for dynamic data or dynamic databases.
 
 # What does `pdcsc` do?
 - It manages a database repository containing `.sql` files.
 - It targets database schema management, not the data inside of a database.
-- It creates changeset scripts for modifications developers perform in each branch.
+- It creates changeset scripts for modifications developers do in their feature branches.
 - It assists in having a smooth and streamlined ci/cd workflow to update database of a product/project.
 - It provides a safe, smooth and automated mechanism to apply schema updates on `SQL Server` databases.
 - It is a tool best used in teams, but can be used by single developers as well.
 
 # What does not `pdcsc` do?
-- It does not merge `.sql` files and generate a single bundle to create the database together with all its objects.
-- It dos not work in an `Up/Down` mindset. It always works in an `Up` midset.
+- It does not merge `.sql` files and generate a single bundle for creating the database (together with all its objects).
+- It dos not work in an `Up/Down` fashion. It always works in an `Up` fashion.
 - It does not have anything to do with a project's business logic.
 
 # Why not `Up/Down`?
 Lets accept this. Most of the time we are going `Up`. We go `Down` mostly in case of errors.
 
-Going back is a dangerous thing. It can lead to data loss.
+Going back is in real a dangerous and daunting happening. It can lead to data loss.
 
-The way `pdcsc` works together with proper ci/cd scripts, ensures that database is updated without any errors.
+The way `pdcsc` works together with proper ci/cd scripts ensures that database is updated without any errors - most of the time if not always.
 
-If we know we always are go up step by step and we are always safe, there is no need to go down.
+If we always go up step by step and we are safe in each step, there should not be a need to go down - in theory.
+
+If something failed, we can issue a hotfix and apply the fix immediately to counter the bug.
+
+Again, we are going up to resolve and fix the issue.
 
 # Features
 
@@ -353,9 +364,16 @@ dbo.usp_Product_getall.sql
 dbo.Products.sql
 ```
 
-The order of the sections is not important.
+The order of the sections in the template is not important.
 
-Whitespaces at the start of the lines are also ignored.
+Whitespaces at either sides of the lines are also ignored.
+
+## Full Changeset
+By default, `pdcsc` generates sections based on the files changed.
+
+For example, if we have only changed a stored procedure, only a `Procedures` section is added to the changeset.
+
+However, using a `-fc` or `--full-changeset` argument in CLI, we can ask `pdcsc` to include all sections in changeset the template, even for empty ones.
 
 ## Custom sections
 There are two especial sections that provide the user to define any custom script to be executed at the start (before) and the end (after) of executing the changeset.
@@ -416,15 +434,15 @@ This is the way the `Generate Script` works in `SQL Server Management Studio`.
 ### example of a changeset
 ```
 # ***            Changeset feature/f01          ***
-# ===================== Custom-Start =====================
+## ===================== Custom-Start =====================
 if not exists (select 1 from sys.all_collumns where object_id = object_id('Products') and name = 'Visible')
   alter table Products add Visible bit null constraint DF_Products_Visible default (1)
 go
-# ===================== Tables =====================
+## ===================== Tables =====================
 dbo.Payments.sql
-# ===================== Procedures =====================
+## ===================== Procedures =====================
 dbo.usp_Products_report.sql
-# ===================== Custom-End =====================
+## ===================== Custom-End =====================
 update Products set Visible = 1 where Visible is null
 ```
 
@@ -432,10 +450,6 @@ update Products set Visible = 1 where Visible is null
 - In order for the changeset script to be idempotent, it first checks whether `Products` table already
 includes the `Visible` column or not and adds it only when the table does not have such column.
 - At the end, the changeset updates those `Visible` columns in `Products` table whose value is `NULL` with `1`.
-
-## Rendering a changeset
-
-
 
 # Using `pdcsc` in `gitlab CI/CD pipeline`
 

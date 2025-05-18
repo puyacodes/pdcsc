@@ -3,18 +3,32 @@ import fs from "fs";
 import commitChanges from "../../utils/commitChanges";
 import { isArray, isEmpty, isNullOrEmpty, isSomeArray, isSomeString, isString } from "@locustjs/base";
 import getSection from "../../utils/getSection";
-import getSectionMarker from "../../utils/getSectionMarker";
 import createSectionsStore from "../../utils/createSectionsStore";
 import getChangesetHeader from "../../utils/getChangesetHeader";
+import getSectionHeader from "../../utils/getSectionHeader";
+import getOrderedSections from "../../utils/getOrderedSections";
+import hasChangesetHeader from "../../utils/hasChangesetHeader";
+import { isCustomEndSection, isCustomStartSection } from "../../utils/isCustomSection";
 
 function finalizeContent(config, content, sections, dropStatements) {
+    let newContent = false;
+    let customEndHeader;
     const result = [];
     const customEnd = [];
+
+    // since end section is an especial section which should
+    // be put at the end, we append the lines of this section
+    // to a distinct array 'customEnd' instead of the normal 'result' array
+
     const draft = createSectionsStore(true);
-    let newContent = false;
+
+    if (config.fullChangeset) {
+        draft.header = []
+    }
 
     if (!isEmpty(content) && content.split("\n").filter(line => line.trim().startsWith("##")).length > 0) {
         let section = '';
+        let isInHeader = true;
         let dropsAdded = false;
         const temp = createSectionsStore(true);
 
@@ -28,13 +42,22 @@ function finalizeContent(config, content, sections, dropStatements) {
                             config.debug3(`\t\tadded ${item}`)
 
                             temp[section].push(item);
-                            result.push(item);
+
+                            if (config.fullChangeset) {
+                                draft[section].push(item)
+                            } else {
+                                result.push(item);
+                            }
                         }
                     }
-                } else if (section == "customStart" && dropStatements && !dropsAdded) {
-                    config.debug3(` section ${chalk.yellow(section)}: adding drop statements`)
+                } else if (isCustomStartSection(section) && dropStatements && !dropsAdded) {
+                    config.debug3(`\t\tsection ${chalk.yellow(section)}: adding drop statements`)
 
-                    result.push(dropStatements);
+                    if (config.fullChangeset) {
+                        draft.customStart.push(dropStatements)
+                    } else {
+                        result.push(dropStatements);
+                    }
 
                     dropsAdded = true;
                 }
@@ -45,10 +68,20 @@ function finalizeContent(config, content, sections, dropStatements) {
             const trimmedLine = line.trim()
 
             if (isNullOrEmpty(trimmedLine)) {
-                if (section == "customEnd") {
-                    customEnd.push(line);
+                if (config.fullChangeset) {
+                    if (section) {
+                        draft[section].push(line);
+                    } else if (isInHeader) {
+                        draft.header.push(line);
+                    } else {
+                        // empty lines between sections are ignored
+                    }
                 } else {
-                    result.push(line);
+                    if (isCustomEndSection(section)) {
+                        customEnd.push(line);
+                    } else {
+                        result.push(line);
+                    }
                 }
 
                 continue;
@@ -58,12 +91,18 @@ function finalizeContent(config, content, sections, dropStatements) {
                 const sec = getSection(trimmedLine);
 
                 if (sec) {
+                    if (isCustomEndSection(sec)) {
+                        customEndHeader = line
+                    }
+
+                    isInHeader = false;
+
                     if (!section) {
                         section = sec;
 
                         config.debug3(`\tdetected section ${chalk.yellow(section)}`)
                     } else if (section == sec) {
-                        if ((section != "customEnd" && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
+                        if ((!isCustomEndSection(section) && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
                             addNewItems();
 
                             section = "";
@@ -75,32 +114,53 @@ function finalizeContent(config, content, sections, dropStatements) {
 
                         section = sec;
                     }
-                }
 
-                if (sec != "customEnd") {
-                    result.push(line);
+                    if (config.fullChangeset) {
+                        draft[sec].push(line);
+                    } else {
+                        if (!isCustomEndSection(sec)) {
+                            result.push(line);
+                        }
+                    }
+                } else {
+                    config.debug3(`\tskipped unknown section ${chalk.red(trimmedLine)}`)
                 }
 
                 continue;
             } else if (trimmedLine.startsWith("#")) {
-                if (section == "customEnd") {
-                    customEnd.push(line);
+                if (config.fullChangeset) {
+                    if (section) {
+                        draft[section].push(line);
+                    } else if (isInHeader) {
+                        draft.header.push(line);
+                    } else {
+                        // comment lines between sections are ignored
+                    }
                 } else {
-                    result.push(line);
+                    if (isCustomEndSection(section)) {
+                        customEnd.push(line);
+                    } else {
+                        result.push(line);
+                    }
                 }
 
                 continue;
             }
 
             if (section) {
-                if (!isSomeArray(draft[section])) {
+                if (!isSomeArray(draft[section]) && !config.fullChangeset) {
                     draft[section].push(true);
                 }
 
                 if (isArray(sections[section])) {
                     if (sections[section].contains(trimmedLine)) {
                         if (!temp[section].contains(trimmedLine)) {
-                            result.push(line);
+                            if (config.fullChangeset) {
+                                draft[section].push(line);
+                            } else {
+                                result.push(line);
+                            }
+
                             temp[section].push(trimmedLine);
                         } else {
                             config.debug3(`\t\t${trimmedLine}: already exists`)
@@ -109,10 +169,14 @@ function finalizeContent(config, content, sections, dropStatements) {
                         config.debug3(`\t\t${trimmedLine}: removed`)
                     }
                 } else {
-                    if (section == "customEnd") {
-                        customEnd.push(line);
+                    if (config.fullChangeset) {
+                        draft[section].push(line);
                     } else {
-                        result.push(line);
+                        if (isCustomEndSection(section)) {
+                            customEnd.push(line);
+                        } else {
+                            result.push(line);
+                        }
                     }
                 }
             }
@@ -122,33 +186,58 @@ function finalizeContent(config, content, sections, dropStatements) {
             addNewItems();
         }
     } else {
-        result.push(getChangesetHeader(config, false))
-        result.push(`## ===================== Custom-Start =====================
-`)
+        if (!hasChangesetHeader(content)) {
+            result.push(getChangesetHeader(config))
+        }
+
+        if (!isEmpty(content)) {
+            result.push(content);
+        }
+
+        if (!config.fullChangeset) {
+            result.push(getSectionHeader("customStart") + "\n")
+        }
+
         newContent = true;
     }
 
-    Object.keys(sections)
-        .filter(section => !isSomeArray(draft[section]))
-        .forEach((section) => {
-            const items = sections[section];
-            const header = `## ============ ${getSectionMarker(section)} ============`;
+    if (config.fullChangeset) {
+        Object.keys(draft)
+            .filter(section => section != "header" && !isSomeArray(draft[section]))
+            .forEach(section => draft[section].push(getSectionHeader(section, isCustomEndSection(section) ? customEndHeader : "") + "\n"));
 
-            if (isString(items)) {
-                if (isSomeString(items.trim())) {
+        if (isSomeArray(draft.header)) {
+            result.push(...draft.header)
+        }
+
+        if (dropStatements && !dropsAdded) {
+            draft.customStart.push(dropStatements);
+        }
+
+        getOrderedSections()
+            .forEach(section => result.push(...draft[section]))
+    } else {
+        getOrderedSections()
+            .filter(section => !isSomeArray(draft[section]))
+            .forEach((section) => {
+                const items = sections[section];
+                const header = getSectionHeader(section, isCustomEndSection(section) ? customEndHeader : "");
+
+                if (isString(items)) {
+                    if (isSomeString(items.trim())) {
+                        result.push(header);
+                        result.push(items.trim());
+                    }
+                } else if (isSomeArray(items)) {
                     result.push(header);
-                    result.push(items.trim());
+                    result.push(items.join("\n"));
                 }
-            } else if (isSomeArray(items)) {
-                result.push(header);
-                result.push(items.join("\n"));
-            }
-        });
+            });
 
-    if (newContent || isSomeArray(customEnd)) {
-        result.push(`## ===================== Custom-End =====================
-${customEnd.join("\n").trim()}
-`);
+        if (newContent || isSomeArray(customEnd)) {
+            result.push(getSectionHeader("customEnd", customEndHeader));
+            result.push(customEnd.join("\n").trim())
+        }
     }
 
     return result.join("\n");

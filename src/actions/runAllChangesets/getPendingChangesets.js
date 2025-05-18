@@ -5,7 +5,7 @@ import chalk from "chalk";
 
 function getPendingChangesets(config, lastExecutedChangeset, executedChangesets) {
     console.log("Getting pending changesets ...");
-
+    const result = [];
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
         .filter(filepath => path.extname(filepath) == ".txt" && extractDateFromString(config, filepath))
@@ -32,7 +32,6 @@ function getPendingChangesets(config, lastExecutedChangeset, executedChangesets)
 
     const lastExecutedChangesetName = lastExecutedChangeset?.name;
     const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(config, lastExecutedChangesetName) : null;
-    const result = [];
 
     console.log("\tchecking newer changesets ...");
 
@@ -45,7 +44,7 @@ function getPendingChangesets(config, lastExecutedChangeset, executedChangesets)
 
         if (!lastExecutedDate || changeset.date > lastExecutedDate) {
             config.debug2(`\t\tadded changeset ${chalk.yellow(changeset.name)}`);
-            
+
             result.push(changeset);
         }
     }

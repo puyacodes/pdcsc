@@ -90,3 +90,8 @@ roll:
 # 2.3.2
     apply
         fixed bug in getting pending changesets
+
+# 2.3.3
+    apply
+        fixed bug: "Cannot access 'c' before initialization"
+        

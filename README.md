@@ -35,7 +35,7 @@ It means a tool that creates changesets for dynamic data or dynamic databases.
 # Why not `Up/Down`?
 Lets accept this. Most of the time we are going `Up`. We go `Down` mostly in case of errors.
 
-Going back is in real a dangerous and daunting happening. It can lead to data loss.
+Going back is in reality a dangerous and daunting happening. It can lead to data loss.
 
 The way `pdcsc` works together with proper ci/cd scripts ensures that database is updated without any errors - most of the time if not always.
 
@@ -43,7 +43,7 @@ If we always go up step by step and we are safe in each step, there should not b
 
 If something failed, we can issue a hotfix and apply the fix immediately to counter the bug.
 
-Again, we are going up to resolve and fix the issue.
+Again, we are going up in order to resolve and fix the issue.
 
 # Features
 
@@ -52,7 +52,7 @@ Again, we are going up to resolve and fix the issue.
 - **Pipeline Mode**: Using `pipeline` argument, it can be used in `ci/cd pipelines` (like `gitlab` or `azuredevops`) to provide a safe merge, preventing the merge if the changeset has errors.
 - **Update database**: Using `apply` argument, it can apply changesets(s) on a database and making the database up-to-date.
 
-By default (withought specifying `pipeline` or `apply` arguments), `@puya/pdcsc` manages current branch's changeset.
+By default (without specifying `pipeline` or `apply` arguments), `@puya/pdcsc` manages current branch's changeset.
 
 # Disclaimer
 `@puya/pdcsc` IS AN IMPORTANT AND CRITICAL TOOL THAT TARGETS SQL SERVER DATABASES.
@@ -394,6 +394,50 @@ While `pdcsc` manages the changeset automatically, it is also possible for the u
 
 Although, this is not required, at times, user may want to encforce an object to be listed in a changeset even though it didn't have any changes in current branch.
 
+## Idempotent changeset
+An ideal changeset is a changeset that is idempotent regarding the changes it will apply on database.
+
+This means that, if it is executed multiple times, it will not produce any side-effect or errors.
+
+Let's show this in an exmaple.
+
+Suppose we have the following changeset:
+
+```
+## =========== Custom-Start ===========
+alter table Foo add Bar int null
+```
+
+The above changeset will add a column named `Bar` to a table named `Foo`.
+
+The issue is that, if the changeset executes multiple times, it will generate an error on the second and following execution.
+
+The reason is, `Foo` table already has a `Bar` column (first execution of the changeset added that). So, `ALTER` command fails.
+
+The correct way of adding a column to a table is that we first check whether the table does not have that column already.
+
+```
+## =========== Custom-Start ===========
+if not exists
+(
+  select 1
+  from          sys.all_columns
+  where object_id = object_id('Foo') and name = 'Bar'
+)
+  alter table Foo add Bar int null
+go
+```
+
+This is just a simple check. A deeper check may want to check whether an existing `Bar` column has a correct type as well - it should be an `int` column - and if not, generate an error.
+
+Also, someone may want to check default values, foreign keys and other things when applying a change.
+
+As it is clear, the scope of this topic can be fairly wide.
+
+Making a changeset idempotent is developers' responsibility and `pdcsc` does not have and is not able to provide such characteristic for changesets.
+
+Anyhow, no matter how you satisfy it, it is highly recommended to make changesets idempotent.
+
 ## Rendering a changeset
 Upon rendering a changeset, `pdcsc` processes sections in the following order:
 
@@ -646,9 +690,10 @@ The `-cs` argument is optional. If it is not specified, `pdcsc` shows list of al
 9. Do not use `sa` and/or `sysadmin` users in `dev`/`test` stages.
 10. Use a less privilaged user in `dev`/`test` stages who can access only to development and test databases, not `master`/`main` database.
 11. Use `sa` and/or `sysadmin` users in `main`/`master` branch who only DBAs have access to.
-12. Never change/manipulate old changesets that fall behind other branches.
-13. Never render existing changesets in a branch other than the branch they were created in. This can produce incorrect script, resulting in bugs, errors, data loss or any other bad consequence.
-14. Do not remove feature branches immediately upon merge in your pipelines.
-15. Keep feature branches for a period of time (like two or three weeks), so that you can refer to them and render their changes later if needed.
-16. Dispose of feature branches only when you are sure the branches are ok and have no error and you will not return back to them in the future.
+12. Provide idempotentcy for your changesets by adding enough custom start/end scripts. Read `Idempotent Changeset` section.
+13. Never change/manipulate old changesets that fall behind other branches.
+14. Never render existing changesets in a branch other than the branch they were created in. This can produce incorrect script, resulting in bugs, errors, data loss or any other bad consequence.
+15. Do not remove feature branches immediately upon merge in your pipelines.
+16. Keep feature branches for a period of time (like two or three weeks), so that you can refer to them and render their changes later if needed.
+17. Dispose of feature branches only when you are sure the branches are ok and have no error and you will not return back to them in the future.
 

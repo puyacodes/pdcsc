@@ -7,6 +7,7 @@ import getLastExecutedChangeset from "./getLastExecutedChangeset.js";
 import getPendingChangesets from "./getPendingChangesets.js";
 import fs from "fs";
 import chalk from "chalk";
+import getExecutedChangesets from "./getExecutedChangesets.js";
 
 async function run(config) {
     let error;
@@ -33,8 +34,9 @@ async function run(config) {
                 break;
             }
 
+            const executedChangesets = await getExecutedChangesets(config);
             const lastExecutedChangeset = await getLastExecutedChangeset(config);
-            const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset);
+            const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset, executedChangesets);
 
             if (!pendingChangesets.length) {
                 console.log("No pending changeset found. Database is up-to-date.");

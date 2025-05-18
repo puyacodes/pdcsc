@@ -2,41 +2,47 @@ import fs from "fs";
 import path from "path";
 import extractDateFromString from "../../utils/extractDateFromString";
 
-function getPendingChangesets(config, lastExecutedChangeset) {
+function getPendingChangesets(config, lastExecutedChangeset, executedChangesets) {
     console.log("Getting pending changesets ...");
 
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
-        .filter(changeset => path.extname(changeset) == ".txt" && extractDateFromString(config, changeset))
+        .filter(filepath => path.extname(filepath) == ".txt" && extractDateFromString(config, filepath))
         .map(filepath => path.parse(filepath).name)
         .map(name => ({
             name,
             path: path.join(config.paths.changesetsPath, name + ".txt"),
-            sqlPath: path.join(config.paths.changesetsPath, name + ".sql")
+            sqlPath: path.join(config.paths.changesetsPath, name + ".sql"),
+            date: extractDateFromString(config, name)
         }));
+
+    // ensure changesets that are older than lastExecutedChangeset will be also executed on database.
+    // this happens when we ahve two or more teams who have distinct workflows (each team has their
+    // own dev branch on which they merge their branches with).
+    changesets.forEach(changeset => {
+        if (!executedChangesets.find(cs => changeset.name.equals(cs.name))) {
+            result.push(changeset);
+        }
+    });
+
     const lastExecutedChangesetName = lastExecutedChangeset?.name;
     const lastExecutedDate = lastExecutedChangesetName ? extractDateFromString(config, lastExecutedChangesetName) : null;
     const result = [];
 
-    for (const file of changesets) {
-        const match = file.name.match(/^(\d{14})/);
+    for (const changeset of changesets) {
+        const match = changeset.name.match(/^(\d{14})/);
 
         if (!match) {
             continue;
         }
 
-        let fileDateStr = match[1]; //example: 14030125094518
-        let fileDate = extractDateFromString(config, fileDateStr);
-
-        if (!lastExecutedDate || fileDate > lastExecutedDate) {
-            if (!file.name.includes("update")) {
-                result.push({ ...file, date: fileDate });
-            }
+        if (!lastExecutedDate || changeset.date > lastExecutedDate) {
+            result.push(changeset);
         }
     }
 
     result.sort((a, b) => a.date - b.date);
-    
+
     config.debug2("Pending Changesets", result.map(changeset => changeset.name));
 
     if (result.length === 0) {

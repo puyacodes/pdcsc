@@ -47,6 +47,8 @@ function read(args) {
 
     if (action == "check-update") {
         action = ActionType.checkUpdate;
+    } else if (action == "create-journal") {
+        action = ActionType.createJournalTable;
     }
 
     if (!ActionType.isValid(action)) {
@@ -56,7 +58,7 @@ function read(args) {
     action = ActionType.getNumber(action);
 
     fullChangeset = args.includes("-fc") || args.includes("--full-changeset");
-    forceChangesetsTable = args.includes("-f") || args.includes("--force");
+    forceChangesetsTable = action == ActionType.createJournalTable || args.includes("-f") || args.includes("--force");
 
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
@@ -81,7 +83,7 @@ function read(args) {
         config.initfull = args.includes("-f") || args.includes("--full");
     }
 
-    const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render;
+    const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render || action == ActionType.createJournalTable;
     const renderMode = action == ActionType.roll || action == ActionType.render;
     const useMinification = renderMode && (args.includes("-m") || args.includes("--minify"));
     const useUglification = renderMode && (args.includes("-u") || args.includes("--uglify"));

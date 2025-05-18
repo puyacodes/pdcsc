@@ -95,3 +95,5 @@ roll:
     apply
         fixed bug: "Cannot access 'c' before initialization"
         
+# 2.4.0
+    added create-journal command

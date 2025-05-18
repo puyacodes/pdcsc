@@ -1,59 +1,59 @@
-{                           
-  "name": "@puya/pdcsc",                           
-  "version": "2.3.3", 
-  "main": "bin/index.js",                           
-  "scripts": {                           
-    "clean": "rimraf bin",                           
-    "cp": "rollup -c rollup.config.dev.js && npm link",                           
-    "build": "npm run clean && rollup -c",                           
-    "release": "set NEW_VERSION=%npm_config_newVersion% && npm run clean && pre-release.bat && rollup -c && release.bat"                           
-  },                           
-  "keywords": [                           
-    "devops",                           
-    "sql server",                           
-    "git",                           
-    "cicd",                           
-    "gitlab",                           
-    "azuredevops"                           
-  ],                           
-  "author": "Puyasoft",                           
-  "license": "MIT",                           
-  "description": "pdcsc is a cli tool for managing .sql database repositories. It creates/updates changesets based on changes detected in feature branches, can be integrated in cicd pipelines and is able to apply changeset(s) on custom databases in cicd pipelines or even manually.",                           
-  "dependencies": {                           
-    "@locustjs/base": "^4.4.1",                           
-    "@locustjs/enum": "^3.0.0",                           
-    "@locustjs/exception": "^2.3.0",                           
-    "@locustjs/extensions-object": "^2.3.2",                           
-    "@locustjs/extensions-string": "^2.0.7",                           
-    "@locustjs/logging": "^3.1.2",                           
-    "@puya/ts": "^1.1.2",                           
-    "chalk": "^4.1.2",                           
-    "detect-file-encoding-and-language": "^2.4.0",                           
-    "iconv-lite": "^0.6.3",                           
-    "jalali-moment": "^3.3.11",                           
-    "mssql": "^11.0.1",                           
-    "semver": "^7.6.3",                           
-    "simple-git": "^3.27.0",                           
-    "windows-1256": "^3.0.4"                           
-  },                           
-  "bin": {                           
-    "pdcsc": "./bin/index.js"                           
-  },                           
-  "files": [                           
-    "bin"                           
-  ],                           
-  "devDependencies": {                           
-    "@babel/preset-env": "^7.26.7",                           
-    "@rollup/plugin-babel": "^6.0.4",                           
-    "@rollup/plugin-commonjs": "^28.0.2",                           
-    "@rollup/plugin-json": "^6.1.0",                           
-    "@rollup/plugin-node-resolve": "^16.0.0",                           
-    "@rollup/plugin-terser": "^0.4.4",                           
-    "cp-cli": "^2.0.0",                           
-    "esm": "^3.2.25",                           
-    "rimraf": "^6.0.1",                           
-    "rollup": "^4.34.3",                           
-    "rollup-plugin-copy": "^3.5.0",                           
-    "rollup-plugin-delete": "^2.1.0"                           
-  }                           
-}                           
+{                             
+  "name": "@puya/pdcsc",                             
+  "version": "2.4.0", 
+  "main": "bin/index.js",                             
+  "scripts": {                             
+    "clean": "rimraf bin",                             
+    "cp": "rollup -c rollup.config.dev.js && npm link",                             
+    "build": "npm run clean && rollup -c",                             
+    "release": "set NEW_VERSION=%npm_config_newVersion% && npm run clean && pre-release.bat && rollup -c && release.bat"                             
+  },                             
+  "keywords": [                             
+    "devops",                             
+    "sql server",                             
+    "git",                             
+    "cicd",                             
+    "gitlab",                             
+    "azuredevops"                             
+  ],                             
+  "author": "Puyasoft",                             
+  "license": "MIT",                             
+  "description": "pdcsc is a cli tool for managing .sql database repositories. It creates/updates changesets based on changes detected in feature branches, can be integrated in cicd pipelines and is able to apply changeset(s) on custom databases in cicd pipelines or even manually.",                             
+  "dependencies": {                             
+    "@locustjs/base": "^4.4.1",                             
+    "@locustjs/enum": "^3.0.0",                             
+    "@locustjs/exception": "^2.3.0",                             
+    "@locustjs/extensions-object": "^2.3.2",                             
+    "@locustjs/extensions-string": "^2.0.7",                             
+    "@locustjs/logging": "^3.1.2",                             
+    "@puya/ts": "^1.1.2",                             
+    "chalk": "^4.1.2",                             
+    "detect-file-encoding-and-language": "^2.4.0",                             
+    "iconv-lite": "^0.6.3",                             
+    "jalali-moment": "^3.3.11",                             
+    "mssql": "^11.0.1",                             
+    "semver": "^7.6.3",                             
+    "simple-git": "^3.27.0",                             
+    "windows-1256": "^3.0.4"                             
+  },                             
+  "bin": {                             
+    "pdcsc": "./bin/index.js"                             
+  },                             
+  "files": [                             
+    "bin"                             
+  ],                             
+  "devDependencies": {                             
+    "@babel/preset-env": "^7.26.7",                             
+    "@rollup/plugin-babel": "^6.0.4",                             
+    "@rollup/plugin-commonjs": "^28.0.2",                             
+    "@rollup/plugin-json": "^6.1.0",                             
+    "@rollup/plugin-node-resolve": "^16.0.0",                             
+    "@rollup/plugin-terser": "^0.4.4",                             
+    "cp-cli": "^2.0.0",                             
+    "esm": "^3.2.25",                             
+    "rimraf": "^6.0.1",                             
+    "rollup": "^4.34.3",                             
+    "rollup-plugin-copy": "^3.5.0",                             
+    "rollup-plugin-delete": "^2.1.0"                             
+  }                             
+}                             

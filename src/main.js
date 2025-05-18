@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import "./extensions";
 import { name, version } from "../package.json";
 import checkForUpdate from './checkForUpdate.js';
 import { ActionType } from "./enums";
@@ -6,13 +7,13 @@ import {
     createOrUpdateChangeset,
     initProject,
     runAllChangesets,
-    runOnPipline
+    runOnPipline,
+    renderChangeset,
+    createJournalTable
 } from "./actions";
 import getConfig from "./config";
 import checkDbExistence from './checkDbExistence.js';
-import "./extensions";
 import { Exception } from '@locustjs/exception';
-import renderChangeset from './actions/renderChangeset/index.js';
 
 function intro() {
     console.log(chalk.whiteBright(`Puya Data Changeset Creator ${version} 2024-2025\n`));
@@ -42,18 +43,20 @@ function help() {
                 -u or --uglify      uglifies generated script
                 -o or --obfuscate   obfuscates generated script
         check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
+        create-journal  creates journal table in the database (if not already existed)
 
     options (global):
         -v or --version                 show pdcsc version number
         -? or --help                    show help
         -c or --config                  use config file specified
+        -fc or --full-changeset         generate full changeset (containing all sections)
         -s or --server                  database address (overrides pdcsc-config)
         -u or --user                    database user (overrides pdcsc-config)
         -p or --password                database password (overrides pdcsc-config)
         -d or --database                database name (overrides pdcsc-config)
         -e or --encrypt                 database connection encryption (overrides pdcsc-config)
         -dbm or --debug-mode            debug mode
-        -dbl or --debug-level           specify debug level (1,2,3,4,5)
+        -dbl or --debug-level           specify debug level (1..9)
 `
     help = `Usage: pdcsc [command] [[[args...]] [[[options...]]]
 command:
@@ -74,18 +77,20 @@ command:
             -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
             -m or --minify      minifies sprocs, udfs, views, triggers
     check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
+    create-journal  creates journal table in the database (if not already existed)
 
 options (global):
     -v or --version                 show pdcsc version number
     -? or --help                    show help
     -c or --config                  use config file specified
+    -fc or --full-changeset         generate full changeset (containing all sections)
     -s or --server                  database address (overrides pdcsc-config)
     -u or --user                    database user (overrides pdcsc-config)
     -p or --password                database password (overrides pdcsc-config)
     -d or --database                database name (overrides pdcsc-config)
     -e or --encrypt                 database connection encryption (overrides pdcsc-config)
     -dbm or --debug-mode            debug mode
-    -dbl or --debug-level           specify debug level (1,2,3,4,5)
+    -dbl or --debug-level           specify debug level (1..9)
 `
     console.log(help);
 }
@@ -130,6 +135,9 @@ async function main() {
                             break;
                         case ActionType.checkUpdate:
                             error = checkForUpdate(config);
+                            break;
+                        case ActionType.createJournalTable:
+                            error = await createJournalTable(config);
                             break;
                     }
                 } else {

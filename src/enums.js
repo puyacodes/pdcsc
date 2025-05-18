@@ -6,7 +6,8 @@ const ActionType = Enum.define({
     pipeline: 2,
     apply: 3,
     render: 4,
-    checkUpdate: 5
+    checkUpdate: 5,
+    createJournalTable: 6
 }, 'ActionType');
 
 const ApplyMode = Enum.define({

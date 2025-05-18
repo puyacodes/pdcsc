@@ -8,18 +8,26 @@ async function ensureChangesTableCreated(config) {
 
     if (config.forceChangesetsTable) {
         console.log(`Ensuring journal table ${chalk.yellow(changesetsTableName)} existence ...`);
-    
-    
+
+
         const query = `IF OBJECT_ID('${changesetsTableName}', 'U') IS NULL
                         CREATE TABLE ${changesetsTableName}
                         (
                             [Id] INT IDENTITY(1,1) PRIMARY KEY,
                             [Name] NVARCHAR(255) NOT NULL,
                             [Date] DATETIME NOT NULL DEFAULT(GETDATE())
-                        );`
+                        );
+                        ELSE
+                            select 1 as Result;`;
         config.debug4(query);
-    
-        await db.executeQuery({ query });
+
+        const rs = await db.executeQuery({ query });
+
+        if (rs && rs.length && rs[0] && rs[0].Result == 1) {
+            console.log("journal table already exists");
+        } else {
+            console.log("journal table created.");
+        }
     } else {
         console.log(`Checking journal table ${chalk.yellow(changesetsTableName)} existence ...`);
 
@@ -30,7 +38,7 @@ ELSE
     SELECT 1 AS Result`;
 
         config.debug4(query);
-    
+
         const rs = await db.executeQuery({ query });
 
         const result = rs && rs.length && rs[0] ? rs[0].Result : false;

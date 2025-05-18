@@ -125,6 +125,7 @@ Nevertheless, while the following rules are not obligatory for `pdcsc`, it is re
 - `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date). If changeset execution was successful as well, it  is journaled in the database (journaling is explained later in `Changeset execution history` section).
 - `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
 - `check-update`: checks whether a new version for `pdcsc` is available or not.
+- `check-journal`: creates journal table (`dbo.Changesets` if not already existed).
 
 # CLI arguments
 

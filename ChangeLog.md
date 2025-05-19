@@ -97,3 +97,8 @@ roll:
         
 # 2.4.0
     added create-journal command
+
+# 2.4.1
+    init
+        removed -f arg from gitlab-ci init file
+        improved readme

@@ -84,7 +84,7 @@ npm install @puya/pdcsc
 
 # Current Version
 ```
-2.3.2
+2.4.1
 ```
 
 # Usage
@@ -96,42 +96,44 @@ pdcsc [cmd] [arguments] [options]
 ```
 
 # Requirements
-- `pdscs` requires `git` to be installed on the machine where it is run.
-- `pdcsc` must be executed in a `git` repository.
-- There should be a `Scripts` folder where sql server objects' scripts are stored.
+- `pdcsc` requires `git` to be installed on the machine where it is run.
+- It must also be executed in a `git` repository.
+- There should be a `Scripts` folder where `pdcsc` executes.
+- In `./Scripts` folder, script files of `SQL Server` objects are expected to be stored.
 - `pdcsc` config files should be placed near the `Scripts` folder.
-- `pdcsc` should be executed where `Scripts` folder is located.
-- `pdcsc` requires a ci/cd tool like `gitlabs` or `azuredevops`.
+- For `pipeline` and `apply` commands, `pdcsc` requires a ci/cd tool like `gitlabs` or `azuredevops`.
 
 # Recommendations
 `pdcsc` does not enforce any rules for file names and their content.
 Nevertheless, while the following rules are not obligatory for `pdcsc`, it is recommended to employ them in your database repository to have a smooth database maintenance.
 
-- It is recommended to put `Scripts` folder at the root of the repo.
-- Each `Sql Server object` (`table`, `udf`, `sproc`, etc.) must be stored as a distinct `.sql` file.
-- Filename should match the object name created by the file.
+- Put `Scripts` folder at the root of the repo.
+- Each object (`table`, `udf`, `sproc`, etc.) must be stored as a distinct `.sql` file.
 - Include schema of the object in the filename (use `dbo.MyTbl.sql` not `MyTbl.sql`)
 - Each file should only create a single object.
+- Name of the file should match the object name.
 - File of tables should include default constriants as well, but not foreign keys.
-- Definition of all foreign keys of a table must be put in `Relations` folder in a file with the same name as table name. The reason behind this is explain at `Why Tables and Relations are separated` section.
-- Any command to modify objects or manipulate records should be placed in `Custom-Start`/`Custom-End` sections provided in changesets.
-- Object's scripts and custom scripts should be written in an idempotent way (i.e. if they are executed multiple times, no error is raised and no side-effect is happened).
+- Definition of all foreign keys of a table must be put in a distinct file in `Relations` folder.
+- The filename of FK relations of a table should be the same name as table name. The reason behind this is explained at `Why Tables and Relations are separated` section.
+- Any custom command to should be placed in especial `Custom-Start`/`Custom-End` sections provided in changesets.
+- Make your changesets idempotent by adding enough custom start/end scripts (i.e. if they are executed multiple times, no error is raised and no side-effect is happened). Read `Idempotent Changeset` section about idempotent changesets.
 
 # Main commands
 
 - `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
-- `roll`: Creates/Updates a changeset based on `.sql` changes in current branch in `./Scripts` folder. This is the default command.
-- `apply`: Applies all changesets in `./Changes` folder on a database (updates the database).
+- `roll`: Creates/Updates a changeset based on `.sql` file changes in `./Scripts` folder in current branch. This is the default command.
+- `apply`: Applies changesets in `./Changes` folder on a database (updates the database).
 - `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date). If changeset execution was successful as well, it  is journaled in the database (journaling is explained later in `Changeset execution history` section).
-- `render`: Renders a changeset and creates a `.sql` file for that (overwrites existing `.sql` file, but does not commit it)
+- `render`: Renders a changeset and creates a `.sql` file (overwrites existing `.sql` file)
 - `check-update`: checks whether a new version for `pdcsc` is available or not.
-- `check-journal`: creates journal table (`dbo.Changesets` if not already existed).
+- `create-journal`: creates journal table (`dbo.Changesets` if it is not already exist).
 
 # CLI arguments
 
 - `-v` or `--version`: Shows pdcsc version.
 - `-?` or `--help`: Shows pdcsc help.
 - `-c` or `--config`: specifying custom config file
+- `-fc` or `--full-changeset`: create full changeset (containing all sections)
 - `-s` or `--server`: database server address.
 - `-u` or `--user`: database user.
 - `-p` or `--password`: database password.
@@ -140,7 +142,7 @@ Nevertheless, while the following rules are not obligatory for `pdcsc`, it is re
 - `-dbm` or `--debug-mode`:	debug mode
 - `-dbl` or `--debug-level`:	debug level
 
-**Note**: `-s`, `-u`, `-p`, `-d` and `-e` cli args have more priority over same database settings in `pdcsc-config.json` config.
+**Note**: `-s`, `-u`, `-p`, `-d` and `-e` cli args have more priority over same database props in `pdcsc-config.json`.
 
 ## Debug Levels
 - `1`: log app execution flow (default)
@@ -202,7 +204,7 @@ As it was stated, database settings specified through cli have more priority ove
 # Configuration
 The behavior of `pdcsc` can be customized through its config file.
 
-The config file is named `pdcsc-config.json` file. It is automatically created upon initializing a new `pdcsc` repository using `-init` command. The file is placed at the root of the repo.
+The config file is named `pdcsc-config.json` file. It is automatically created when initializing a new `pdcsc` repository using `-init` command. The file is placed at the root of the repo.
 
 Here's an example of a simple `pdcsc configuration file`:
 
@@ -265,29 +267,36 @@ The full `pdcsc config` file with all its options is as follows:
 ```
 
 ## Customization
-We can customize `pdcsc configuration` using an environment variable named `PDCSC_CONFIG_MODE`.
+We can customize `pdcsc configuration` through an environment variable named `PDCSC_CONFIG_MODE`.
 
-If `pdcsc` detects such envionment variable, it checks whether a `pdcsc-config.{env.PDCSC_CONFIG_MODE}.config` file exists or not.
-If so, it merges that file with `pdcsc-config.json` file.
+If `pdcsc` detects such variable, it checks whether a `pdcsc-config.{env.PDCSC_CONFIG_MODE}.config` file exists or not.
+If so, it merges that file with `pdcsc config` file (`pdcsc-config.json` or the custom config file specified through `-c` cli argument).
 
-This, enables us to customize master branch name or database name based on env or store sensitive data such as database password in a customized `pdcsc config` file.
+This way we can customize master branch name, database name or other config props based on our env variable or store sensitive data such as database password in our customized `pdcsc config` file.
 
 In the second usage, we can add `pdcsc-config.{env.PDCSC_CONFIG_MODE}.json` in the `.gitignore`, so that the database password is not stored in the repository.
 
-# roll: creating changeset
+By default, `pdcsc-config.development.json` and `pdcsc-config.production.json` are already ignored (these two names are already added to `.gitignore` when project initialized through `pdcsc init`). If you are using another env value, don't forget to add your custom `pdcsc-config.{env}.json` to your `.gitignore` file.
+
+# `roll`: creating changeset
 In order to create a new changeset, we can use the `roll` command.
+
+You should issue this command in a feature branch.
+
+So, first create a feature branch and then run the following command.
 
 ```bash
 pdcsc roll
 ```
 
-This is the default command and mentioning it is not required.
+As it was said, `roll` is the default command and mentioning it is not required.
 
 ```bash
 pdcsc
 ```
 
-After issuing this command, `pdcsc` looks into the changes in current branch in `./Scripts` folder, looking for any changes in `.sql` files.
+## How `roll` command works?
+Upon issuing `roll` command, `pdcsc` looks into the changes in current branch, looking for any changes in `.sql` files.
 
 A change means:
 
@@ -298,20 +307,48 @@ A change means:
 
 If there are any uncommitted changes, `pdcsc` first questions the user to specify whether he wants to commit the changes and include them in the changeset or not.
 
-Then, it checks the history of current branch and includes any changes in `.sql` files.
+Then, it checks the history of current branch and includes any other changes it finds in `.sql` files.
 
-After that, it merges all the changes and creates a changeset template based on the collected changes.
+After that, `pdcsc` merges all the changes and creates a changeset based on the collected changes.
 
-It finally renders the template and generates a `.sql` script for the changeset.
+What it creates is called a `Changeset template`.
 
-Ech time `roll` command is issued, `pdcsc` updates the timestamp of the changeset filename.
+It is simply a text file in which list of changed files are added based on their category.
 
-This is neccessary and guarantees that changesets created by developers who push later, always placed at the bottom in the `/Changes` folder.
+Lastly, `pdcsc` renders the template and generates a `.sql` script for the changeset.
+
+This is the end of what the `roll` command does.
+
+## Changeset's filename format
+a Changeset filename is composed of 3 parts:
+
+```
+{timestamp}_{mergeBase}_{branchName}
+```
+
+The first 14 characters of the changeset filename is called `timestamp` of the changeset.
+
+It contains date/time when the `roll` command executed.
+
+The next 8 characters after the first hyphen is `merge base`. It is a hash file extracted from the merge base of current branch (hash of the git node where current branch separated from the parent branch).
+
+And the last part is branch name.
+
+These 3 parts, make a changeset filename 99% unique (preventing potential conflicts) and also sortable (making changesets follow one another each time a new one is created).
+
+
+## Updating changeset's timestamp
+
+Each time `roll` command runs, `pdcsc` updates the timestamp of the changeset in current branch.
+
+This is neccessary and very important.
+
+It guarantees that newer changesets that are pushed more recently, always placed at the bottom in the `/Changes` folder.
 
 ## Changeset template structure
 Each changeset template is simply a `.txt` file in which there are specific sections for each `Sql Server Object`.
 
-The sections are as follows:
+A changeset's sections are as follows:
 
 - `Assemblies`: changed/modified assembly objects
 - `Types`: changed/modified user-defined types
@@ -353,7 +390,7 @@ Lines with a single `#` characters are assumed comments and ignored. Empty lines
 ## ============ Tables ============
 ```
 
-In each section, name of a changed `.sql` file (file name with extension) is listed.
+After a section marker, name of the changed `.sql` files (file name with extension) related to that section are listed.
 
 ```
 ## ============ Procedures ============
@@ -369,31 +406,35 @@ The order of the sections in the template is not important.
 
 Whitespaces at either sides of the lines are also ignored.
 
+Developers can manually modify changeset templates, add more sections or items. However, this is not neccessary, as `pdcsc` is smart enough to manage the changeset, automatically adding new changed files into the template.
+
 ## Full Changeset
-By default, `pdcsc` generates sections based on the files changed.
+By default, `pdcsc` generates changeset's sections based on the files changed.
 
 For example, if we have only changed a stored procedure, only a `Procedures` section is added to the changeset.
 
-However, using a `-fc` or `--full-changeset` argument in CLI, we can ask `pdcsc` to include all sections in changeset the template, even for empty ones.
+However, using a `-fc` or `--full-changeset` argument in CLI, we can ask `pdcsc` to include all sections in the template, even empty sections.
 
 ## Custom sections
-There are two especial sections that provide the user to define any custom script to be executed at the start (before) and the end (after) of executing the changeset.
+There are two especial sections that provide the user to define any custom statements or queries to be executed at the start (before) and the end (after) of executing the changeset.
 
-- `Custom Start`: custom script and sql statements that are run before changeset script.
-- `Custom End`: custom script and sql statements that are run after changeset script.
+- `Custom Start`: run before changeset script.
+- `Custom End`: run after changeset script.
 
 ## Changeset modification
-By default, `pdcsc` manages the changeset automatically, adding new items or removing deleted ones if their files are deleted. 
+As it was said, `pdcsc` manages the changeset automatically, adding new items or removing deleted items if their files are deleted. 
 
-So, the user doesn't need to worry about anything.
+So, the user does not need to worry about anything.
 
-The only thing he needs to do is working his normal job, adding new scripts, editing existing scripts, or removing an object (like a sproc).
+The only thing he needs to focus on is his normal job, i.e. adding new tables, stored-procedure, editing existing user-defined functions, changing existing tables (adding a new column), defining new foreign keys, removing a stored procedure or table that will not be used any more, etc.
 
-The only thing the user needs to do is to issue a `pdcsc` command to update current branche's changeset.
+The only thing the user needs to do and should not forget is to issue a `pdcsc` command and update his branche's changeset.
 
-While `pdcsc` manages the changeset automatically, it is also possible for the user to manually manipulate the changeset, like adding new items.
+He can then push his branch so that it is merged and his changes are applied to databases (based on cicd configs).
 
-Although, this is not required, at times, user may want to encforce an object to be listed in a changeset even though it didn't have any changes in current branch.
+While `pdcsc` manages changesets automatically, developers can manually modify the changesets.
+
+Although, this is not required, at times, a developer may want to encforce an object to be listed in a changeset even though it didn't have any changes in current branch.
 
 ## Idempotent changeset
 An ideal changeset is a changeset that is idempotent regarding the changes it will apply on database.
@@ -411,7 +452,7 @@ alter table Foo add Bar int null
 
 The above changeset will add a column named `Bar` to a table named `Foo`.
 
-The issue is that, if the changeset executes multiple times, it will generate an error on the second and following execution.
+The issue is that, if the changeset executes multiple times, it will generate an error on the second and following executions.
 
 The reason is, `Foo` table already has a `Bar` column (first execution of the changeset added that). So, `ALTER` command fails.
 
@@ -429,9 +470,7 @@ if not exists
 go
 ```
 
-This is just a simple check. A deeper check may want to check whether an existing `Bar` column has a correct type as well - it should be an `int` column - and if not, generate an error.
-
-Also, someone may want to check default values, foreign keys and other things when applying a change.
+This is just a simple check. A deeper check may want to check whether an existing `Bar` column has a correct type as well - it should be an `int` column - and if not, generate an error (someone may want to check default values, foreign keys and other things when applying a change).
 
 As it is clear, the scope of this topic can be fairly wide.
 
@@ -440,7 +479,7 @@ Making a changeset idempotent is developers' responsibility and `pdcsc` does not
 Anyhow, no matter how you satisfy it, it is highly recommended to make changesets idempotent.
 
 ## Rendering a changeset
-Upon rendering a changeset, `pdcsc` processes sections in the following order:
+Upon rendering a changeset, `pdcsc` processes sections and generates changeset script in the following order:
 
 1. Custom-Start
 2. Assemblies
@@ -462,19 +501,15 @@ Upon rendering a changeset, `pdcsc` processes sections in the following order:
 `pdcsc` reads items listed in each section, looks up the file in `Scripts` folder, reads its content and appends it to the generated script.
 
 ## Why `Tables` and `Relations` are separated?
-The reason why `Tables` and `Relations` have two distinct sections and foreign key declaration should be put in a distinct script file separated from the table is that we may want to create foreign keys in a distinct stage than creating the tables.
+The reason why `Tables` and `Relations` have two distinct sections and foreign key declaration should be put in a distinct script file is that a foreign key can be created only when the parent table exist.
 
-In fact, this is not a `pdcsc` concern. It is more a database creation concern.
+If the script of a child table is executed before its parent table is created, creating the foreign key will definitely fail.
 
-A foreign key can be created only when the parent table exist.
-
-If the script of a child table is executed before its parent table is created, creating foreign key will definitely fail.
-
-Thus, we are better to create all tables at first, without any relations.
+Thus, we should create all tables first, without any relations.
 
 Then, create foreign keys one by one.
 
-This is the way the `Generate Script` works in `SQL Server Management Studio`.
+This is the way `Generate Script` feature in `SQL Server Management Studio` works.
 
 ### example of a changeset
 ```
@@ -492,13 +527,13 @@ update Products set Visible = 1 where Visible is null
 ```
 
 - This changeset adds a new column named `Visible` to a `Products` table at the start of its execution.
-- In order for the changeset script to be idempotent, it first checks whether `Products` table already
+- In order for the changeset to be idempotent, it first checks whether `Products` table already
 includes the `Visible` column or not and adds it only when the table does not have such column.
-- At the end, the changeset updates those `Visible` columns in `Products` table whose value is `NULL` with `1`.
+- At the end, the changeset updates `Visible` columns in `Products` table whose value is `NULL` with `1`.
 
-# Using `pdcsc` in `gitlab CI/CD pipeline`
+# `pipeline`: using `pdcsc` in `gitlab CI/CD pipeline`
 
-In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `pipeline` argument to ensure our database is updated automatically whenever a feature branche is merged.
+In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `pipeline` command to ensure our database is updated automatically whenever a feature branche is merged.
 
 Here is a sample `gitlab` pipeline:
 
@@ -539,7 +574,7 @@ Notes:
 - In our pipeline, we explicitly specify config file for `pdcsc` through `-c` switch.
 - Name of the config file depends on the source branch that is going to be merged.
 - If it is `dev`, we are merging `dev` into `main`.
-- So, target branch (`CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) should be `main`. We specify a config file named `pdcsc-config-{CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json` which would be `pdcsc-config-main.json`. So, the master database will be updated.
+- So, target branch (`CI_MERGE_REQUEST_TARGET_BRANCH_NAME`) is `main`. We specify a config file named `pdcsc-config-{CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json` which would be `pdcsc-config-main.json`. So, the master database will be updated.
 - If the source branch is not `dev`, we are mereging a feature branch.
 - So, we know that our target branch is `dev`.
 - This time, the config file `pdcsc-config-{CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json` would be `pdcsc-config-dev.json`.
@@ -586,45 +621,60 @@ before_merge_build:
     ...
 ```
 
-# Updating a database
+# `apply`: Updating a database
 Using `apply` argument we can execute all changesets against a database and update it with the latest changes we have.
 
 ```bash
 pdcsc apply -d MyDb
 ```
 
-## Changesets Journal
+This command is especial in a way that it does not need even a `git` repo, cicd tool, any branch, etc.
+
+The only thing `pdcsc` requires when using this command is a `./Changes` folder where changeset scripts are located and enough config files that tell `pdcsc` what database it should apply the changesets on.
+
+So, this command can be issued on the machine that can access target database.
+
+In fact, this command can be handy tool for support teams that may need to manually update a customers' database.
+
+## Changesets' Journal
 `pdcsc` uses a table named `dbo.Changesets` in databases in order to save history of executed changesets.
 
 After a changeset executes successfully, `pdcsc` inserts its name into `dbo.Changesets` table. This is called `journaling`.
 
 Before `pdcsc` executes a changeset on a database, it checks `dbo.Changesets` table to see whether the changeset is already executed or not.
 
-If such table does not exist, it shows and error and exits.
-
-Using `-f` or `--force` cli argument, we can ask `pdcsc` to create such table if it does not exits.
+If such table does not exist, it shows an error and exits.
 
 ```bash
 pdcsc apply -d MyDb
 ```
+
 Output:
 ```
 Journal table dbo.Changesets not found. Use -f or --force to create journal table.
 ```
 
+Using `-f` or `--force` cli argument, we can ask `pdcsc` to create such table if it does not exits.
+
 ```bash
 pdcsc apply -d MyDb -f
 ```
 
-This behavior (manually use `-f` or force mode) is intentional in order to avoid updating an old database that is far behind our changesets and other updates should be applied on that before hand.
+This behavior (manually use `-f` or force mode) is intentional in order to avoid updating an old database that is far behind our changesets (we may need to execute other updates on the database first).
+
+There is also a `create-journal` command that creates the journal table as well.
+
+```bash
+pdcsc create-journal
+```
 
 The name of journal table can be customized in `pdcsc` config file through `changesetsTableName` prop.
 
-## Update mode
+## apply mode
 The `apply` command has 3 modes which can be customized through `-m` argument:
 
 - `Test`: test changesets against a backup of the database. This is useful when we want to make sure whether changesets will work correctly on the database or not.
-- `TestAndUpdate` (default): test changesets first and if they were ok, update database.
+- `TestAndUpdate` (default): test changesets first and if they are ok, apply them on database.
 - `Update`: execute changesets directly against the database.
 
 Ideally, we should use a `TestAndUpdate` mode as it is the default mode. However, if we are completely sure about our changesets or the test phase takes a long time (database is very large or under heavy load and backup/restore will take a long time), we can directly execute them on the database.
@@ -640,7 +690,7 @@ pdcsc apply -d MyDb -m Update
 ```
 
 ## Test changesets one by one
-By default, `pdcsc apply` creates a bundle out of changesets and executes the bundle against a database backup.
+By default, `pdcsc apply` creates a script bundle out of changesets and executes the whole bundle in one go against a database backup.
 
 Using `-11` or `--one-by-one` cli argument we can ask `pdcsc` to test changesets one by one.
 
@@ -651,32 +701,32 @@ pdcsc apply -d MyDb -11
 ```
 
 # Manually render a changeset
-By default `pdcsc` renders or generates `.sql` file of a changeset when using `roll` command (default).
+By default, `pdcsc` renders `.sql` file of a changeset automatically when using `roll` command.
 
-Using `render` cli argument we can manually render a changeset.
+Using `render` cli argument we can manually render a changeset as well.
 
 ## Attention
 MANUALLY RENDERING A CHANGESET IS NOT RECOMMENDED AND SHOULD BE AVOIDED AT ALL COSTS. RENDERING A CHANGESET SHOULD ONLY AND ONLY BE DONE EXACTLY IN THE BRANCH IT WAS CREATED AT.
 
-If you render a changeset in another branch, the generated `.sql` may not be correct, may not be even generated and may not work or may lead to unwanted errors, bugs and disasters at worst case.
+IF YOU RENDER A CHANGESET IN ANOTHER BRANCH, THE GENERATED `.sql` MAY NOT BE CORRECT, MAY NOT BE EVEN GENERATED AND MAY NOT WORK OR MAY LEAD TO UNWANTED ERRORS, BUGS AND DISASTERS AT WORST CASE.
 
 ## Discussion
 Suppose we are in branch `feature/fix-product-update` and we fix a sproc named `usp_Product_update`.
 
-We generate a changeset, make a PR and the Team Lead in who performs code reviews merges the branch.
+We generate a changeset, make a PR and the Team Lead who performs code reviews merges the branch.
 
-Now, if we switch to branch `feature/create-reports` and we have not pulled our `main` branch to receive the changes, if we intend to render the changeset of `feature/fix-product-update` branch, the `.sql` file being generated definitely is not correct, since we are creating `usp_Product_update` sproc using the copy in our own branch which is not up-to-date.
+Now, if we switch to branch `feature/create-reports` and we have not pulled our `main` branch to receive the changes, if we manually render the changeset of `feature/fix-product-update` branch, the generated `.sql` file is definitely incorrect, since we are creating `usp_Product_update` sproc using the copy in our own branch which is not up-to-date.
 
-That is why, it is never recommended to manually render a changeset and this should be done in scarse cases and performed only by DBAs who know what they are doing.
+That is why, **it is never recommended to manually render a changeset** and this should be done in scarse cases and performed only by DBAs who know what they are doing.
 
 ## How to
-We can specify the changeset for which we intend to create `.sql` file using `-cs` cli argument.
+We should specify the changeset we want to render through `-cs` cli argument.
 
 ```bash
 pdcsc render -cs 20250412082457_b6775a321_feature-add-otp
 ```
 
-The `-cs` argument is optional. If it is not specified, `pdcsc` shows list of all changesets found in `./Changes` folder and asks to choose which one to render.
+If `-cs` is not specified, `pdcsc` shows list of all changesets found in `./Changes` folder and asks the user to choose which one to be rendered.
 
 # Best Practices and Guidelines
 
@@ -691,10 +741,9 @@ The `-cs` argument is optional. If it is not specified, `pdcsc` shows list of al
 9. Do not use `sa` and/or `sysadmin` users in `dev`/`test` stages.
 10. Use a less privilaged user in `dev`/`test` stages who can access only to development and test databases, not `master`/`main` database.
 11. Use `sa` and/or `sysadmin` users in `main`/`master` branch who only DBAs have access to.
-12. Provide idempotentcy for your changesets by adding enough custom start/end scripts. Read `Idempotent Changeset` section.
-13. Never change/manipulate old changesets that fall behind other branches.
-14. Never render existing changesets in a branch other than the branch they were created in. This can produce incorrect script, resulting in bugs, errors, data loss or any other bad consequence.
-15. Do not remove feature branches immediately upon merge in your pipelines.
-16. Keep feature branches for a period of time (like two or three weeks), so that you can refer to them and render their changes later if needed.
-17. Dispose of feature branches only when you are sure the branches are ok and have no error and you will not return back to them in the future.
+12. Never change/manipulate old changesets that fall behind other branches.
+13. Never render existing changesets in a branch other than the branch they were created in. This can produce incorrect script, resulting in bugs, errors, data loss or any other bad consequence.
+14. Do not remove feature branches immediately upon merge in your pipelines.
+15. Keep feature branches for a period of time (like two or three weeks), so that you can refer to them and render their changes later if needed.
+16. Dispose of feature branches only when you are sure the branches are ok and have no error and you will not return back to them in the future.
 

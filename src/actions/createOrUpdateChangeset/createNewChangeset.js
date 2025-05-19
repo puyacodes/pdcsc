@@ -14,8 +14,8 @@ function createNewChangeset(config) {
     try {
         const cs = getNewChangeset(config);
 
-        const content = getChangesetHeader(config) + "\n" +
-            (config.fullChangeset ? getOrderedSections().map(section => getSectionHeader(section) + "\n").join("\n") : "");
+        const content = getChangesetHeader(config) +
+            (config.fullChangeset ? "\n" + getOrderedSections().map(section => getSectionHeader(section) + "\n").join("\n") : "");
         changeset = cs.changeset;
         changesetFilePath = cs.changesetFilePath;
 

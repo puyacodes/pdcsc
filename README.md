@@ -84,7 +84,7 @@ npm install @puya/pdcsc
 
 # Current Version
 ```
-2.4.1
+2.4.2
 ```
 
 # Usage
@@ -160,13 +160,13 @@ Nevertheless, while the following rules are not obligatory for `pdcsc`, it is re
 1. Initializing a new database repository:
 
 ```bash
-pdcsc -init
+pdcsc init
 ```
 
 Initializing a new database repository with full config:
 
 ```bash
-pdcsc -init -f
+pdcsc init -f
 ```
 
 2. Creating/Updating current feature branch's changeset:
@@ -201,10 +201,37 @@ pdcsc -s "192.168.10.120" -u "myUser" -p "myPassword" -d "MyDb"
 
 As it was stated, database settings specified through cli have more priority over config file.
 
+# Initializing a new database repository
+As it was said, by executing `pdcsc init` in a folder we can prepare it to be used by `pdcsc`.
+
+```bash
+pdcsc init
+```
+
+`pdcsc` checks whether it is executed in a git repo and if not, creates one.
+
+Then it creates `Scripts` folders and its sub-folders (if not already existed).
+
+After that, it creates a list of files as below (if not already existed):
+
+- gitignore
+- pdcsc config
+- pdcsc custom configs for development and production mode
+- gitlabg and azuredevops cicd scripts
+
+This command can be both executed in an empty folder and a non-empty folder.
+
+## Customizing database setting through CLI
+Using `-s`, `-d`, `-u`, `-p` and `-e` we can also ask `pdcsc` to createe config files with our own values, so there won't be a need to manually edit config files and changes database settings.
+
+```bash
+pdcsc init -s 192.168.10.10 -d OdooDb -u dteam -p 3246784
+```
+
 # Configuration
 The behavior of `pdcsc` can be customized through its config file.
 
-The config file is named `pdcsc-config.json` file. It is automatically created when initializing a new `pdcsc` repository using `-init` command. The file is placed at the root of the repo.
+The config file is named `pdcsc-config.json` file. It is automatically created when initializing a new `pdcsc` repository using `init` command. The file is placed at the root of the repo.
 
 Here's an example of a simple `pdcsc configuration file`:
 
@@ -727,6 +754,111 @@ pdcsc render -cs 20250412082457_b6775a321_feature-add-otp
 ```
 
 If `-cs` is not specified, `pdcsc` shows list of all changesets found in `./Changes` folder and asks the user to choose which one to be rendered.
+
+# Database version
+Versioning is a mechanism that developers use to better maintain software products.
+
+Adding version to a software executable part or a library is not a problem.
+
+It is the database that providing versioning for that it is a little tricky.
+
+`SQL Server` has a `Extended Pproperties` feature by which we can add version to our database.
+
+Its advantage is that we can see it visually in a program like `SQL Server Management Studio` (`SSMS`).
+
+However, using extended properties is a little awkward.
+
+`pdcsc` provides another simple solution for this need.
+
+## What is version of my database?
+Last executed changeset in someway can be simply assumed as a version for a database.
+
+There are two ways to see what last executed changeset is in a database:
+
+1. Look into journal table (`dbo.Changesets`) and find the top 1 record (order by `Date` descending).
+2. Use `dbo.GetAppVersion` sproc.
+
+The first approach is not reliable that much, since journal table can be manually deleted or its records manipulated.
+
+The `dbo.GetAppVersion` sproc is a utility sproc that `pdcsc` provides for this same purpose: database version.
+
+It returns changeset's timestamp and name.
+
+Here is a sample of this sproc's source in a feature branch named `feature/otp` that is executed in `2025/06/12 15:46:02`:
+
+```sql
+create or alter proc dbo.GetAppVersion as select '20250612154602' as applyDate, '20250612154602_7e02da54_feature_otp' as changeset
+```
+
+By invoking this sproc using a script like below, we can see what the last executed changeset is:
+
+```sql
+exec dbo.GetAppVersion
+```
+
+Sample Output:
+| applyDate | changeset |
+|-----------|-----------|
+| `20250612154602` | `20250612154602_7e02da54_feature_otp` |
+
+Each time a changeset is executed on a database, `dbo.GetAppVersion` is created/altered.
+
+Thus, we can always know what version a database is.
+
+## Customizing database versioning
+### Custom name for `dbo.GetAppVersion`
+`pdcsc` provides a `appVersionSprocName` property in its config by which we can use another name for our database versioning sproc.
+
+```json
+{
+  "database": { ... },
+  "appVersionSprocName": "dbo.ProductVersion"
+}
+```
+
+### Custom script
+There is also a `appVersionSprocTemplate` property by which we can completely customize how we want to implement versioning for our database.
+
+For example suppose we prefer `Extended Properties` for versioning our database.
+
+If this property is not empty, `pdcsc` ignores `GetAppVersion` method and simply appends that to the bottom of a changeset upon rendering.
+
+There are two interpolation parameters that the custom `appVersionSprocTemplate` can have:
+
+- `{ts}`
+- `{changeset}`
+
+`pdcsc` replaces these parameters with a changeset timestamp and its name respectively.
+
+Here is example of a custom script for database version that uses extended properties:
+
+```json
+{
+  "database": { ... },
+  "appVersionSprocTemplate": "
+go
+if exists
+(
+	SELECT 1 FROM fn_listextendedproperty(NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+	WHERE NAME = 'ProductVersion'
+)
+	EXEC sp_updateextendedproperty @name = N'ProductVersion', @value = N'{ts}'
+ELSE
+	EXEC sp_addextendedproperty @name = N'ProductVersion', @value = N'{ts}'
+go
+
+if exists
+(
+	SELECT 1 FROM fn_listextendedproperty(NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+	WHERE NAME = 'LastChangeset'
+)
+	EXEC sp_updateextendedproperty @name = N'LastChangeset', @value = N'{changeset}'
+ELSE
+	EXEC sp_addextendedproperty @name = N'LastChangeset', @value = N'{changeset}'
+"
+
+}
+```
 
 # Best Practices and Guidelines
 

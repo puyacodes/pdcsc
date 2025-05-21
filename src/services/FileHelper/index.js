@@ -12,29 +12,33 @@ class FileHelper {
             FileHelper.deleteFile(filepath);
         }
     }
-    static createFile(basePath, fileName, content, log = false) {
+    static createFile(basePath, fileName, content) {
+        let alreadyExists;
         const filePath = path.join(basePath, fileName);
 
         if (!fs.existsSync(filePath)) {
             fs.writeFileSync(filePath, content, "utf8");
 
-            if (log) {
-                console.log(`Created file: ${fileName}`);
-            }
+            alreadyExists = false;
+        } else {
+            alreadyExists = true;
         }
 
-        return filePath;
+        return { filePath, alreadyExists };
     }
-    static createDir(basePath, folder, log = false) {
+    static createDir(basePath, folder) {
+        let alreadyExists;
         const folderPath = path.join(basePath, folder);
 
         if (!fs.existsSync(folderPath)) {
             fs.mkdirSync(folderPath, { recursive: true });
 
-            if (log) {
-                console.log(`Created folder: ${folder}`);
-            }
+            alreadyExists = false;
+        } else {
+            alreadyExists = true;
         }
+
+        return { folderPath, alreadyExists };
     }
 }
 

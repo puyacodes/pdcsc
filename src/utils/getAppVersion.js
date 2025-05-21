@@ -4,13 +4,13 @@ import { Timestamper } from '@puya/ts';
 import chalk from 'chalk';
 
 function getAppVersion(config, changesetName) {
-    const template = isSomeString(config.appVersionSprocTemplate) ?
+    const template = `-- ${config.appVersionSprocName}\n` + (isSomeString(config.appVersionSprocTemplate) ?
         config.appVersionSprocTemplate :
-`
+        `
 go
 create or alter proc ${config.appVersionSprocName} as select '{ts}' as applyDate, '{changesetName}' as changeset
 go
-`;
+`);
     const res = Timestamper({
         locale: `${config.timestampLocale}`,
         template: template.replace('{changesetName}', changesetName),

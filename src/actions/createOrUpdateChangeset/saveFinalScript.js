@@ -26,19 +26,21 @@ async function saveFinalScript(config, allFiles) {
             old = fs.readFileSync(scriptFilePath, "utf-8");
         }
 
-        config.finalScript = `${script}
-${getAppVersion(config, finalChangesetName)}`;
+        config.finalScript = `${script}${getAppVersion(config, finalChangesetName)}`;
+
         if (old) {
-            const i = old.lastIndexOf(`create or alter proc ${config.appVersionSprocName}`);
+            const i = old.lastIndexOf(`-- ${config.appVersionSprocName}`);
 
             if (i >= 0) {
                 const scriptOld = old.substr(0, i).trim();
-                const scriptNew = script.trim() + "\n\ngo";
+                const scriptNew = script.trim();
 
                 hasChanges = scriptNew != scriptOld;
 
-                config.debug2(`Script length: old = ${scriptOld.length}, new = ${scriptNew.length}`);
+                config.debug2(`Script diff: old = ${scriptOld.length}, new = ${scriptNew.length}`);
                 config.debug7(`scripts`, { old: scriptOld, "new": scriptNew });
+            } else {
+                config.debug2(`Script diff: not applicable`);
             }
         }
 

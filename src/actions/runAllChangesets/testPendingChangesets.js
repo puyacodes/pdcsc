@@ -57,7 +57,7 @@ async function testPendingChangesets(config, pendingChangesets) {
             const all = _scripts.join("\ngo\n");
 
             if (config.debugMode) {
-                FileHelper.createFile(config.paths.scriptsPath, "all.sql", all);
+                FileHelper.createFile(config.paths.scriptsPath, "all.sql");
             }
 
             if (!config.applyOneByOne) {

@@ -5,35 +5,43 @@ import pdcscConfigContent from "./pdcscConfigContent";
 import gitlabCiContent from "./gitlabCiContent";
 import commitChanges from "../../utils/commitChanges";
 import azuredevopsPipelineContent from "./azuredevopsPipelineContent";
-import fs from "fs";
-import path from "path";
 import { isFunction, isString } from "@locustjs/base";
+import chalk from "chalk";
 
 function createFile(config, name, fnContent) {
-    let result = path.join(config.basePath, name);
+    let content = "";
 
-    if (!fs.existsSync(result)) {
-        config.debug(`Creating ${name} file ...`);
-        let content;
-
-        if (isFunction(fnContent)) {
-            content = fnContent(config)
-        } else if (isString(fnContent)) {
-            content = fnContent;
-        }
-
-        result = FileHelper.createFile(config.basePath, name, content, config.debugMode);
-    } else {
-        config.debug("already exist");
+    if (isFunction(fnContent)) {
+        content = fnContent(config)
+    } else if (isString(fnContent)) {
+        content = fnContent;
     }
 
-    return result;
+    const { filePath, alreadyExists } = FileHelper.createFile(config.basePath, name, content);
+
+    if (!alreadyExists) {
+        console.log(`Creating ${chalk.yellow(name)}: ${chalk.green("created")}`);
+    } else {
+        console.log(`Creating ${chalk.yellow(name)}: ${chalk.magenta("already exists")}`);
+    }
+
+    return filePath;
+}
+
+function createFolder(folderPath, parent, folder) {
+    const { alreadyExists } = FileHelper.createDir(folderPath, folder)
+
+    if (!alreadyExists) {
+        console.log(`Creating /${chalk.yellow((parent ? parent + "/" : "") + folder)}: ${chalk.green("created")}`);
+    } else {
+        console.log(`Creating /${chalk.yellow((parent ? parent + "/" : "") + folder)}: ${chalk.magenta("already exists")}`);
+    }
 }
 
 async function initProject(config) {
     let error;
 
-    const { basePath, debugMode, paths, folders } = config;
+    const { basePath, paths, folders } = config;
 
     do {
         try {
@@ -43,25 +51,36 @@ async function initProject(config) {
                 break;
             }
 
-            config.debug("Creating folders ...");
+            console.log("");
 
-            Object.values(folders).forEach(folder => FileHelper.createDir(basePath + '/' + paths.scriptsFolderName, folder, debugMode));
+            createFolder(basePath, "", "Scripts");
 
-            FileHelper.createDir(basePath, "Changes", debugMode);
+            Object.values(folders).forEach(folder => createFolder(basePath + '/' + paths.scriptsFolderName, "Scripts", folder));
+
+            createFolder(basePath, "", "Changes");
 
             const gitlabCI = createFile(config, ".gitlab-ci.yml", gitlabCiContent);
             const azurePipelines = createFile(config, "azure-pipelines.yml", azuredevopsPipelineContent);
             const gitIgnore = createFile(config, ".gitignore", gitignoreContent);
             const pdcscConfig = createFile(config, "pdcsc-config.json", pdcscConfigContent);
-
-            const customConfig = JSON.stringify({
+            const dbName = config.database?.database || "MyDb";
+            const customConfigDev = JSON.stringify({
                 database: {
-                    password: "****"
-                }
+                    database: `${dbName}_dev`,
+                    password: config.database?.password || "****"
+                },
+                masterBranchName: "origin/dev"
+            }, null, 4);
+            const customConfigMain = JSON.stringify({
+                database: {
+                    database: `${dbName}_main`,
+                    password: config.database?.password || "****"
+                },
+                masterBranchName: "origin/main"
             }, null, 4);
 
-            createFile(config, "pdcsc-config.development.json", customConfig);
-            createFile(config, "pdcsc-config.production.json", customConfig);
+            createFile(config, "pdcsc-config.development.json", customConfigDev);
+            createFile(config, "pdcsc-config.production.json", customConfigMain);
 
             config.debug("Committing changes ...");
 

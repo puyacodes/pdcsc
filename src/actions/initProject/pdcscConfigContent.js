@@ -1,11 +1,12 @@
 function pdcscConfigContent(config) {
+    const dbName = config.database?.database || "MyDb";
     const configContent = {
         database: {
-            server: "127.0.0.1",
-            user: "my_user",
+            server: config.database?.server || "127.0.0.1",
+            user: config.database?.user || "myuser",
             password: "****",
-            database: "mydb",
-            encrypt: false
+            database: dbName,
+            encrypt: config.database?.encrypt || false
         }
     };
 

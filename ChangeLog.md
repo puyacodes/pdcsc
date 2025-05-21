@@ -102,3 +102,11 @@ roll:
     init
         removed -f arg from gitlab-ci init file
         improved readme
+
+# 2.4.2
+    init
+        improved functionality & output
+    roll
+        fixed issue: changeset is tested even though it is not required to be tested or
+                    when database versioning is customized.
+        

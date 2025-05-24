@@ -4,12 +4,16 @@ import getChangesetScript from "./getChangesetScript";
 import createErrorLog from "../../utils/createErrorLog";
 import chalk from "chalk";
 import testScript from "../testScript";
+import { ApplyMode } from "../../enums";
 
 async function testPendingChangesets(config, pendingChangesets) {
     let error;
     const scripts = {}
+    const { applyMode } = config;
 
     console.log("Bundling/Testing pending changesets ...");
+
+    const canTest = applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Test;
 
     try {
         const _scripts = []
@@ -28,7 +32,7 @@ async function testPendingChangesets(config, pendingChangesets) {
                 scripts[changeset.name] = cr.script;
             }
 
-            if (config.applyOneByOne) {
+            if (config.applyOneByOne && canTest) {
                 try {
                     config.debug2(`\tTesting ...`);
 
@@ -54,13 +58,17 @@ async function testPendingChangesets(config, pendingChangesets) {
         if (!error) {
             console.log("Bundling ...");
 
+            config.debug2(`joining all scripts (count = ${_scripts.length}) ...`);
+
             const all = _scripts.join("\ngo\n");
 
             if (config.debugMode) {
-                FileHelper.createFile(config.paths.scriptsPath, "all.sql");
+                config.debug2(`Creating all.sql script ...`);
+
+                FileHelper.createFile(config.paths.scriptsPath, "all.sql", all);
             }
 
-            if (!config.applyOneByOne) {
+            if (!config.applyOneByOne && canTest) {
                 console.log("Testing bundle ...");
 
                 error = await testScript(config, all);

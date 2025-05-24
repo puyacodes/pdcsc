@@ -5,6 +5,7 @@ import chalk from "chalk";
 
 function getPendingChangesets(config, lastExecutedChangeset, executedChangesets) {
     console.log("Getting pending changesets ...");
+
     const result = [];
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
@@ -21,7 +22,7 @@ function getPendingChangesets(config, lastExecutedChangeset, executedChangesets)
     // this happens when we ahve two or more teams who have distinct workflows (each team has their
     // own dev branch on which they merge their branches with).
     console.log("\tchecking older changesets ...");
-    
+
     changesets.forEach(changeset => {
         if (!executedChangesets.find(cs => changeset.name.equals(cs.name))) {
             config.debug2(`\t\tadded changeset ${chalk.yellow(changeset.name)}`);
@@ -35,6 +36,7 @@ function getPendingChangesets(config, lastExecutedChangeset, executedChangesets)
 
     console.log("\tchecking newer changesets ...");
 
+    /*
     for (const changeset of changesets) {
         const match = changeset.name.match(/^(\d{14})/);
 
@@ -45,9 +47,12 @@ function getPendingChangesets(config, lastExecutedChangeset, executedChangesets)
         if (!lastExecutedDate || changeset.date > lastExecutedDate) {
             config.debug2(`\t\tadded changeset ${chalk.yellow(changeset.name)}`);
 
-            result.push(changeset);
+            if (!result.contains(changeset)) {
+                result.push(changeset);
+            }
         }
     }
+    */
 
     result.sort((a, b) => a.date - b.date);
 

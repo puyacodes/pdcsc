@@ -14,7 +14,7 @@ async function addChangesetToDatabase(config, changeset, i) {
 
         await db.executeQuery({ query });
     } catch (ex) {
-        error = new Exception(`Journaling changeset${isNullOrEmpty(i) ? "": ` #${i}`} ${changeset.name} to database ${config.database.database} failed.`, ex);
+        error = new Exception(`Journaling changeset${isNullOrEmpty(i) ? "" : ` #${i}`} ${changeset.name} to database ${config.database.database} failed.`, ex);
     }
 
     return error;

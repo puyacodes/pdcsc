@@ -22,9 +22,9 @@ async function run(config) {
     do {
         try {
             console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, one-by-one = ${chalk.yellow(config.applyOneByOne)}, database = ${chalk.magenta(config.database.database)}`);
-    
+
             error = await ensureChangesTableCreated(config);
-    
+
             if (error) {
                 break;
             }
@@ -38,6 +38,8 @@ async function run(config) {
             const lastExecutedChangeset = await getLastExecutedChangeset(config);
             const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset, executedChangesets);
 
+            config.debug3({ pendingChangesets })
+
             if (!pendingChangesets.length) {
                 console.log("No pending changeset found. Database is up-to-date.");
                 break;
@@ -45,12 +47,10 @@ async function run(config) {
 
             let scripts;
 
-            if (applyMode == ApplyMode.TestAndUpdate || applyMode == ApplyMode.Test) {
-                const tr = await testPendingChangesets(config, pendingChangesets);
+            const tr = await testPendingChangesets(config, pendingChangesets);
 
-                error = tr.error;
-                scripts = tr.scripts;
-            }
+            error = tr.error;
+            scripts = tr.scripts;
 
             if (error) {
                 console.log("Operation aborted.");
@@ -65,7 +65,11 @@ async function run(config) {
                 let i = 1;
 
                 for (let changeset of pendingChangesets) {
+                    // config.debug3(`${i}. changeset: ${changeset.name}`);
+
                     const script = scripts[changeset.name];
+
+                    // config.debug3(`\tscript length: ${script?.length}`);
 
                     error = await runAndAddChangeset(config, changeset, script, i);
 

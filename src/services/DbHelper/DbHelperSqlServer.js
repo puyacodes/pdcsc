@@ -117,7 +117,7 @@ class DbHelperSqlServer extends DbHelperBase {
         // this is to check whether connection is ok
         await this.executeNonQuery({ query: 'declare @a int', dbName: "master" });
         // checking given database existence
-        await this.executeNonQuery({ query: 'use ' + dbName, dbName: "master" });
+        await this.executeNonQuery({ query: 'use [' + dbName + ']', dbName: "master" });
     }
 }
 

@@ -9,14 +9,14 @@ class DbHelperSqlServer extends DbHelperBase {
         super(config)
     }
     getConnectionConfig(dbName) {
-        const trustServerCertificate = isBool(this.config.database.trustServerCertificate) ? {
-            trustServerCertificate: this.config.database.trustServerCertificate
+        const trustServerCertificate = isBool(this.config.trustServerCertificate) ? {
+            trustServerCertificate: this.config.trustServerCertificate
         } : {};
-        const connectionTimeout = isNumber(this.config.database.connectionTimeout) && this.config.database.connectionTimeout > 0 ? {
-            connectionTimeout: this.config.database.connectionTimeout
+        const connectionTimeout = isNumber(this.config.connectionTimeout) && this.config.connectionTimeout > 0 ? {
+            connectionTimeout: this.config.connectionTimeout * 1000
         } : { connectionTimeout: 10000 };  // 10 sec
-        const requestTimeout = isNumber(this.config.database.requestTimeout) && this.config.database.queryTimeout > 0 ? {
-            requestTimeout: this.config.database.queryTimeout
+        const requestTimeout = isNumber(this.config.queryTimeout) && this.config.queryTimeout > 0 ? {
+            requestTimeout: this.config.queryTimeout * 1000
         } : { requestTimeout: 30000 };  // 30 sec
 
         return {

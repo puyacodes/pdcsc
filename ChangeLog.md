@@ -119,3 +119,6 @@ roll:
         fixed issue: 
 
     added connection timeout and query timeout options for database config
+
+# 2.4.4
+    fixed connection timeout/query timeout

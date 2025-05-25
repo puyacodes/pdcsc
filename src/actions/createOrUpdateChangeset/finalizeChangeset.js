@@ -103,6 +103,8 @@ function finalizeContent(config, content, sections, dropStatements) {
                         config.debug3(`\tdetected section ${chalk.yellow(section)}`)
                     } else if (section == sec) {
                         if ((!isCustomEndSection(section) && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
+                            config.debug3(`\tsection ${chalk.yellow(section)} ended`)
+
                             addNewItems();
 
                             section = "";
@@ -124,6 +126,10 @@ function finalizeContent(config, content, sections, dropStatements) {
                     }
                 } else {
                     config.debug3(`\tskipped unknown section ${chalk.red(trimmedLine)}`)
+                }
+
+                if (!config.fullChangeset && !isSomeArray(draft[section])) {
+                    draft[section].push(true);
                 }
 
                 continue;
@@ -148,10 +154,6 @@ function finalizeContent(config, content, sections, dropStatements) {
             }
 
             if (section) {
-                if (!isSomeArray(draft[section]) && !config.fullChangeset) {
-                    draft[section].push(true);
-                }
-
                 if (isArray(sections[section])) {
                     if (sections[section].contains(trimmedLine)) {
                         if (!temp[section].contains(trimmedLine)) {
@@ -221,6 +223,9 @@ function finalizeContent(config, content, sections, dropStatements) {
             .filter(section => !isSomeArray(draft[section]))
             .forEach((section) => {
                 const items = sections[section];
+
+                config.debug3(`${section}`, items)
+
                 const header = getSectionHeader(section, isCustomEndSection(section) ? customEndHeader : "");
 
                 if (isString(items)) {

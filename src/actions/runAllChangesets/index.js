@@ -8,6 +8,7 @@ import getPendingChangesets from "./getPendingChangesets.js";
 import fs from "fs";
 import chalk from "chalk";
 import getExecutedChangesets from "./getExecutedChangesets.js";
+import getFirstExecutedChangeset from "./getFirstExecutedChangeset.js";
 
 async function run(config) {
     let error;
@@ -35,8 +36,7 @@ async function run(config) {
             }
 
             const executedChangesets = await getExecutedChangesets(config);
-            const lastExecutedChangeset = await getLastExecutedChangeset(config);
-            const pendingChangesets = getPendingChangesets(config, lastExecutedChangeset, executedChangesets);
+            const pendingChangesets = getPendingChangesets(config, executedChangesets);
 
             config.debug3({ pendingChangesets })
 

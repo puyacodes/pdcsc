@@ -11,6 +11,7 @@ async function runAndAddChangeset(config, changeset, script, i) {
     console.log(`${isEmpty(i) ? '?' : i}. Executing changeset ${chalk.cyan(changeset.name)} ...`);
 
     try {
+        /*
         const rs = await db.executeQuery({
             query: `
 select case
@@ -25,12 +26,14 @@ select case
         if (rs && rs.length && rs[0] == 1) {
             console.log(chalk.blue("\tAlready Journaled"));
         } else {
-            await db.executeBatch({ content: script });
-
-            console.log(chalk.green("\tSucceeded"));
-
-            error = await addChangesetToDatabase(config, changeset, i);
+            
         }
+        */
+        await db.executeBatch({ content: script });
+
+        console.log(chalk.green("\tSucceeded"));
+
+        error = await addChangesetToDatabase(config, changeset, i);
     } catch (ex) {
         console.log(chalk.red("\tFailed"));
 

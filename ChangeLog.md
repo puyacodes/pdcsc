@@ -109,4 +109,13 @@ roll:
     roll
         fixed issue: changeset is tested even though it is not required to be tested or
                     when database versioning is customized.
-        
+
+# 2.4.3
+    roll
+        fixed bug: added redundant section upon meeting empty sections
+    apply
+        fixed bug: changeset execution order is corrupted
+        fixed bug: missing bundle file (all.sql) content in debug mode and update mode
+        fixed issue: 
+
+    added connection timeout and query timeout options for database config

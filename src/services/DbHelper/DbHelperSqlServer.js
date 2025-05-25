@@ -1,7 +1,7 @@
 import sql from "mssql";
 import DbHelperBase from './DbHelperBase'
 import { ExecuteQueryException } from "./exceptions";
-import { isBool, isNullOrEmpty } from "@locustjs/base";
+import { isBool, isNullOrEmpty, isNumber } from "@locustjs/base";
 import ConnectionException from "./exceptions/ConnectionException";
 
 class DbHelperSqlServer extends DbHelperBase {
@@ -9,12 +9,24 @@ class DbHelperSqlServer extends DbHelperBase {
         super(config)
     }
     getConnectionConfig(dbName) {
+        const trustServerCertificate = isBool(this.config.database.trustServerCertificate) ? {
+            trustServerCertificate: this.config.database.trustServerCertificate
+        } : {};
+        const connectionTimeout = isNumber(this.config.database.connectionTimeout) && this.config.database.connectionTimeout > 0 ? {
+            connectionTimeout: this.config.database.connectionTimeout
+        } : { connectionTimeout: 10000 };  // 10 sec
+        const requestTimeout = isNumber(this.config.database.requestTimeout) && this.config.database.queryTimeout > 0 ? {
+            requestTimeout: this.config.database.queryTimeout
+        } : { requestTimeout: 30000 };  // 30 sec
+
         return {
             user: this.config.user,
             password: this.config.password,
             server: this.config.server,
             database: isNullOrEmpty(dbName) ? this.config.database : dbName,
-            options: { encrypt: isBool(this.config.encrypt) ? this.config.encrypt : false }
+            options: { encrypt: isBool(this.config.encrypt) ? this.config.encrypt : false, ...trustServerCertificate },
+            ...connectionTimeout,
+            ...requestTimeout
         }
     }
     async executeNonQuery({ query, dbName, options }) {

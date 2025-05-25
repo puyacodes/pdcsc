@@ -259,7 +259,10 @@ The full `pdcsc config` file with all its options is as follows:
 		"user": "...",		  // database userid
 		"password": "...",	// database password
 		"database": "...",	  // master database name
-		"encrypt": "..."	  // encrypt connection or not
+		"encrypt": true | false,	  // encrypt connection or not
+    "trustServerCertificate": true | false, // trust server certificate
+    "connectionTimeout": number, // conenction timeout (default = 10 sec)
+    "queryTimeout": number, // query timeout (default = 30 sec)
 	},
 	"pipeline": "...",			    // pipeline type (gitlabs = default, azuredevops)
 	"masterBranchName": "...",		// master branch name (default = 'origin/main')
@@ -797,8 +800,8 @@ exec dbo.GetAppVersion
 ```
 
 Sample Output:
-| applyDate | changeset |
-|-----------|-----------|
+| applyDate        | changeset                             |
+| ---------------- | ------------------------------------- |
 | `20250612154602` | `20250612154602_7e02da54_feature_otp` |
 
 Each time a changeset is executed on a database, `dbo.GetAppVersion` is created/altered.

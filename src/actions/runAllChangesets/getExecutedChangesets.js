@@ -13,7 +13,7 @@ async function getExecutedChangesets(config) {
         // we MUST sort by name. changesets' name already has a timestamp
         // which provides sortability.
 
-        const query = `SELECT [name], [date] FROM ${changesetsTableName} ORDER BY [name]`;
+        const query = `SELECT distinct [name] FROM ${changesetsTableName} ORDER BY [name]`;
 
         config.debug4(query);
 

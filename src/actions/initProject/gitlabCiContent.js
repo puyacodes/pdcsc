@@ -14,7 +14,7 @@ before_merge_build:
     - apk update && apk add git
     - npm i @puya/pdcsc -g
     - |
-      if [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "dev" ] || [ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "main" ]; then
+      if [ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" = "main" ]; then
         pdcsc apply -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm -p "$DB_PASS"
       else
         pdcsc pipeline -c "pdcsc-config-$\{CI_MERGE_REQUEST_TARGET_BRANCH_NAME\}.json" -dbm -p "$DB_PASS"

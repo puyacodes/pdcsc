@@ -122,3 +122,7 @@ roll:
 
 # 2.4.4
     fixed connection timeout/query timeout
+
+# 2.4.5
+    apply
+        fixed bug: assignment to constant variable

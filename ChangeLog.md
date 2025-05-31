@@ -135,3 +135,5 @@ roll:
         fixed finalDeleteds reporting in debug mode
         used level 7 reporting for chnageset timestamp extraction
         
+# 2.4.7
+    fixed bug: ReferenceError: isSectionEnd is not defined

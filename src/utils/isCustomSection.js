@@ -10,4 +10,8 @@ function isCustomSection(section) {
     return isCustomStartSection(section) || isCustomEndSection(section);
 }
 
-export { isCustomStartSection, isCustomEndSection, isCustomSection };
+function isSectionEnd(section, line) {
+    return (!isCustomEndSection(section) && line && line.contains("end")) || /\(\s*end\s*\)/.test(line)
+}
+
+export { isCustomStartSection, isCustomEndSection, isCustomSection, isSectionEnd };

@@ -126,3 +126,12 @@ roll:
 # 2.4.5
     apply
         fixed bug: assignment to constant variable
+
+# 2.4.6
+    roll
+        fixed bug: renamed items are not added to changeset
+        fixed issue: custom sections in rendered script are trimmed
+        fixed issue: added not .sql deleted files to changes
+        fixed finalDeleteds reporting in debug mode
+        used level 7 reporting for chnageset timestamp extraction
+        

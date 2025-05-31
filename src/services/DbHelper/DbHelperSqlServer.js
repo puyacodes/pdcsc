@@ -77,37 +77,39 @@ class DbHelperSqlServer extends DbHelperBase {
         query = query.replace(/^go\s+/i, '');
 
         if (options && options.minify) {
-            query = this.cleanQuery(query);
+            // query = this.cleanQuery(query);
         }
 
-        try {
+        if (query) {
             try {
-                pool = await sql.connect(this.getConnectionConfig(dbName));
-
-                conn_ok = true;
-            } catch (e) {
-                error = new ConnectionException(`Database connection error`, e)
-            }
-
-            if (conn_ok) {
-                result = await pool.request().query(query);
-
-                result = result.recordset;
-            }
-        } catch (ex) {
-            error = new ExecuteQueryException(query, ex);
-        } finally {
-            if (pool && conn_ok) {
                 try {
-                    await pool.close();
+                    pool = await sql.connect(this.getConnectionConfig(dbName));
+
+                    conn_ok = true;
                 } catch (e) {
-                    console.error("DbHelperSqlServer", e);
+                    error = new ConnectionException(`Database connection error`, e)
+                }
+
+                if (conn_ok) {
+                    result = await pool.request().query(query);
+
+                    result = result.recordset;
+                }
+            } catch (ex) {
+                error = new ExecuteQueryException(query, ex);
+            } finally {
+                if (pool && conn_ok) {
+                    try {
+                        await pool.close();
+                    } catch (e) {
+                        console.error("DbHelperSqlServer", e);
+                    }
                 }
             }
-        }
 
-        if (error) {
-            throw error;
+            if (error) {
+                throw error;
+            }
         }
 
         return result;

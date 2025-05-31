@@ -12,14 +12,14 @@ function extractChangesetItems(config, content) {
 
     for (let line of content.split("\n")) {
         i++;
-        line = line.trim()
+        const trimmedLine = line.trim();
 
-        if (isNullOrEmpty(line) && (!section || isCustomSection(section))) {
+        if (isNullOrEmpty(trimmedLine) && (!section || isCustomSection(section))) {
             continue;
         }
 
-        if (line.startsWith("##")) {
-            const sec = getSection(line);
+        if (trimmedLine.startsWith("##")) {
+            const sec = getSection(trimmedLine);
 
             if (!sec) {
                 // ignore
@@ -31,7 +31,7 @@ function extractChangesetItems(config, content) {
                 config.debug3(` detected section ${chalk.yellow(section)}`)
                 continue;
             } else if (section == sec) {
-                if ((section != "customEnd" && line.contains("end")) || /\(\s*end\s*\)/.test(line)) {
+                if (isSectionEnd(section, trimmedLine)) {
                     section = "";
                 } else {
                     throw `unexpected redundant section marker '${sec}' at line ${i}`
@@ -41,19 +41,19 @@ function extractChangesetItems(config, content) {
                 section = sec;
                 continue;
             }
-        } else if (line.startsWith("#")) {
+        } else if (trimmedLine.startsWith("#")) {
             // comment line
             continue;
         }
 
-        if (section && line) {
+        if (section && trimmedLine) {
             if (isArray(result[section])) {
-                if (!result[section].contains(line)) {
-                    config.debug3(`\tItem Added: ${chalk.gray(line)}`);
+                if (!result[section].contains(trimmedLine)) {
+                    config.debug3(`\tItem Added: ${chalk.gray(trimmedLine)}`);
 
-                    result[section].push(line);
+                    result[section].push(trimmedLine);
                 } else {
-                    config.debug3(`\tItem exists: ${chalk.gray(line)}`);
+                    config.debug3(`\tItem exists: ${chalk.gray(trimmedLine)}`);
                 }
             } else {
                 result[section] = result[section] ? (result[section] + "\n" + line) : line;

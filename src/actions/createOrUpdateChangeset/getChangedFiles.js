@@ -37,14 +37,14 @@ function getChangedFiles(config) {
             { encoding: "utf-8" }
         )
             .split("\n")
-            .map((file) => file.trim())
-            .filter((file) => file);
+            .map(file => file.trim())
+            .filter(file => isValidScriptFile(config, file));
 
         config.debug2("\nrenamed files", renamedFiles);
         config.debug2("\ndeleted files", deletedFiles);
 
         const allFiles = [...modifiedAndAddedFiles, ...renamedFiles.map(x => x.new)];
-        const finalChanges = allFiles.filter((file) => isValidScriptFile(config, file));
+        const finalChanges = allFiles.filter(file => isValidScriptFile(config, file));
 
         config.debug2("\nFinal changes", finalChanges);
 

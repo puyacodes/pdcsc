@@ -5,7 +5,7 @@ import { Exception } from "@locustjs/exception";
 
 function extractDateFromString(config, inputString) {
 
-    config.debug3(`extracting date from: ${inputString}`)
+    config.debug7(`extracting date from: ${inputString}`)
 
     try {
         const regex = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/;

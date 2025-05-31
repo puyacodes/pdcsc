@@ -7,7 +7,6 @@ function updateSections(config, allFiles) {
     const { folders, sections, finalDeleteds, finalChanges } = config;
 
     config.debug("Updating sections with new changes ...");
-    config.debug2({ finalDeleteds })
 
     config.debug("\nadding new changes to sections ...");
 
@@ -50,7 +49,9 @@ function updateSections(config, allFiles) {
                         });
 
                         if (rename) {
-                            finalDeleteds.push(rename.old)
+                            if (!path.basename(rename.old).equals(path.basename(rename.new))) {
+                                finalDeleteds.push(rename.old)
+                            }
                             //                         console.warn(`\n${chalk.yellow(`Warning:`)} detected script rename (${chalk.yellow(fileName)}).
                             // Don't forget to add ${chalk.yellow("DROP statement")} for old script into ${chalk.yellow("Custom-Start")} section of the Changeset to drop the old object.`);
                         }
@@ -62,6 +63,8 @@ function updateSections(config, allFiles) {
         }
     });
 
+    config.debug2({ finalDeleteds })
+    
     config.debug("\nremoving changeset items that are deleted ...");
 
     finalDeleteds.forEach(file => {

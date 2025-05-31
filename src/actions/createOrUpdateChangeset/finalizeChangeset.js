@@ -8,7 +8,8 @@ import getChangesetHeader from "../../utils/getChangesetHeader";
 import getSectionHeader from "../../utils/getSectionHeader";
 import getOrderedSections from "../../utils/getOrderedSections";
 import hasChangesetHeader from "../../utils/hasChangesetHeader";
-import { isCustomEndSection, isCustomStartSection } from "../../utils/isCustomSection";
+import { isCustomEndSection, isCustomStartSection, isSectionEnd } from "../../utils/isCustomSection";
+import { Exception } from "@locustjs/exception";
 
 function finalizeContent(config, content, sections, dropStatements) {
     let newContent = false;
@@ -44,6 +45,10 @@ function finalizeContent(config, content, sections, dropStatements) {
                             temp[section].push(item);
 
                             if (config.fullChangeset) {
+                                if (!isArray(draft[section])) {
+                                    throw new Exception(`missing array in ${section} section`)
+                                }
+
                                 draft[section].push(item)
                             } else {
                                 result.push(item);
@@ -102,11 +107,11 @@ function finalizeContent(config, content, sections, dropStatements) {
 
                         config.debug3(`\tdetected section ${chalk.yellow(section)}`)
                     } else if (section == sec) {
-                        if ((!isCustomEndSection(section) && trimmedLine.contains("end")) || /\(\s*end\s*\)/.test(line)) {
+                        if (isSectionEnd(section, trimmedLine)) {
                             config.debug3(`\tsection ${chalk.yellow(section)} ended`)
-
+    
                             addNewItems();
-
+    
                             section = "";
                         }
                     } else {
@@ -128,7 +133,7 @@ function finalizeContent(config, content, sections, dropStatements) {
                     config.debug3(`\tskipped unknown section ${chalk.red(trimmedLine)}`)
                 }
 
-                if (!config.fullChangeset && !isSomeArray(draft[section])) {
+                if (!config.fullChangeset && isArray(draft[section]) && !draft[section].length) {
                     draft[section].push(true);
                 }
 

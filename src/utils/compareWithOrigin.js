@@ -3,6 +3,7 @@ import simpleGit from "simple-git";
 import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
 import { ActionType } from "../enums";
+import promptUser from "./promptUser";
 
 async function compareWithOrigin(config) {
     const { masterBranchName } = config

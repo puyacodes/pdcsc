@@ -119,7 +119,7 @@ function getPendingChangesets(config, executedChangesets) {
     }
 
     if (result.length) {
-        config.debug2("Pending Changesets", result.map(changeset => changeset.name));
+        config.debug1("Pending Changesets", result.map(changeset => changeset.name));
 
         console.log(`${result.length} changesets found.`);
     }

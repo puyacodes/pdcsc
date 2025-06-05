@@ -1,14 +1,14 @@
-import ensureChangesTableCreated from "./ensureChangesTableCreated.js";
+import fs from "fs";
+import chalk from "chalk";
 import { Exception } from "@locustjs/exception";
 import runAndAddChangeset from "./runAndAddChangeset.js";
 import testPendingChangesets from "./testPendingChangesets.js";
 import { ApplyMode } from "../../enums.js";
-import getLastExecutedChangeset from "./getLastExecutedChangeset.js";
 import getPendingChangesets from "./getPendingChangesets.js";
-import fs from "fs";
-import chalk from "chalk";
 import getExecutedChangesets from "./getExecutedChangesets.js";
-import getFirstExecutedChangeset from "./getFirstExecutedChangeset.js";
+import checkIfGitRepo from "../../utils/checkIfGitRepo.js";
+import checkIfBranchIsReady from "./checkIfBranchIsReady.js";
+import ensureJournalTableCreated from "./ensureJournalTableCreated.js";
 
 async function run(config) {
     let error;
@@ -21,10 +21,25 @@ async function run(config) {
     //  update
 
     do {
-        try {
-            console.log(`Apply mode = ${chalk.yellow(ApplyMode[applyMode])}, one-by-one = ${chalk.yellow(config.applyOneByOne)}, database = ${chalk.magenta(config.database.database)}`);
+        if (config.inPipeline) {
+            if (!await checkIfGitRepo(config)) {
+                error = config.error;
+                break;
+            }
 
-            error = await ensureChangesTableCreated(config);
+            if (!await checkIfBranchIsReady(config)) {
+                error = config.error;
+                break;
+            }
+        }
+
+        try {
+            console.log(`database: ${chalk.magenta(config.database.database)}`);
+            console.log(`\tapply mode = ${chalk.yellow(ApplyMode[applyMode])}, ` +
+                        `one-by-one = ${chalk.yellow(config.applyOneByOne)}, ` +
+                        `force journal = ${chalk.yellow(config.forceJournalTable)}, `);
+
+            error = await ensureJournalTableCreated(config);
 
             if (error) {
                 break;

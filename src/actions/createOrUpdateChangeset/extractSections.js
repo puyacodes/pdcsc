@@ -36,7 +36,7 @@ function _extractOld(config, content) {
 
     sections.forEach(section => {
         // Check if the section exists
-        config.debug4(`Checking section ${chalk.yellow(section.name)} existence ...`);
+        config.debug1(`Checking section ${chalk.yellow(section.name)} existence ...`);
 
         if (!content.includes(section.start) || !content.includes(section.end)) {
             throw new Exception(`Section '${chalk.yellow(section.name)}' was not found in changeset.`);
@@ -75,7 +75,7 @@ function _extractOld(config, content) {
 }
 
 function extractSections(config) {
-    config.debug("Extracting sections ...");
+    config.debug("Reading items from changeset ...");
 
     const content = fs.readFileSync(config.finalChangesetFilePath, "utf-8");
 

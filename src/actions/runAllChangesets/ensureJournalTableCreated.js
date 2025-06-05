@@ -1,12 +1,12 @@
 import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
-async function ensureChangesTableCreated(config) {
+async function ensureJournalTableCreated(config) {
     let error;
 
     const { db, changesetsTableName } = config;
 
-    if (config.forceChangesetsTable) {
+    if (config.forceJournalTable) {
         console.log(`Ensuring journal table ${chalk.yellow(changesetsTableName)} existence ...`);
 
 
@@ -53,4 +53,4 @@ ELSE
     return error;
 }
 
-export default ensureChangesTableCreated;
+export default ensureJournalTableCreated;

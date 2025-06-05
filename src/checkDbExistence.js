@@ -1,3 +1,4 @@
+import { Exception } from "@locustjs/exception";
 import chalk from "chalk";
 
 async function checkDbExistence(config) {
@@ -13,7 +14,7 @@ async function checkDbExistence(config) {
 
             result = true
         } catch (ex) {
-            config.error = ex;
+            config.error = new Exception('db existence check failed', ex);
         }
     } else {
         result = true;

@@ -1,22 +1,18 @@
 import { isNullOrEmpty } from "@locustjs/base";
 import { Exception } from "@locustjs/exception";
-import { execSync } from "child_process";
 
 function checkIfBranchAlreadyMerged(config) {
-    const { realBranchName, masterBranchName } = config;
+    const { realCurrentBranch, masterBranchName } = config;
 
     try {
         config.debug("Checking if branch already merged ...")
         
-        const result = execSync(
-            `git merge-base --is-ancestor ${realBranchName} ${masterBranchName} && echo "merged" || echo "not merged"`,
-            { encoding: "utf-8" }
-        );
+        const result = config.exec(`git merge-base --is-ancestor ${realCurrentBranch} ${masterBranchName} && echo "merged" || echo "not merged"`);
 
-        if (result.trim() == "merged") {
-            config.error = `branch ${realBranchName} already merged into ${masterBranchName}.
+        if (result == "merged") {
+            config.error = new Exception(`branch ${realCurrentBranch} already merged into ${masterBranchName}.
 Changing already merged branches is forbidden.
-Please create a new branch.`;
+Please create a new branch.`);
         } else {
             config.debug("Branch is ok (not merged).");
         }

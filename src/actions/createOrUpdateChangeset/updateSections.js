@@ -6,9 +6,9 @@ import { isEmpty, isNullOrEmpty } from "@locustjs/base";
 function updateSections(config, allFiles) {
     const { folders, sections, finalDeleteds, finalChanges } = config;
 
-    config.debug("Updating sections with new changes ...");
+    config.debug("Updating changeset with new changes ...");
 
-    config.debug("\nadding new changes to sections ...");
+    config.debug("  adding new items ...");
 
     finalChanges.forEach((file) => {
         let fileName = path.basename(file);
@@ -65,7 +65,7 @@ function updateSections(config, allFiles) {
 
     config.debug2({ finalDeleteds })
     
-    config.debug("\nremoving changeset items that are deleted ...");
+    config.debug("  removing items whose files are deleted ...");
 
     finalDeleteds.forEach(file => {
         let fileName = path.basename(file);
@@ -95,7 +95,7 @@ function updateSections(config, allFiles) {
         }
     })
 
-    config.debug("\nchecking if items exist ...");
+    config.debug("  checking if items' files exist ...");
 
     for (const [section, folder] of Object.entries(folders)) {
         for (let item of sections[section]) {

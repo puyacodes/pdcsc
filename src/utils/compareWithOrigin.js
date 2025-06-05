@@ -2,105 +2,93 @@ import { Exception } from "@locustjs/exception";
 import simpleGit from "simple-git";
 import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
-import { execSync } from "child_process";
 
 async function compareWithOrigin(config) {
     const { masterBranchName } = config
 
-    config.debug(`Initializing simpleGit ...`)
+    do {
+        config.debug(`Checking if ${chalk.yellow(masterBranchName)} is valid ...`);
 
-    const git = simpleGit();
-
-    if (masterBranchName) {
         try {
-            do {
-                config.debug(`Checking if we are a git repo ...`)
+            config.debug1(`getting remote branches ...`)
 
-                let isRepo = false;
+            const branches = config.exec(`git branch -r`)
+                .split("\n")
+                .map(x => x.trim())
+                .filter(x => x);
 
-                try {
-                    isRepo = await git.checkIsRepo();
-                } catch (ex) {
-                    config.error = ex;
+            config.debug2('remote branches', branches)
 
-                    break;
-                }
+            if (!branches.includes(masterBranchName)) {
+                config.error = new Exception(`Remote branch ${chalk.yellow(masterBranchName)} does not exist.`);
 
-                if (!isRepo) {
-                    config.error = 'We are not a git repository.';
-                    break;
-                } else {
-                    config.debug("We are a git repo.");
-                }
+                break;
+            }
+            
+            config.debug(`${masterBranchName} is valid.`);
 
-                config.debug("Fetching origin ...");
+            config.debug(`Fetching master branch ${masterBranchName} ...`);
 
-                const [origin, branch] = masterBranchName.split("/");
+            const [origin, branch] = masterBranchName.split("/");
 
-                config.debug2({ origin, branch })
+            config.exec(`git fetch ${origin} ${branch}`);
 
-                execSync(
-                    `git fetch ${origin} ${branch}`,
-                    { encoding: "utf-8" }
-                );
+            // await git.fetch(origin, branch);
 
-                // await git.fetch(origin, branch);
+            // const base = await git.raw(['merge-base', realCurrentBranch, masterBranchName]);
+            const base = config.mergeBase;
 
-                config.debug("Fetch completed.");
-                config.debug(`Checking if ${chalk.yellow(masterBranchName)} is valid ...`);
+            config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
 
-                const branches = execSync(
-                    `git branch -r`,
-                    { encoding: "utf-8" }
-                ).trim()
-                    .split("\n")
-                    .map(x => x.trim())
-                    .filter(x => x);
+            config.debug(`Checking if we are behind ${masterBranchName} ...`);
 
-                //branches = await git.branch(['-r']);
+            // const logs = await git.log({ from: base, to: masterBranchName });
 
-                config.debug4('remote branches', branches)
-
-                if (!branches || !branches.includes(masterBranchName)) {
-                    config.error = `Remote branch ${chalk.yellow(masterBranchName)} does not exist.`;
-                    break;
-                } else {
-                    config.debug(`${masterBranchName} is valid.`);
-                }
-
-                // const base = await git.raw(['merge-base', realBranchName, masterBranchName]);
-                const base = config.mergeBase;
-
-                config.debug3(`Getting git logs from base ${base} to ${masterBranchName}...`)
-
-                config.debug(`Checking if we are behind ${masterBranchName} ...`);
-
-                // const logs = await git.log({ from: base, to: masterBranchName });
-
-                const logs = execSync(
-                    `git log ${base}..${masterBranchName} --oneline`,
-                    { encoding: "utf-8" }
-                ).trim()
+            const logs = config.exec(`git log ${base}..${masterBranchName} --oneline`)
                 .split("\n")
                 .filter(x => x && x.trim().length > 0);
 
-                config.debug3('\nlogs', logs)
+            config.debug3('\nlogs', logs)
 
-                if (logs.length > 0) {
-                    console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.length} commits.`);
-                    console.log(`Please run ${chalk.yellow(`git pull | git merge | git push`)} to sync with the latest changes from ${masterBranchName}.`);
+            if (logs.length == 0) {
+                config.debug(`We are not behind ${masterBranchName}.`);
 
-                    config.error = "Operation aborted.";
-                } else {
-                    config.debug(`We are not behind ${masterBranchName}.`);
+                break;
+            }
+
+            console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.length} commits.`);
+
+            if (!config.cliMode) {
+                console.log(`Please run ${chalk.yellow(`git pull ${origin} ${branch} & git merge ${branch}`)} to sync with the latest changes from ${masterBranchName}.`);
+
+                config.error = "Operation aborted.";
+
+                break;
+            }
+
+            const userChoice = await promptUser(`Do you want to pull/merge ${masterBranchName} (y/n)? `);
+
+            if (userChoice != 'y') {
+                config.error = "Operation aborted.";
+
+                break;
+            }
+
+            try {
+                config.exec(`git pull ${origin} ${branch}`);
+
+                try {
+                    config.exec(`git merge ${branch}`);
+                } catch (ex) {
+                    config.error = new Exception(`git merge ran into a merge conflict. Please merge/commit the files manually and try again.`, ex);
                 }
-            } while (false);
+            } catch (ex) {
+                config.error = new Exception(`git pull failed.`, ex);
+            }
         } catch (ex) {
-            config.error = new Exception(`Error checking ${masterBranchName} branch:`, ex);
+            config.error = new Exception(`Error comparing branch with ${masterBranchName}:`, ex);
         }
-    } else {
-        config.error = "no master branch is specified";
-    }
+    } while (false);
 
     return isNullOrEmpty(config.error);
 }

@@ -1,5 +1,4 @@
 import semver from "semver";
-import { execSync } from "child_process";
 import { name, version } from "../package.json";
 import chalk from "chalk";
 import { Exception } from "@locustjs/exception";
@@ -10,11 +9,7 @@ function checkForUpdate(config) {
     try {
         console.log("Checking for pdcsc update ...\n");
 
-        const cmd = `npm view ${name} version`;
-
-        config.debug4("update command:", cmd);
-
-        const latest = execSync(cmd, { encoding: "utf8" }).trim();
+        const latest = config.exec(`npm view ${name} version`);
 
         if (semver.gt(latest, version)) {
             console.warn(`⚠️  Update available: ${chalk.yellow(latest)}`);

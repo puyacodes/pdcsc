@@ -45,7 +45,7 @@ async function updateChangesetNameIfNeeded(config) {
 
             if (!config.error) {
                 config.debug(`Changeset timestamp updated.`);
-                config.debug2(`  old: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
+                config.debug1(`\told: ${chalk.blue(config.oldChangesetName)}, new: ${chalk.cyan(config.newChangesetName)}`);
             } else {
                 config.error = new Exception(`committing changeset name failed (old: ${config.oldChangesetName}, new: ${config.newChangesetName}).`, config.error);
             }

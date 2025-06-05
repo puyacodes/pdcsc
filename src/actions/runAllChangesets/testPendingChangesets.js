@@ -34,13 +34,13 @@ async function testPendingChangesets(config, pendingChangesets) {
 
             if (config.applyOneByOne && canTest) {
                 try {
-                    config.debug2(`\tTesting ...`);
+                    config.debug1(`\tTesting ...`);
 
                     await config.db.executeBatch({ content: cr.script });
 
-                    config.debug2(chalk.green("\t\tSucceeded"));
+                    config.debug1(chalk.green("\t\tSucceeded"));
                 } catch (ex) {
-                    config.debug2(chalk.red("\t\tFailed"));
+                    config.debug1(chalk.red("\t\tFailed"));
 
                     error = new Exception(`Testing changeset ${changeset.name} was not successful.`, ex);
 
@@ -58,12 +58,12 @@ async function testPendingChangesets(config, pendingChangesets) {
         if (!error) {
             console.log("Bundling ...");
 
-            config.debug2(`joining all scripts (count = ${_scripts.length}) ...`);
+            config.debug1(`joining all scripts (count = ${_scripts.length}) ...`);
 
             const all = _scripts.join("\ngo\n");
 
             if (config.debugMode) {
-                config.debug2(`Creating all.sql script ...`);
+                config.debug1(`Creating all.sql script ...`);
 
                 FileHelper.createFile(config.paths.scriptsPath, "all.sql", all);
             }

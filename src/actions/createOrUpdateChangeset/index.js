@@ -11,8 +11,8 @@ import updateSections from "./updateSections.js";
 import checkIfBranchAlreadyMerged from "./checkIfBranchAlreadyMerged.js";
 import updateChangesetNameIfNeeded from "./updateChangesetNameIfNeeded.js";
 import getAllSqlFiles from "../../utils/getAllSqlFiles.js";
-import restoreChangesIfNeeded from "./restoreChangesIfNeeded.js";
 import changesFolderIsReady from "./changesFolderIsReady.js";
+import checkIfGitRepo from "../../utils/checkIfGitRepo.js";
 import chalk from "chalk";
 
 async function createOrUpdateChangeset(config) {
@@ -22,13 +22,17 @@ async function createOrUpdateChangeset(config) {
 
     try {
         do {
+            if (!await checkIfGitRepo(config)) {
+                break;
+            }
+
             if (!await changesFolderIsReady(config)) {
                 console.log(`Please commit or discard changes in ${chalk.yellow(config.paths.changesetFolderName)} folder first.`)
                 break;
             }
 
             if (!await compareWithOrigin(config)) {
-                break
+                break;
             }
 
             // TODO: Done
@@ -38,14 +42,14 @@ async function createOrUpdateChangeset(config) {
             // if he intends to change previous branches.
 
             if (!checkIfBranchAlreadyMerged(config)) {
-                break
+                break;
             }
 
             // Todo: Done
             // we should update changeset timestamp and mergeBase always.
 
             if (!await updateChangesetNameIfNeeded(config)) {
-                break
+                break;
             }
 
             if (!await checkUncommittedChanges(config)) {

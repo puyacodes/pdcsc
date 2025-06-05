@@ -19,7 +19,7 @@ async function testAndCommitChangeset(config) {
     // Todo: Done
     // skip test and commit if changeset has no new changes
 
-    config.debug2(`hasChanges: ${config.hasChanges}, hasAnything: ${config.hasAnything}`);
+    config.debug1(`\thasChanges: ${config.hasChanges}, hasAnything: ${config.hasAnything}`);
 
     if (config.hasChanges) {
         if (config.hasAnything) {
@@ -32,7 +32,7 @@ async function testAndCommitChangeset(config) {
     }
 
     if (config.error) {
-        console.log(`See 'error.log' for more details`);
+        console.log(`See ${chalk.yellow('error.log')} for more details`);
     } else {
         if (config.hasChanges && config.hasAnything) {
             console.log(chalk.green("Passed.\n"));

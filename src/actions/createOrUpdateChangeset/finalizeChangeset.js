@@ -330,7 +330,7 @@ async function finalizeChangeset(config) {
             config.changesetChanged = true;
         }
     } catch (ex) {
-        config.error = ex;
+        config.error = new Exception('finalizing changeset failed', ex);
     }
 
     return isNullOrEmpty(config.error);

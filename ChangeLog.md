@@ -2,7 +2,7 @@
 
 ## 2.1.28
 
-Fixed bug: Reference error 'forceChangesetsTable' is not defined
+Fixed bug: Reference error 'forceJournalTable' is not defined
 
 ## 2.1.29
 roll: skipped new changeset deletion on errors
@@ -50,11 +50,11 @@ roll:
         Fixed bug: Array.contains() returned true for incorrect items
 
 ## 2.1.36
-    pipeline
+    merge
         Fixed bug: changeset is never executed on merging PRs
 
 # 2.1.37
-    pipeline
+    merge
         Fixed bug: changeset is not journaled after being executed on database
 
 # 2.1.38
@@ -71,11 +71,11 @@ roll:
         Fixed issue: creatd Changes folder in the init process
 
 # 2.1.41
-    pipeline
+    merge
         Fixed bug: Invalid object name 'Changesets' (on new empty databases)
 
 # 2.1.42
-    pipeline
+    merge
         Fixed bug: -f arg is not applied
 
 # 2.2.0
@@ -96,7 +96,7 @@ roll:
         fixed bug: "Cannot access 'c' before initialization"
         
 # 2.4.0
-    added create-journal command
+    added journal command
 
 # 2.4.1
     init
@@ -137,3 +137,14 @@ roll:
         
 # 2.4.7
     fixed bug: ReferenceError: isSectionEnd is not defined
+
+# 3.0.0
+    renamed `pipeline` command to `merge`
+    enhanced shell exec by introducing config.exec()
+    added new missing db objects drop statements
+    added config.debug1() function
+    used level 1 debug messages for better debugging without going to level 2
+
+    apply
+        added `-ip` or `--in-pipeline` argument
+

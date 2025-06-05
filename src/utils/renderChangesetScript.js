@@ -60,7 +60,7 @@ function extractObjects(config, changesetPath) {
         }
     }
 
-    config.debug2(`\tTotal objects: ${objects.length}`);
+    config.debug1(`\tTotal objects: ${objects.length}`);
 
     return { objects, customStart, customEnd }
 }
@@ -99,7 +99,7 @@ function extractObjectsOld(config, changesetPath) {
         }
     }
 
-    config.debug2(`Total objects: ${objects.length}`);
+    config.debug1(`Total objects: ${objects.length}`);
 
     return { objects, customStart, customEnd };
 }
@@ -144,7 +144,7 @@ async function renderChangesetScript(config, changesetPath, changesetName, delet
 
     const { objects, customStart, customEnd } = extractObjects(config, changesetPath);
 
-    config.debug2('extracted objects', objects);
+    config.debug1('extracted objects', objects);
 
     if (!isArray(deleteds)) {
         deleteds = [];

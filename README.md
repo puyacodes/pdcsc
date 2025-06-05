@@ -49,10 +49,10 @@ Again, we are going up in order to resolve and fix the issue.
 
 - **Generate Changeset**: generates changeset based on committed changes detected in a branch.
 - **Test Changeset**: creates a database backup and executes the changeset against that to see whether the changeset is ok or not.
-- **Pipeline Mode**: Using `pipeline` argument, it can be used in `ci/cd pipelines` (like `gitlab` or `azuredevops`) to provide a safe merge, preventing the merge if the changeset has errors.
-- **Update database**: Using `apply` argument, it can apply changesets(s) on a database and making the database up-to-date.
+- **Pipeline Mode**: Using `merge` command, it can be used in `ci/cd pipelines` (like `gitlab` or `azuredevops`) to provide a safe merge, preventing the merge if the changeset has errors or its execution ran into any errors.
+- **Update database**: Using `apply` command, it can execute changesets(s) on a database and making the database up-to-date.
 
-By default (without specifying `pipeline` or `apply` arguments), `@puya/pdcsc` manages current branch's changeset.
+By default, `pdcsc` manages current branch's changeset (uses `roll` command).
 
 # Disclaimer
 `@puya/pdcsc` IS AN IMPORTANT AND CRITICAL TOOL THAT TARGETS SQL SERVER DATABASES.
@@ -101,7 +101,7 @@ pdcsc [cmd] [arguments] [options]
 - There should be a `Scripts` folder where `pdcsc` executes.
 - In `./Scripts` folder, script files of `SQL Server` objects are expected to be stored.
 - `pdcsc` config files should be placed near the `Scripts` folder.
-- For `pipeline` and `apply` commands, `pdcsc` requires a ci/cd tool like `gitlabs` or `azuredevops`.
+- For `merge` and `apply` commands, `pdcsc` requires a ci/cd tool like `gitlabs` or `azuredevops`.
 
 # Recommendations
 `pdcsc` does not enforce any rules for file names and their content.
@@ -123,10 +123,10 @@ Nevertheless, while the following rules are not obligatory for `pdcsc`, it is re
 - `init`: Initializes a new database repository in current path, creates a git repo in it (if no git repo found), creates default scripts folders and creates a `pdcsc-config.json` config file and gitlab ci/cd yaml file.
 - `roll`: Creates/Updates a changeset based on `.sql` file changes in `./Scripts` folder in current branch. This is the default command.
 - `apply`: Applies changesets in `./Changes` folder on a database (updates the database).
-- `pipeline`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date). If changeset execution was successful as well, it  is journaled in the database (journaling is explained later in `Changeset execution history` section).
+- `merge`: Used in CICD pipelines, tests changeset of current branch that its merge is requested and if it succeeds, executes changeset over the database specified (making it up-to-date). If changeset execution was successful as well, it  is journaled in the database (journaling is explained later in `Changeset execution history` section).
 - `render`: Renders a changeset and creates a `.sql` file (overwrites existing `.sql` file)
 - `check-update`: checks whether a new version for `pdcsc` is available or not.
-- `create-journal`: creates journal table (`dbo.Changesets` if it is not already exist).
+- `journal`: creates journal table (`dbo.Changesets` if it is not already exist).
 
 # CLI arguments
 
@@ -145,14 +145,15 @@ Nevertheless, while the following rules are not obligatory for `pdcsc`, it is re
 **Note**: `-s`, `-u`, `-p`, `-d` and `-e` cli args have more priority over same database props in `pdcsc-config.json`.
 
 ## Debug Levels
-- `1`: log app execution flow (default)
+- `(empty)`: log app execution flow (default)
+- `1`: show more execution flow or business-related info
 - `2`: show local variables
 - `3`: show loop variables and more detailed variables
 - `4`: show db queries
 - `5`: show large db queries
 - `6`: show used pdcsc-config
 - `7`: show deepest variables (rarely used)
-- `8`: resered
+- `8`: exec commands
 - `9`: show detailed exceptions and errors (expanded stack trace)
 
 # Examples
@@ -184,7 +185,7 @@ pdcsc
 3. Updating master database upon merge requests in CI/CD:
 
 ```bash
-pdcsc pipeline
+pdcsc merge
 ```
 
 4. Manually updating an existing database
@@ -561,9 +562,9 @@ update Products set Visible = 1 where Visible is null
 includes the `Visible` column or not and adds it only when the table does not have such column.
 - At the end, the changeset updates `Visible` columns in `Products` table whose value is `NULL` with `1`.
 
-# `pipeline`: using `pdcsc` in `gitlab CI/CD pipeline`
+# `merge`: using `pdcsc` in `gitlab CI/CD pipeline`
 
-In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `pipeline` command to ensure our database is updated automatically whenever a feature branche is merged.
+In `GitLab`, we can create a custom CI/CD pipeline, and use `pdcsc` in it with `merge` command to ensure our database is updated automatically whenever a feature branche is merged.
 
 Here is a sample `gitlab` pipeline:
 
@@ -587,7 +588,7 @@ before_merge_build:
         pdcsc apply -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json" -dbm -f
       else
         echo "checking branch changeset before merge ..."
-        pdcsc pipeline -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json" -dbm
+        pdcsc merge -c "pdcsc-config-${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}.json" -dbm
       fi
   rules:
     - when: manual`
@@ -599,7 +600,7 @@ Notes:
 - The `dev` branch is our `development` stage where incomplete features are pushed and tested.
 - This way, we do not push incomplete/not-tested features directly to main branch.
 - Whenever we are ok with our `dev`, we merge it to `main` branch (bringing features to production).
-- Upon merging `dev` to `main`, previous features are already merged into `dev`, there is no need to use `pipeline` switch.
+- Upon merging `dev` to `main`, previous features are already merged into `dev`, there is no need to use `merge` switch.
 - We use `apply` switch instead and update master database (apply changeset files from `dev` upon master database).
 - In our pipeline, we explicitly specify config file for `pdcsc` through `-c` switch.
 - Name of the config file depends on the source branch that is going to be merged.
@@ -633,8 +634,7 @@ Note that, we should have `pdcsc-config-dev.json` and `pdcsc-config-main.json` f
 ```
 
 ## Speed-up pipeline
-We can create a Docker container, install `Node.js` and `Git` in it, so that these steps are not executed over and over again.
-This can speed up pipeline execution.
+We can create a Docker image, install `Node.js` and `Git` in it, so that these steps are not executed over and over again. This can speed up pipeline execution.
 
 ```yaml
 stages:
@@ -658,7 +658,7 @@ Using `apply` argument we can execute all changesets against a database and upda
 pdcsc apply -d MyDb
 ```
 
-This command is especial in a way that it does not need even a `git` repo, cicd tool, any branch, etc.
+This command is especial in a way that it does not need even a `git` repo, cicd, any branch, etc.
 
 The only thing `pdcsc` requires when using this command is a `./Changes` folder where changeset scripts are located and enough config files that tell `pdcsc` what database it should apply the changesets on.
 
@@ -692,10 +692,10 @@ pdcsc apply -d MyDb -f
 
 This behavior (manually use `-f` or force mode) is intentional in order to avoid updating an old database that is far behind our changesets (we may need to execute other updates on the database first).
 
-There is also a `create-journal` command that creates the journal table as well.
+There is also a `journal` command that creates the journal table as well.
 
 ```bash
-pdcsc create-journal
+pdcsc journal
 ```
 
 The name of journal table can be customized in `pdcsc` config file through `changesetsTableName` prop.
@@ -729,6 +729,17 @@ This can better highlight faulting changesets in case of errors.
 ```bash
 pdcsc apply -d MyDb -11
 ```
+
+## apply in pipeline
+If there are multiple teasm who work on different `dev` branches and push to a single `main` branch, it is neccessary for their `dev` branch to first pull/merge changes from `main` before applying their changesets on `main` database. Otherwise, a team may apply a change before having other teams changesets pushed into `main`.
+
+So, if we are using `apply` command in cicd pipeline, we should specify `-ip` or `--in-pipeline` argument in cli so that `pdcsc` checks whether `dev` branch is not behind `main`. If not, it aborts operation and asks the user to first pull/merge `main` branch.
+
+```bash
+pdcsc apply --in-pipeline
+```
+
+This argument is only available and applicable when we have access both to project's git repo and the remote repo.
 
 # Manually render a changeset
 By default, `pdcsc` renders `.sql` file of a changeset automatically when using `roll` command.
@@ -870,7 +881,7 @@ ELSE
 3. Employ a Sql Server DBA and Team Lead in your team who performs code review on feature branch merging and accepts merge only when he feels everything is all right.
 4. Use a separate database for `dev`/`test` and `main`/`master` branches.
 5. If possible, use a separate server for `main`/`master` database, other than `dev`/`test` server.
-6. In your pipelines, use `pdcsc pipeline` for merging feature PRs and `pdcsc apply` for merging `dev`/`test` branches with `main`/`master` branch.
+6. In your pipelines, use `pdcsc merge` for merging feature PRs and `pdcsc apply` for merging `dev`/`test` branches with `main`/`master` branch.
 7. Do not change/alter `main`/`master` database directly. Let cicd pipelines and `pdcsc` update your database automatically.
 8. Merge `dev`/`test` branch with `main`/`master` branch only when you really intend to bring changesets to production.
 9. Do not use `sa` and/or `sysadmin` users in `dev`/`test` stages.

@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import moment from "jalali-moment";
-import getCurrentBranch from "./getCurrentBranch.js"
+import getBranchName from "../utils/getBranchName.js"
 import { DbHelperSqlServer } from '../services/DbHelper/index.js';
 import { Exception } from "@locustjs/exception";
 import getCurrentBranchChangeset from "./getCurrentBranchChangeset.js";
@@ -39,16 +39,19 @@ function init(config) {
     config.uglifier = new NullSqlUglifier();
     config.obfuscator = new NullSqlObfuscator();
     config.now = moment().locale(config.timestampLocale).format('YYYYMMDDHHmmss');
+    config.exec = function (cmd) {
+        config.debug8(cmd);
 
-    if (!config.cliMode && config.action != ActionType.apply) {
-        let cmd;
+        return execSync(cmd, { encoding: "utf-8" }).trim();
+    }
 
-        const { currentBranch, realBranchName } = getCurrentBranch(config);
+    if (!config.cliMode && (config.action != ActionType.apply || config.inPipeline)) {
+        const { currentBranch, realCurrentBranch } = getBranchName(config);
 
-        console.log(`Current branch: ${chalk.yellow(realBranchName)}`);
+        console.log(`Current branch: ${chalk.yellow(realCurrentBranch)}`);
 
         config.currentBranch = currentBranch;
-        config.realBranchName = realBranchName;
+        config.realCurrentBranch = realCurrentBranch;
 
         if (!fs.readdirSync(config.paths.scriptsPath).some(folder =>
             Object.values(config.folders).some(f => folder === f)
@@ -56,31 +59,29 @@ function init(config) {
             throw new Exception("Please specify all 'Scripts' subfolders in the 'folders' section of the config file.");
         }
 
-        config.debug("getting merge-base ...", { realBranchName, masterBranch: config.masterBranchName })
-
-        cmd = `git merge-base HEAD ${config.masterBranchName}`;
-
-        config.debug4(cmd);
+        config.debug("getting merge-base ...", { realCurrentBranch, masterBranch: config.masterBranchName })
 
         try {
-            config.mergeBase = execSync(cmd, { encoding: "utf-8" }).trim();
+            config.mergeBase = config.exec(`git merge-base HEAD ${config.masterBranchName}`);
         } catch (ex) {
             throw new Exception("Getting merge-base for current branch failed", ex);
         }
 
         if (!config.mergeBase) {
-            throw new Exception(`No merge-base for current branch (${realBranchName}) found. Please use pdcsc in another branch.`);
+            throw new Exception(`No merge-base for current branch (${realCurrentBranch}) found. Please use pdcsc in another branch.`);
         } else {
-            config.debug2('merge-base =', config.mergeBase);
+            config.debug1('merge-base', config.mergeBase);
         }
 
-        config.debug("getting current branch changeset ...")
+        if (config.action != ActionType.apply) {
+            config.debug("getting current branch changeset ...")
 
-        config.oldChangeset = getCurrentBranchChangeset(config);
+            config.oldChangeset = getCurrentBranchChangeset(config);
 
-        if (config.oldChangeset) {
-            config.oldChangesetName = path.parse(config.oldChangeset).name;
-            config.oldChangesetFilePath = path.join(config.paths.changesetsPath, config.oldChangeset);
+            if (config.oldChangeset) {
+                config.oldChangesetName = path.parse(config.oldChangeset).name;
+                config.oldChangesetFilePath = path.join(config.paths.changesetsPath, config.oldChangeset);
+            }
         }
     }
 

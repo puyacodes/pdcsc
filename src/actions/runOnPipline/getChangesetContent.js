@@ -3,7 +3,6 @@ import extractDateFromString from "../../utils/extractDateFromString";
 import renderChangesetScript from "../../utils/renderChangesetScript";
 import chalk from "chalk";
 import path from "path";
-import { execSync } from "child_process";
 
 async function getChangesetContent(config) {
     config.debug("Getting changeset content ...");
@@ -11,7 +10,7 @@ async function getChangesetContent(config) {
     let content;
     let error;
     let changesetName;
-    const { oldChangeset, oldChangesetFilePath, realBranchName } = config;
+    const { oldChangeset, oldChangesetFilePath, realCurrentBranch } = config;
     const { changesetsPath } = config.paths;
 
     // Todo: Done
@@ -28,7 +27,7 @@ async function getChangesetContent(config) {
             // if there is a git commit after last pdcsc execution,
             // we should stop pipeline and generate error.
             // user must always use pdcsc.
-            const lastCommit = execSync('git log --pretty=format:"%s" HEAD^..HEAD ', { encoding: "utf-8" }).trim();
+            const lastCommit = config.exec('git log --pretty=format:"%s" HEAD^..HEAD ');
 
             config.debug("Last commit = " + lastCommit + "\n");
 
@@ -80,7 +79,7 @@ async function getChangesetContent(config) {
             }
         }
     } else {
-        error = `No changeset found for branch ${chalk.yellow(realBranchName)}`;
+        error = `No changeset found for branch ${chalk.yellow(realCurrentBranch)}`;
     }
 
     return { content, error, changesetName };

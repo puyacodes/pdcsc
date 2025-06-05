@@ -1,7 +1,7 @@
-import ensureChangesTableCreated from "../runAllChangesets/ensureChangesTableCreated";
+import ensureJournalTableCreated from "../runAllChangesets/ensureJournalTableCreated";
 
 async function createJournalTable(config) {
-    const error = await ensureChangesTableCreated(config);
+    const error = await ensureJournalTableCreated(config);
 
     return error;
 }

@@ -30,12 +30,13 @@ function help() {
                 -m or --minify      minifies generated script
                 -u or --uglify      uglifies generated script
                 -o or --obfuscate   obfuscates generated script
-        pipeline    run on pipeline (should be used only in cicd .yml files)
+        merge    merge a feature branch with master branch (should be used only in cicd pipelines)
         apply       apply all changesets in ./Changes folder on a database
             args:
                 -m or --mode        apply mode (Test, Update, TestAndUpdate = default).
                 -11 or --one-by-one apply changesets one by one
                 -f or --force       force creating Changesets table
+                -ip or --in-pipeline    ensures current branch is not behind master branch
         render      generate .sql file for a changeset (overwrites existing)
             args:
                 -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
@@ -43,7 +44,7 @@ function help() {
                 -u or --uglify      uglifies generated script
                 -o or --obfuscate   obfuscates generated script
         check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
-        create-journal  creates journal table in the database (if not already existed)
+        journal  creates journal table in the database (if not already existed)
 
     options (global):
         -v or --version                 show pdcsc version number
@@ -66,18 +67,19 @@ command:
     roll        create/update changeset (default)
         args:
             -m or --minify      minifies sprocs, udfs, views, triggers
-    pipeline    run on pipeline (should be used only in cicd .yml files)
+    merge    merge a feature branch with master branch (should be used only in cicd pipelines)
     apply       apply all changesets in ./Changes folder on a database
         args:
             -m or --mode        apply mode (Test, Update, TestAndUpdate = default).
             -11 or --one-by-one apply changesets one by one
             -f or --force       force creating Changesets table
+            -ip or --in-pipeline    ensures current branch is not behind master branch
     render      generate .sql file for a changeset (overwrites existing)
         args:
             -cs or --changeset  changeset name (if not specified, uses changeset in current branch)
             -m or --minify      minifies sprocs, udfs, views, triggers
     check-update    checks npm to see whether pdcsc is up-to-date and a new version is available or not
-    create-journal  creates journal table in the database (if not already existed)
+    journal  creates journal table in the database (if not already existed)
 
 options (global):
     -v or --version                 show pdcsc version number
@@ -121,23 +123,23 @@ async function main() {
                         case ActionType.init:
                             error = await initProject(config);
                             break;
-                        case ActionType.pipeline:
+                        case ActionType.roll:
+                            error = await createOrUpdateChangeset(config);
+                            break;
+                        case ActionType.merge:
                             error = await runOnPipline(config);
                             break;
                         case ActionType.apply:
                             error = await runAllChangesets(config);
                             break;
-                        case ActionType.roll:
-                            error = await createOrUpdateChangeset(config);
-                            break;
                         case ActionType.render:
                             error = await renderChangeset(config);
                             break;
+                        case ActionType.journal:
+                            error = await createJournalTable(config);
+                            break;
                         case ActionType.checkUpdate:
                             error = checkForUpdate(config);
-                            break;
-                        case ActionType.createJournalTable:
-                            error = await createJournalTable(config);
                             break;
                     }
                 } else {
@@ -152,7 +154,7 @@ async function main() {
         if (error) {
             console.error(chalk.red(error.toString()));
 
-            if (config && config.debugMode && config.debugLevel.contains("9") && error instanceof Exception) {
+            if (config && config.debugMode && config.debugLevel && config.debugLevel.contains("9") && error instanceof Exception) {
                 console.error(JSON.stringify(error, null, 4))
             }
 

@@ -15,7 +15,7 @@ function getOrCreateChangeset(config) {
 
     if (!config.changeset) {
         if (!config.oldChangeset) {
-            config.debug("No existing changeset found. Creating a new changeset ...");
+            config.debug("\tNo existing changeset found. Creating a new changeset ...");
 
             const cs = createNewChangeset(config);
             
@@ -23,7 +23,7 @@ function getOrCreateChangeset(config) {
             config.finalChangesetFilePath = cs.changesetFilePath;
             config.isNewChangeset = true;
         } else {
-            config.debug("Working on existing changeset ...");
+            config.debug(`Using existing changeset ${config.oldChangeset} ...`);
 
             config.finalChangeset = config.newChangeset;
             config.finalChangesetFilePath = config.newChangesetFilePath;

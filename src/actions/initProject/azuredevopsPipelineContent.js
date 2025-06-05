@@ -21,10 +21,10 @@ stages:
               echo "Installing dependencies..."
               sudo apt-get update && sudo apt-get install -y git
               npm install -g @puya/pdcsc
-              if [[ "$(Build.SourceBranchName)" == "dev" || "$(Build.SourceBranchName)" == "main" ]]; then
-                pdcsc apply -c "pdcsc-config-$(System.PullRequest.TargetBranchName).json" -dbm -f -p "$(DB_PASS)"
+              if [[ "$(System.PullRequest.TargetBranchName)" == "main"]]; then
+                pdcsc apply -c "pdcsc-config-$(System.PullRequest.TargetBranchName).json" -dbm -dbl 1 -ip -f -p "$(DB_PASS)"
               else
-                pdcsc pipeline -c "pdcsc-config-$(System.PullRequest.TargetBranchName).json" -dbm -p "$(DB_PASS)"
+                pdcsc merge -c "pdcsc-config-$(System.PullRequest.TargetBranchName).json" -dbm -dbl 1 -p "$(DB_PASS)"
               fi
             displayName: "Run Build Script"
           condition: eq(variables['Build.Reason'], 'Manual')

@@ -6,11 +6,11 @@ async function getChangesetScript(config, changeset, i) {
     let script;
 
     if (fs.existsSync(changeset.sqlPath)) {
-        config.debug2(`${i}. ${changeset.name}: .sql found`);
+        config.debug1(`${i}. ${changeset.name}: script found`);
         script = fs.readFileSync(changeset.sqlPath, "utf-8");
     } else {
-        config.debug2(`${i}. ${changeset.name}: .sql not found`);
-        error = new Exception(`changeset ${changeset.name} .sql file not found.`);
+        config.debug1(`${i}. ${changeset.name}: script not found`);
+        error = new Exception(`changeset ${changeset.name} script was not found.`);
     }
 
     return { error, script }

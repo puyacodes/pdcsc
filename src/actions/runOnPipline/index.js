@@ -3,18 +3,24 @@ import testScript from "../testScript";
 import executeChangeset from "./executeChangeset";
 import compareWithOrigin from "../../utils/compareWithOrigin.js";
 import addChangesetToDatabase from "../runAllChangesets/addChangesetToDatabase.js";
-import ensureChangesTableCreated from "../runAllChangesets/ensureChangesTableCreated.js";
+import ensureJournalTableCreated from "../runAllChangesets/ensureJournalTableCreated.js";
+import checkIfGitRepo from "../../utils/checkIfGitRepo.js";
 
 async function run(config) {
     let error;
 
     do {
+        if (!await checkIfGitRepo(config)) {
+            error = config.error;
+            break;
+        }
+
         if (!await compareWithOrigin(config)) {
             error = config.error;
             break;
         }
 
-        error = await ensureChangesTableCreated(config);
+        error = await ensureJournalTableCreated(config);
 
         if (error) {
             break;

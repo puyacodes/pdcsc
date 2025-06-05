@@ -37,10 +37,10 @@ async function saveFinalScript(config, allFiles) {
 
                 hasChanges = scriptNew != scriptOld;
 
-                config.debug2(`Script diff: old = ${scriptOld.length}, new = ${scriptNew.length}`);
+                config.debug1(`Script size: old = ${scriptOld.length}, new = ${scriptNew.length}`);
                 config.debug7(`scripts`, { old: scriptOld, "new": scriptNew });
             } else {
-                config.debug2(`Script diff: not applicable`);
+                config.debug1(`Script size diff: not applicable`);
             }
         }
 

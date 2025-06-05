@@ -4,10 +4,6 @@ import path from "path";
 function getAllSqlFiles(config, dir, level = 0) {
     let result = [];
 
-    if (level == 0) {
-        config.debug("Getting all .sql files ...");
-    }
-
     if (fs.existsSync(dir)) {
         const list = fs.readdirSync(dir);
 
@@ -24,7 +20,7 @@ function getAllSqlFiles(config, dir, level = 0) {
     }
 
     if (level == 0) {
-        config.debug("Total .sql files = ", result.length);
+        config.debug1("Total .sql files = ", result.length);
     }
 
     return result;

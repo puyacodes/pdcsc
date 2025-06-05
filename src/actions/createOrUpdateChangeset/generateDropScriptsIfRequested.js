@@ -7,60 +7,77 @@ const generateDropQuery = (objectType, objectName) => {
         case "FUNCTION":
             return `
 IF OBJECT_ID(N'${objectName}', N'${objectType[0]}') IS NOT NULL
-DROP ${objectType} ${objectName};
+    DROP ${objectType} ${objectName};
 GO
 `;
-
         case "TABLE":
             return `
 /*Note: Drop Table
 IF OBJECT_ID(N'${objectName}', N'U') IS NOT NULL
-DROP TABLE ${objectName};
+    DROP TABLE ${objectName};
 GO
 */`;
-
         case "FOREIGN KEY":
             return `
 /*Note: Drop the FOREIGN KEY from its table
-ALTER TABLE table_name DROP CONSTRAINT ${objectName};
+    ALTER TABLE table_name DROP CONSTRAINT ${objectName};
 GO
 */`;
 
         case "TYPE":
             return `
 IF EXISTS (SELECT 1 FROM sys.types WHERE name = '${objectName}')
-DROP TYPE ${objectName};
+    DROP TYPE ${objectName};
 GO
 `;
-
         case "VIEW":
             return `
 IF OBJECT_ID(N'${objectName}', N'V') IS NOT NULL
-DROP VIEW ${objectName};
+    DROP VIEW ${objectName};
 GO
 `;
-
         case "INDEX":
             return `
 /*Note: Drop the index from its table
-DROP INDEX ${objectName} ON table_name;
+    DROP INDEX ${objectName} ON table_name;
 GO
 */`;
-
         case "TRIGGER":
             return `
 IF OBJECT_ID(N'${objectName}', N'TR') IS NOT NULL
-DROP TRIGGER ${objectName};
+    DROP TRIGGER ${objectName};
 GO
 `;
-
         case "SCHEMA":
             return `
 IF EXISTS (SELECT 1 FROM sys.schemas WHERE name = '${objectName}')
-DROP SCHEMA ${objectName};
+    DROP SCHEMA ${objectName};
 GO
 `;
-
+        case "SEQUENCE":
+            return `
+IF EXISTS (SELECT 1 FROM sys.sequences WHERE name = '${objectName}')
+    DROP SEQUENCE ${objectName};
+GO
+`;
+        case "SYNONYM":
+            return `
+IF EXISTS (SELECT 1 FROM sys.synonyms WHERE name = '${objectName}')
+    DROP SYNONYM ${objectName};
+GO
+`;
+        case "QUEUE":
+            return `
+IF EXISTS (SELECT 1 FROM sys.service_queues WHERE name = '${objectName}')
+    DROP QUEUE ${objectName};
+GO
+`;
+        case "STATISTICS":
+            return `
+IF EXISTS (SELECT 1 FROM sys.stats WHERE name = '${objectName}')
+    DROP STATISTICS ${objectName};  -- attention: drop requires table/view name as well.
+GO
+`;
         default:
             return null;
     }
@@ -69,7 +86,7 @@ GO
 async function generateDropScriptsIfRequested(config) {
     if (await askIfGenerateDrops(config)) {
         config.debug("\nGenerating drop statements ...");
-        
+
         const { finalDeleteds, folders } = config;
         const folderToObjectMap = {
             [folders.procedures]: "PROCEDURE",

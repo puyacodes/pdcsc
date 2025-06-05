@@ -2,7 +2,7 @@ import { isObject } from "@locustjs/base";
 import simpleGit from "simple-git";
 
 async function changesFolderIsReady(config) {
-    config.debug2(`Checking if ${config.paths.changesetFolderName} folder is ready (does not have uncommitted changes) ...`)
+    config.debug1(`Checking if ${config.paths.changesetFolderName} folder is ready (does not have uncommitted changes) ...`)
 
     const git = simpleGit();
     const changes = await git.status();
@@ -25,7 +25,9 @@ async function changesFolderIsReady(config) {
     }
 
     if (result) {
-        config.debug2(`${config.paths.changesetFolderName} folder is ok.`)
+        config.debug1(`${config.paths.changesetFolderName} folder is ok.`)
+    } else {
+        config.debug1(`${config.paths.changesetFolderName} has changes in its changesets.`)
     }
 
     return result;

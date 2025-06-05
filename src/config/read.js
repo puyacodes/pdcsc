@@ -8,10 +8,16 @@ import chalk from "chalk";
 
 function addDebugFunctions(config) {
     for (let i = 1; i < 10; i++) {
-        config[`debug${i > 1 ? i : ''}`] = (...args) => {
-            if (config.debugMode && (i == 1 || config.debugLevel.contains(`${i}`))) {
+        config[`debug${i}`] = (...args) => {
+            if (config.debugMode && config.debugLevel.contains(`${i}`)) {
                 console.log(...args);
             }
+        }
+    }
+
+    config.debug = (...args) => {
+        if (config.debugMode) {
+            console.log(...args);
         }
     }
 }
@@ -34,8 +40,9 @@ function read(args) {
     let action;
     let applyMode;
     let applyOneByOne = false;
-    let forceChangesetsTable = false;
+    let forceJournalTable = false;
     let fullChangeset = false;
+    let inPipeline = false;
 
     if (args.length && args[0] && !args[0].startsWith("-")) {
         action = args[0];
@@ -47,8 +54,8 @@ function read(args) {
 
     if (action == "check-update") {
         action = ActionType.checkUpdate;
-    } else if (action == "create-journal") {
-        action = ActionType.createJournalTable;
+    } else if (action == "journal") {
+        action = ActionType.journal;
     }
 
     if (!ActionType.isValid(action)) {
@@ -58,11 +65,12 @@ function read(args) {
     action = ActionType.getNumber(action);
 
     fullChangeset = args.includes("-fc") || args.includes("--full-changeset");
-    forceChangesetsTable = action == ActionType.createJournalTable || args.includes("-f") || args.includes("--force");
+    forceJournalTable = action == ActionType.journal || args.includes("-f") || args.includes("--force");
 
     if (action == ActionType.apply) {
         applyMode = getArg("-m", "--mode");
         applyOneByOne = args.includes("-11") || args.includes("--one-by-one");
+        inPipeline = args.includes("-ip") || args.includes("--in-pipeline");
 
         if (isEmpty(applyMode)) {
             applyMode = ApplyMode.TestAndUpdate;
@@ -83,7 +91,7 @@ function read(args) {
         config.initfull = args.includes("-f") || args.includes("--full");
     }
 
-    const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render || action == ActionType.createJournalTable;
+    const cliMode = action == ActionType.init || action == ActionType.checkUpdate || action == ActionType.render || action == ActionType.journal;
     const renderMode = action == ActionType.roll || action == ActionType.render;
     const useMinification = renderMode && (args.includes("-m") || args.includes("--minify"));
     const useUglification = renderMode && (args.includes("-u") || args.includes("--uglify"));
@@ -161,7 +169,8 @@ function read(args) {
         cliMode,
         applyMode,
         applyOneByOne,
-        forceChangesetsTable,
+        inPipeline,
+        forceJournalTable,
         useMinification,
         useUglification,
         useObfuscation,

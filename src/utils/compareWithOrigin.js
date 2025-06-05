@@ -2,6 +2,7 @@ import { Exception } from "@locustjs/exception";
 import simpleGit from "simple-git";
 import chalk from 'chalk';
 import { isNullOrEmpty } from "@locustjs/base";
+import { ActionType } from "../enums";
 
 async function compareWithOrigin(config) {
     const { masterBranchName } = config
@@ -58,7 +59,7 @@ async function compareWithOrigin(config) {
 
             console.warn(`${chalk.yellow("Warning:")} you are behind ${masterBranchName} by ${logs.length} commits.`);
 
-            if (!config.cliMode) {
+            if (config.action == ActionType.merge) {
                 console.log(`Please run ${chalk.yellow(`git pull ${origin} ${branch} & git merge ${branch}`)} to sync with the latest changes from ${masterBranchName}.`);
 
                 config.error = "Operation aborted.";
@@ -69,7 +70,7 @@ async function compareWithOrigin(config) {
             const userChoice = await promptUser(`Do you want to pull/merge ${masterBranchName} (y/n)? `);
 
             if (userChoice != 'y') {
-                config.error = "Operation aborted.";
+                config.error = new Exception("Operation aborted.");
 
                 break;
             }

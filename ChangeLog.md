@@ -148,3 +148,6 @@ roll:
     apply
         added `-ip` or `--in-pipeline` argument
 
+# 3.0.1
+    roll
+        fixed auto pull/merge

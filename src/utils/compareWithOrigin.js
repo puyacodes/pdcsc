@@ -68,7 +68,7 @@ async function compareWithOrigin(config) {
                 break;
             }
 
-            const userChoice = await promptUser(`Do you want to pull/merge ${masterBranchName} (y/n)? `);
+            const userChoice = await promptUser(`\nDo you want to pull/merge ${masterBranchName} (y/n)? `);
 
             if (userChoice != 'y') {
                 config.error = new Exception("Operation aborted.");

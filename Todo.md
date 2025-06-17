@@ -42,3 +42,29 @@ delete a file
 commit
 pdcsc
 	it should ask 'create drops' for committed deletions as well
+
+## new commands 1404/03/17
+
+pdcsc rel dbo.FinVchLs
+	reports parent/child objects that relate to dbo.FinVchLs
+
+pdcsc affect dbo.FinVchLs -t view,udf
+	adds child objects who depend on dbo.FinVchLs to changeset
+
+pdcsc diff 14040101 14040302
+	creates an update bundle by merging all changesets between the two timestamps
+
+pdcsc get-bundle
+	creates an update bundle script produced by merging all changesets
+	from target database last changeset until now (last changeset in ./Changes folder)
+
+pdcsc check
+	checks whether ./Changes folder match target database's last changeset and app version
+
+pdcsc report
+	reports last changeset executed on target database, list of changesets executed on it
+	and its current app version (timestamp, branch)
+
+pdcsc info
+	reports information about a database:
+		total tables, sprocs, udfs, ...

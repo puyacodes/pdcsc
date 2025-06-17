@@ -3,22 +3,10 @@ import path from "path";
 import extractDateFromString from "../../utils/extractDateFromString";
 import chalk from "chalk";
 import { isSomeArray } from "@locustjs/base";
+import { Exception } from "@locustjs/exception";
+import addChangesetToDatabase from "./addChangesetToDatabase";
 
-function getPendingChangesets(config, executedChangesets) {
-    console.log("Getting pending changesets ...");
-
-    const firstExecutedChangeset = isSomeArray(executedChangesets) ? executedChangesets[0] : null;
-    const lastExecutedChangeset = isSomeArray(executedChangesets) ? executedChangesets[executedChangesets.length - 1] : null;
-
-    if (firstExecutedChangeset) {
-        console.log(`First ${lastExecutedChangeset == firstExecutedChangeset ? "and Last " : ""}executed changeset: ${chalk.cyan(firstExecutedChangeset.name)}.`)
-
-        if (lastExecutedChangeset && lastExecutedChangeset != firstExecutedChangeset) {
-            console.log(`Last executed changeset: ${chalk.cyan(lastExecutedChangeset.name)}.`)
-        }
-    }
-
-    let result = [];
+function getCurrentChangesets() {
     const files = fs.readdirSync(config.paths.changesetsPath);
     const changesets = files
         .filter(filepath => path.extname(filepath) == ".txt" && extractDateFromString(config, filepath))
@@ -32,6 +20,44 @@ function getPendingChangesets(config, executedChangesets) {
         }));
 
     changesets.sort((a, b) => a.date - b.date);
+
+    return changesets;
+}
+
+async function getPendingChangesets(config, executedChangesets, appVersion) {
+    console.log("Getting pending changesets ...");
+
+    const changesets = getCurrentChangesets(config);
+    const firstExecutedChangeset = isSomeArray(executedChangesets) ? executedChangesets[0] : null;
+    const lastExecutedChangeset = isSomeArray(executedChangesets) ? executedChangesets[executedChangesets.length - 1] : null;
+
+    if (firstExecutedChangeset) {
+        console.log(`First ${lastExecutedChangeset == firstExecutedChangeset ? "and Last " : ""}executed changeset: ${chalk.cyan(firstExecutedChangeset.name)}.`)
+
+        if (lastExecutedChangeset && lastExecutedChangeset != firstExecutedChangeset) {
+            console.log(`Last executed changeset: ${chalk.cyan(lastExecutedChangeset.name)}.`)
+        }
+    } else {
+        console.log(`Journal table is empty. Falling back to app version ...`);
+        
+        if (appVersion && appVersion.changeset) {
+            console.log(`Restoring database journals to ${appVersion.changeset} ...`);
+
+            let i = 1;
+
+            executedChangesets = []
+
+            for (let changeset of changesets.filter(cs => extractDateFromString(config, cs) < extractDateFromString(config, appVersion.changeset))) {
+                await addChangesetToDatabase(config, changeset, i++);
+
+                executedChangesets.push(changeset);
+            }
+        } else {
+            throw new Exception(`database has no journal ${appVersion ? ' and its app version is corrupted' : 'and app version'}. cannot continue!`);
+        }
+    }
+
+    let result = [];
 
     const firstExecutedChangesetName = firstExecutedChangeset?.name;
     const firstExecutedDate = firstExecutedChangesetName ? extractDateFromString(config, firstExecutedChangesetName) : null;
@@ -81,9 +107,9 @@ function getPendingChangesets(config, executedChangesets) {
         // so, it is recommended for teams to manually merge other teams' dev branches into
         // their dev branch and then try to merge their dev branch to main branch.
 
-        // anyhow, when looping through changeset, if we find a changeset prior to
+        // anyhow, when looping through changesets, if we find a changeset prior to
         // last executed changeset, we don't care anymore that next changesets are executed
-        // on the database or not. from that point forward, we must executed the changesets
+        // on the database or not. from that point forward, we must execute the changesets
         // on the database.
 
         let foundOldChangeset = false;

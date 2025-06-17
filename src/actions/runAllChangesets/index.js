@@ -9,6 +9,7 @@ import getExecutedChangesets from "./getExecutedChangesets.js";
 import checkIfGitRepo from "../../utils/checkIfGitRepo.js";
 import checkIfBranchIsReady from "./checkIfBranchIsReady.js";
 import ensureJournalTableCreated from "./ensureJournalTableCreated.js";
+import getDatabaseVersion from "./getDatabaseVersion.js";
 
 async function run(config) {
     let error;
@@ -51,7 +52,8 @@ async function run(config) {
             }
 
             const executedChangesets = await getExecutedChangesets(config);
-            const pendingChangesets = getPendingChangesets(config, executedChangesets);
+            const appVersion = await getDatabaseVersion(config);
+            const pendingChangesets = getPendingChangesets(config, executedChangesets, appVersion);
 
             config.debug3({ pendingChangesets })
 
